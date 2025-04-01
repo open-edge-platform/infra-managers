@@ -1,0 +1,422 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+package hostmgr_southbound_proto;
+
+import "validate/validate.proto";
+
+option go_package = ".;hostmgr_southbound";
+
+// buf:lint:ignore SERVICE_SUFFIX
+service Hostmgr {
+  // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+  rpc UpdateHostStatusByHostGuid(UpdateHostStatusByHostGuidRequest) returns (HostStatusResp) {}
+
+  // This call is dedicated to updating of an Instance's Current State AND Instance's Status.
+  rpc UpdateInstanceStateStatusByHostGUID(UpdateInstanceStateStatusByHostGUIDRequest) returns (UpdateInstanceStateStatusByHostGUIDResponse) {}
+
+  // This call will update the Host System info
+  rpc UpdateHostSystemInfoByGUID(UpdateHostSystemInfoByGUIDRequest) returns (UpdateHostSystemInfoByGUIDResponse) {}
+}
+
+message HostStatus {
+  Host_status host_status = 1;
+
+  string details = 2;
+
+  string human_readable_status = 3;
+
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  // buf:lint:ignore ENUM_PASCAL_CASE
+  enum Host_status {
+    UNSPECIFIED = 0;
+
+    REGISTERING = 1;
+
+    BOOTING = 2;
+
+    BOOTFAILED = 3;
+
+    PROVISIONING = 4;
+
+    PROVISIONED = 5;
+
+    PROVISIONFAILED = 6;
+
+    RUNNING = 7;
+
+    UPDATING = 8;
+
+    UPDATEFAILED = 9;
+
+    ERROR = 10;
+  }
+}
+
+message HostStatusResp {
+  Host_action host_action = 1;
+
+  string details = 2;
+
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  // buf:lint:ignore ENUM_PASCAL_CASE
+  enum Host_action {
+    NONE = 0;
+
+    SHUTDOWN = 1;
+
+    RESTART = 2;
+
+    UPDATING = 3;
+
+    RUNNING = 4;
+  }
+}
+
+message Metadata {
+  string key = 1;
+
+  string value = 2;
+}
+
+message SystemInfo {
+  HWInfo hw_info = 1;
+
+  OsInfo os_info = 2;
+
+  BmInfo bm_ctl_info = 3;
+
+  BiosInfo bios_info = 4;
+}
+
+message BiosInfo {
+  string version = 1 [(validate.rules).string = {
+    max_len: 128
+    ignore_empty: true
+    // no regex pattern because the BIOS version can be reported in many different formats.
+    // See https://www.cyberciti.biz/faq/check-bios-version-linux/.
+  }];
+
+  string release_date = 2 [(validate.rules).string = {
+    max_len: 128
+    ignore_empty: true
+    pattern: "^(0[1-9]|1[012])[/](0[1-9]|[12][0-9]|3[01])[/](19|20)\\d\\d$" // MM/DD/YYYY format
+  }];
+
+  string vendor = 3 [(validate.rules).string = {
+    max_len: 40
+    ignore_empty: true
+  }];
+}
+
+message OsInfo {
+  OsKernel kernel = 1;
+
+  OsRelease release = 2;
+}
+
+message Config {
+  string key = 1;
+
+  string value = 2;
+}
+
+message OsKernel {
+  string version = 1 [(validate.rules).string = {max_len: 128}];
+
+  repeated Config config = 2;
+}
+
+message OsRelease {
+  string id = 1 [(validate.rules).string = {max_len: 128}];
+
+  string version = 2 [(validate.rules).string = {max_len: 128}];
+
+  repeated Metadata metadata = 3;
+}
+
+message Storage {
+  repeated SystemDisk disk = 1;
+
+  repeated string features = 2;
+}
+
+message HWInfo {
+  string serial_num = 1 [(validate.rules).string = {max_len: 128}];
+
+  string product_name = 9 [(validate.rules).string = {max_len: 128}];
+
+  SystemCPU cpu = 2;
+
+  SystemGPU gpu_deprecated = 3 [deprecated = true];
+
+  SystemMemory memory = 4;
+
+  Storage storage = 5;
+
+  repeated SystemNetwork network = 6;
+
+  repeated SystemPCI pci = 7;
+
+  repeated SystemUSB usb = 8;
+
+  repeated SystemGPU gpu = 10;
+}
+
+message SystemCPU {
+  string arch = 1 [(validate.rules).string = {max_len: 128}];
+
+  string vendor = 2 [(validate.rules).string = {max_len: 128}];
+
+  string model = 3 [(validate.rules).string = {max_len: 128}];
+
+  uint32 sockets = 4 [(validate.rules).uint32.gt = 0];
+
+  uint32 cores = 5 [(validate.rules).uint32.gt = 0];
+
+  uint32 threads = 6 [(validate.rules).uint32.gt = 0];
+
+  repeated string features = 7;
+
+  CPUTopology cpu_topology = 8;
+}
+
+message SystemMemory {
+  uint64 size = 1 [(validate.rules).uint64.gt = 0];
+}
+
+message SystemDisk {
+  string serial_number = 1 [(validate.rules).string = {max_len: 128}];
+
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 128
+  }];
+
+  string vendor = 3 [(validate.rules).string = {max_len: 128}];
+
+  string model = 4 [(validate.rules).string = {max_len: 128}];
+
+  uint64 size = 5;
+
+  string wwid = 6 [(validate.rules).string = {max_len: 128}];
+}
+
+message SystemGPU {
+  string pci_id = 1 [(validate.rules).string = {
+    ignore_empty: true // this is for backwards compatibility only as older HD agents send empty SystemGPU
+    min_len: 1
+    max_len: 128
+  }];
+
+  string product = 2 [(validate.rules).string = {max_len: 128}];
+
+  string vendor = 3 [(validate.rules).string = {max_len: 128}];
+
+  string name = 4 [(validate.rules).string = {
+    ignore_empty: true // this is for backwards compatibility only as older HD agents send empty SystemGPU
+    min_len: 1
+    max_len: 128
+  }];
+
+  string description = 5 [(validate.rules).string = {max_len: 128}]; // human-readable description of GPU
+
+  repeated string features = 6;
+}
+
+message SystemNetwork {
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 128
+  }];
+
+  string pci_id = 2 [(validate.rules).string = {max_len: 128}];
+
+  string mac = 3 [(validate.rules).string = {max_len: 128}];
+
+  bool link_state = 4;
+
+  uint64 current_speed = 5;
+
+  string current_duplex = 6 [(validate.rules).string = {max_len: 128}];
+
+  repeated string supported_link_mode = 7;
+
+  repeated string advertising_link_mode = 8;
+
+  repeated string features = 9;
+
+  bool sriovenabled = 10;
+
+  uint32 sriovnumvfs = 11;
+
+  uint32 sriov_vfs_total = 20;
+
+  string peer_name = 12 [(validate.rules).string = {max_len: 128}];
+
+  string peer_description = 13 [(validate.rules).string = {max_len: 128}];
+
+  string peer_mac = 14 [(validate.rules).string = {max_len: 128}];
+
+  string peer_mgmt_ip = 15 [(validate.rules).string = {max_len: 128}];
+
+  string peer_port = 16 [(validate.rules).string = {max_len: 128}];
+
+  repeated IPAddress ip_addresses = 17; // NIC can report multiple IP addresses for each NIC
+
+  uint32 mtu = 18; // units are bytes
+
+  bool bmc_net = 19; // whether or not this is a bmc NIC
+}
+
+message CPUTopology {
+  repeated Socket sockets = 1 [(validate.rules).repeated = {min_items: 1}]; // a list of CPU socket descriptions
+}
+
+message Socket {
+  uint32 socket_id = 1;
+  repeated CoreGroup core_groups = 2 [(validate.rules).repeated = {min_items: 1}]; // a list of CPU core groups, categorized by CPU core type
+}
+
+message CoreGroup {
+  string core_type = 1; // type of CPU cores (e.g., P-Core or E-Core)
+  repeated uint32 core_list = 3 [(validate.rules).repeated = {
+    unique: true
+    min_items: 1
+  }]; // a list of CPU cores in the group
+}
+
+message IPAddress {
+  string ip_address = 1 [(validate.rules).string.ip = true]; // Just an IP Address of the interface (e.g., 192.168.1.12)
+
+  int32 network_prefix_bits = 2 [(validate.rules).int32 = {
+    gte: 1
+    lt: 128
+  }];
+
+  ConfigMode config_mode = 4; // this is derived from the FLAG and lifetime associated with the IPAddress
+}
+
+enum ConfigMode {
+  CONFIG_MODE_UNSPECIFIED = 0;
+  CONFIG_MODE_STATIC = 1;
+  CONFIG_MODE_DYNAMIC = 2;
+}
+
+message SystemPCI {
+  string dev_class = 1 [(validate.rules).string = {max_len: 128}];
+}
+
+message Interfaces {
+  string class = 1 [(validate.rules).string = {max_len: 128}];
+}
+
+message SystemUSB {
+  string class = 1 [(validate.rules).string = {max_len: 128}];
+
+  string idvendor = 2 [(validate.rules).string = {max_len: 128}];
+
+  string idproduct = 3 [(validate.rules).string = {max_len: 128}];
+
+  uint32 bus = 4;
+
+  uint32 addr = 5;
+
+  string description = 6 [(validate.rules).string = {max_len: 128}];
+
+  string serial = 7 [(validate.rules).string = {max_len: 128}];
+
+  repeated Interfaces interfaces = 8;
+}
+
+message BmInfo {
+  Bm_type bm_type = 1;
+
+  BmcInfo bmc_info = 2;
+
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  // buf:lint:ignore ENUM_PASCAL_CASE
+  enum Bm_type {
+    IPMI = 0;
+
+    REDFISH = 1;
+
+    PDU = 2;
+
+    VPRO = 3;
+
+    FDO = 4;
+
+    NONE = 5;
+  }
+}
+
+message BmcInfo {
+  string bm_ip = 1 [(validate.rules).string = {max_len: 128}];
+
+  string bm_username = 2 [(validate.rules).string = {max_len: 128}];
+
+  string bm_password = 3 [(validate.rules).string = {max_len: 128}];
+}
+
+//UpdateHostStatusByHostGuidParameters holds parameters to UpdateHostStatusByHostGuid
+message UpdateHostStatusByHostGuidRequest {
+  string host_guid = 1 [(validate.rules).string = {
+    min_len: 1
+    uuid: true
+    max_bytes: 36
+  }];
+
+  HostStatus host_status = 2 [(validate.rules).message.required = true];
+}
+
+message UpdateHostSystemInfoByGUIDRequest {
+  string host_guid = 1 [(validate.rules).string = {
+    min_len: 1
+    uuid: true
+    max_bytes: 36
+  }];
+
+  SystemInfo system_info = 2 [(validate.rules).message.required = true];
+}
+
+message UpdateHostSystemInfoByGUIDResponse {}
+
+enum InstanceState {
+  INSTANCE_STATE_UNSPECIFIED = 0; // unconfigured
+  INSTANCE_STATE_INSTALLED = 2; // OS is installed, but hasn't been started
+  INSTANCE_STATE_RUNNING = 3; // OS is Running
+  INSTANCE_STATE_STOPPED = 4; // OS is Stopped
+  INSTANCE_STATE_DELETED = 5; // OS should be Deleted
+}
+
+enum InstanceStatus {
+  INSTANCE_STATUS_UNSPECIFIED = 0;
+  INSTANCE_STATUS_BOOTING = 1;
+  INSTANCE_STATUS_BOOT_FAILED = 2;
+  INSTANCE_STATUS_PROVISIONING = 3;
+  INSTANCE_STATUS_PROVISIONED = 4;
+  INSTANCE_STATUS_PROVISION_FAILED = 5;
+  INSTANCE_STATUS_RUNNING = 6;
+  INSTANCE_STATUS_ERROR = 7;
+  INSTANCE_STATUS_UPDATING = 9;
+  INSTANCE_STATUS_UPDATE_FAILED = 10;
+}
+
+message UpdateInstanceStateStatusByHostGUIDRequest {
+  string host_guid = 1 [(validate.rules).string = {
+    uuid: true
+    max_bytes: 36
+  }]; // Host GUID
+  InstanceStatus instance_status = 2; // Instance's Status
+  InstanceState instance_state = 3; // Instance's last State as seen by the PS/ENA
+  string provider_status_detail = 4; // Details of the current status of the Instance
+}
+
+message UpdateInstanceStateStatusByHostGUIDResponse {}

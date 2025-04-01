@@ -1,0 +1,90 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package maintmgr.v1;
+
+import "validate/validate.proto";
+
+option go_package = "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1;maintmgrv1";
+
+message UpdateStatus {
+  StatusType status_type = 1;
+  enum StatusType {
+    STATUS_TYPE_UNSPECIFIED = 0; // Default value, status not specified
+    STATUS_TYPE_UP_TO_DATE = 1; // Status when EN is not performing any update related actions.
+    STATUS_TYPE_STARTED = 2; // Status when the update process of EN has started
+    STATUS_TYPE_UPDATED = 3; // Status when the EN update is completed succesfully
+    STATUS_TYPE_FAILED = 4; // Status when the EN update fails; a detailed log is also sent
+    STATUS_TYPE_DOWNLOADING = 5; // Status when the EN is downloading update artifacts
+    STATUS_TYPE_DOWNLOADED = 6; // Status when the EN completes downloading update artifacts
+  }
+  string status_detail = 2;
+  string profile_name = 3;
+  string profile_version = 4;
+  string os_image_id = 5;
+}
+
+message PlatformUpdateStatusRequest {
+  string host_guid = 1 [(validate.rules).string = {
+    uuid: true
+    max_bytes: 36
+  }];
+  UpdateStatus update_status = 2 [(validate.rules).message.required = true];
+}
+
+message SingleSchedule {
+  uint64 start_seconds = 1; // start of one-time schedule (required)
+  uint64 end_seconds = 2; // end of one-time schedule (optional)
+}
+
+message RepeatedSchedule {
+  uint32 duration_seconds = 1 [(validate.rules).uint32 = {
+    ignore_empty: true
+    gte: 1
+    lte: 86400
+  }]; // between 1 second and 86400 seconds (24 hours worth of seconds)
+  string cron_minutes = 2 [(validate.rules).string = {pattern: "^([*]|([0-9]|([1-5][0-9]))((,([0-9]|([1-5][0-9])))*))$"}]; // cron style minutes (0-59)
+  string cron_hours = 3 [(validate.rules).string = {pattern: "^([*]|([0-9]|1[0-9]|2[0-3])((,([0-9]|1[0-9]|2[0-3]))*))$"}]; // cron style hours (0-23)
+  string cron_day_month = 4 [(validate.rules).string = {pattern: "^([*]|([1-9]|([12][0-9])|3[01])((,([1-9]|([12][0-9])|3[01]))*))$"}]; // cron style day of month (0-31)
+  string cron_month = 5 [(validate.rules).string = {pattern: "^([*]|([1-9]|1[012])((,([1-9]|1[012]))*))$"}]; // cron style month (1-12)
+  string cron_day_week = 6 [(validate.rules).string = {pattern: "^([*]|([0-6])((,([0-6]))*))$"}]; // cron style day of week (0-6)
+}
+
+message UpdateSchedule {
+  SingleSchedule single_schedule = 1;
+  RepeatedSchedule repeated_schedule = 2 [deprecated = true];
+  repeated RepeatedSchedule repeated_schedules = 3; // provide a list of repeated schedules to PUA.
+}
+
+message PlatformUpdateStatusResponse {
+  UpdateSource update_source = 1 [(validate.rules).message.required = true];
+  UpdateSchedule update_schedule = 2;
+  string installed_packages = 3; // Freeform text, OS-dependent. A list of package names, one per line (newline separated). Should not contain version info.
+  OSType os_type = 4;
+  enum OSType {
+    OS_TYPE_UNSPECIFIED = 0;
+    OS_TYPE_MUTABLE = 1;
+    OS_TYPE_IMMUTABLE = 2;
+  }
+  OSProfileUpdateSource os_profile_update_source = 5;
+}
+
+message UpdateSource {
+  string kernel_command = 1; // Kernel command line
+  string os_repo_url = 2 [deprecated = true]; // 'DEB822 Source Format' url to the public repository, deprecated in 24.11
+  repeated string custom_repos = 3; // 'DEB822 Source Format' entries for Debian style OSs
+}
+
+message OSProfileUpdateSource {
+  string os_image_url = 1; // URL that PUA will use to download the immutable OS image file
+  string os_image_id = 2; // Identifier (e.g., version) of the image to be used by PUA to verify if it can use the OS image for EN update
+  string os_image_sha = 3; // Version of the image to be used by PUA to verify if it can use the OS image for EN update
+  string profile_name = 4; // Describes the OS profile name used by EN
+  string profile_version = 5; // Describes the OS profile version used by EN
+}
+
+service MaintmgrService {
+  rpc PlatformUpdateStatus(PlatformUpdateStatusRequest) returns (PlatformUpdateStatusResponse) {}
+}

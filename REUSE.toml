@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+
+[[annotations]]
+path = [
+  "VERSION",
+  "**.md",
+  "host/**",
+  "maintenance/**",
+  "networking/**",
+  "os-resource/**",
+  "telemetry/**",
+  "attestationstatus/**",
+]
+
+precedence = "aggregate"
+SPDX-FileCopyrightText = "(C) 2025 Intel Corporation"
+SPDX-License-Identifier = "Apache-2.0"

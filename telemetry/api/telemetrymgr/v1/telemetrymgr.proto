@@ -1,0 +1,68 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+// File: telemetrymgr.proto
+// Description: 
+//   Defines a message format for interacting with telemetry manager
+
+syntax = "proto3";
+
+package telemetrymgr.v1;
+
+import "validate/validate.proto";
+
+option go_package = "github.com/open-edge-platform/infra-managers/telemetry/pkg/api/telemetrymgr/v1";
+
+// Enum representing severity level required for logging input.
+enum SeverityLevel {
+  SEVERITY_LEVEL_UNSPECIFIED = 0;
+  SEVERITY_LEVEL_CRITICAL = 1;
+  SEVERITY_LEVEL_ERROR = 2;
+  SEVERITY_LEVEL_WARN = 3;
+  SEVERITY_LEVEL_INFO = 4;
+  SEVERITY_LEVEL_DEBUG = 5;
+}
+
+// Enum representing telemetry kind/type of an input.
+enum TelemetryResourceKind {
+  TELEMETRY_RESOURCE_KIND_UNSPECIFIED = 0;
+  TELEMETRY_RESOURCE_KIND_METRICS = 1;
+  TELEMETRY_RESOURCE_KIND_LOGS = 2;
+}
+
+// Enum representing telemetry collector environment in which the input will be collected.
+enum CollectorKind {
+  COLLECTOR_KIND_UNSPECIFIED = 0;
+  COLLECTOR_KIND_HOST = 1; // telemetry data collected from bare-metal host
+  COLLECTOR_KIND_CLUSTER = 2; // telemetry data collected from Kubernetes cluster
+}
+
+// Southbound service interface to Telemetry Manager.
+service TelemetryMgr {
+  rpc GetTelemetryConfigByGUID (GetTelemetryConfigByGuidRequest) returns (GetTelemetryConfigResponse) {}
+}
+
+// Message representing a config request based on host UUID.
+message GetTelemetryConfigByGuidRequest {
+  string guid = 1 [(validate.rules).string = {
+    uuid: true,
+    max_bytes: 36
+  }];
+}
+
+// Message representing a response to a request for config.
+message GetTelemetryConfigResponse {
+  message TelemetryCfg  {
+    string input = 1 [(validate.rules).string = { ignore_empty: false }];    // plugin name of telegraf/fluent-bit
+    TelemetryResourceKind type = 2;     // indicating from telegraf or fluent-bit
+    CollectorKind kind = 3;     // indicating collected from host or cluster
+    SeverityLevel level = 4;  // severity level of log
+    int64 interval = 5 [(validate.rules).int64 = { ignore_empty: false }];   // interval of metric
+  }
+  string host_guid = 1 [(validate.rules).string = {
+    uuid: true,
+    max_bytes: 36
+  }];  // guid of the Node            
+  string timestamp = 2 [(validate.rules).string = {pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[-+][0-9]{2}:[0-9]{2}$" }]; //latest timestamp of the overall update from Orchestrator, used by TA to determine re-run
+  repeated TelemetryCfg cfg = 3;
+}

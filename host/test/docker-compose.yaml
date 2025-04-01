@@ -1,0 +1,36 @@
+---
+# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+services:
+  inv-db:
+    container_name: inv-db
+    image: "postgres:${POSTGRES_VERSION}"
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=pass
+  inventory:
+    container_name: inventory
+    image: "inventory:main"
+    ports:
+      - 50051:50051
+    command:
+      - -globalLogLevel=debug
+    environment:
+      - PGUSER=admin
+      - PGDATABASE=postgres
+      - PGHOST=inv-db
+      - PGPORT=5432
+      - PGPASSWORD=pass
+      - PGSSLMODE=disable
+    depends_on:
+      - inv-db
+    restart: on-failure
+  hostmgr:
+    container_name: hostmgr
+    image: hostmgr:main
+    network_mode: "host"
+    depends_on:
+      - inventory
+    restart: on-failure

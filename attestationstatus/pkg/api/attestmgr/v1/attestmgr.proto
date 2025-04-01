@@ -1,0 +1,31 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+syntax = "proto3";
+
+package attestmgr.v1;
+
+import "validate/validate.proto";
+
+option go_package = ".;attestmgr_sb";
+
+service AttestationStatusMgrService {
+  // This call is dedicated to updating of an Instance's Trusted Attestation Status
+  rpc UpdateInstanceAttestationStatusByHostGuid(UpdateInstanceAttestationStatusByHostGuidRequest) returns (UpdateInstanceAttestationStatusByHostGuidResponse) {}
+}
+
+enum AttestationStatus {
+  ATTESTATION_STATUS_UNSPECIFIED = 0;
+  ATTESTATION_STATUS_VERIFIED = 1;
+  ATTESTATION_STATUS_FAILED = 2;
+}
+
+message UpdateInstanceAttestationStatusByHostGuidRequest {
+  string host_guid = 1 [(validate.rules).string = {
+    uuid: true
+    max_bytes: 36
+  }]; // Host GUID
+  AttestationStatus attestation_status = 2; // Instance's Attestation Status
+  string attestation_status_detail = 3; // Detailed Attestation status (set when errors occur)
+}
+
+message UpdateInstanceAttestationStatusByHostGuidResponse {}
