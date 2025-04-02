@@ -23,10 +23,60 @@ const (
 var zlogUtil = logging.GetLogger(loggerName)
 
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
-	platformBundleData, err := json.Marshal(&osProfile.Spec.PlatformBundle)
-	if err != nil {
-		zlogUtil.Error().Err(err).Msg("")
-		return nil, inv_errors.Errorf("Failed to convert OS platform bundle for profile %s", osProfile.Spec.ProfileName)
+	platformBundle := ""
+
+	if len(osProfile.Spec.PlatformBundle) != 0 {
+		pbData, err := json.Marshal(&osProfile.Spec.PlatformBundle)
+		if err != nil {
+			zlogUtil.Error().Err(err).Msg("")
+			return nil, inv_errors.Errorf("Failed to convert OS platform bundle for profile %s", osProfile.Spec.ProfileName)
+		}
+		platformBundle = string(pbData)
+	}
+
+	_osType, valid := osv1.OsType_value[osProfile.Spec.Type]
+	if !valid {
+		osTypeErr := inv_errors.Errorf("Invalid OS type: %s", osProfile.Spec.Type)
+		zlogUtil.Error().Err(osTypeErr).Msg("")
+		return nil, osTypeErr
+	}
+
+	osType := osv1.OsType(_osType)
+
+	if osType == osv1.OsType_OS_TYPE_UNSPECIFIED {
+		osTypeErr := inv_errors.Errorf("OS type cannot be %s", osType.String())
+		zlogUtil.Error().Err(osTypeErr).Msg("")
+		return nil, osTypeErr
+	}
+
+	_osProvider, valid := osv1.OsProviderKind_value[osProfile.Spec.Provider]
+	if !valid {
+		osProviderErr := inv_errors.Errorf("Invalid OS provider: %s", osProfile.Spec.Provider)
+		zlogUtil.Error().Err(osProviderErr).Msg("")
+		return nil, osProviderErr
+	}
+
+	osProvider := osv1.OsProviderKind(_osProvider)
+
+	if osProvider == osv1.OsProviderKind_OS_PROVIDER_KIND_UNSPECIFIED {
+		osProviderErr := inv_errors.Errorf("OS provider cannot be %s", osProvider.String())
+		zlogUtil.Error().Err(osProviderErr).Msg("")
+		return nil, osProviderErr
+	}
+
+	_securityFeature, valid := osv1.SecurityFeature_value[osProfile.Spec.SecurityFeature]
+	if !valid {
+		securityFeaturErr := inv_errors.Errorf("Invalid security feature: %s", osProfile.Spec.SecurityFeature)
+		zlogUtil.Error().Err(securityFeaturErr).Msg("")
+		return nil, securityFeaturErr
+	}
+
+	securityFeature := osv1.SecurityFeature(_securityFeature)
+
+	if securityFeature == osv1.SecurityFeature_SECURITY_FEATURE_UNSPECIFIED {
+		securityFeaturErr := inv_errors.Errorf("Security feature cannot be %s", securityFeature.String())
+		zlogUtil.Error().Err(securityFeaturErr).Msg("")
+		return nil, securityFeaturErr
 	}
 
 	return &osv1.OperatingSystemResource{
@@ -37,9 +87,9 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 		Architecture:    osProfile.Spec.Architecture,
 		ProfileName:     osProfile.Spec.ProfileName,
 		SecurityFeature: osv1.SecurityFeature(osv1.SecurityFeature_value[osProfile.Spec.SecurityFeature]),
-		OsType:          osv1.OsType(osv1.OsType_value[osProfile.Spec.Type]),
-		OsProvider:      osv1.OsProviderKind(osv1.OsProviderKind_value[osProfile.Spec.Provider]),
-		PlatformBundle:  string(platformBundleData),
+		OsType:          osType,
+		OsProvider:      osProvider,
+		PlatformBundle:  platformBundle,
 	}, nil
 }
 
