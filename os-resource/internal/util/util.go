@@ -23,9 +23,9 @@ const (
 var zlogUtil = logging.GetLogger(loggerName)
 
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
-	var platformBundle = ""
+	platformBundle := ""
 
-	if osProfile.Spec.PlatformBundle != nil && len(osProfile.Spec.PlatformBundle) != 0 {
+	if len(osProfile.Spec.PlatformBundle) != 0 {
 		pbData, err := json.Marshal(&osProfile.Spec.PlatformBundle)
 		if err != nil {
 			zlogUtil.Error().Err(err).Msg("")

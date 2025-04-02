@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-package util
+package util_test
 
 import (
-	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
-	"github.com/open-edge-platform/infra-managers/os-resource/internal/fsclient"
 	"reflect"
 	"testing"
+
+	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
+	"github.com/open-edge-platform/infra-managers/os-resource/internal/fsclient"
+	"github.com/open-edge-platform/infra-managers/os-resource/internal/util"
 )
 
+//nolint:funlen // it's a test
 func TestConvertOSProfileToOSResource(t *testing.T) {
 	type args struct {
 		osProfile *fsclient.OSProfileManifest
@@ -23,6 +26,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Success_Mutable",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -72,6 +76,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Success_WithPlatformBundle",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -123,6 +128,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Success_EmptyPlatformBundle",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -172,6 +178,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_InvalidOSType",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -209,6 +216,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_OSTypeUnspecified",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -246,6 +254,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_InvalidOSProvider",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -283,6 +292,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_OSProviderUnspecified",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -320,6 +330,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_InvalidSecurityFeature",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -357,6 +368,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 		{
 			name: "Failed_SecurityFeatureUnspecified",
 			args: args{
+				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
 					Metadata: struct {
@@ -394,7 +406,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ConvertOSProfileToOSResource(tt.args.osProfile)
+			got, err := util.ConvertOSProfileToOSResource(tt.args.osProfile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ConvertOSProfileToOSResource() error = %v, wantErr %v", err, tt.wantErr)
 				return
