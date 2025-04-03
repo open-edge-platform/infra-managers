@@ -4,8 +4,8 @@
 package attestmgr_test
 
 import (
-	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +31,7 @@ func TestAttestationStatusMgrClient_UpdateInstanceAttestationStatusByHostGuid(t 
 		HostGuid: dummyGUID,
 	}
 
-	respGet, err := AttestMgrTestClient.UpdateInstanceAttestationStatusByHostGuid(context.Background(), badJWT)
+	respGet, err := AttestMgrTestClient.UpdateInstanceAttestationStatusByHostGuid(t.Context(), badJWT)
 	require.Error(t, err)
 	require.Nil(t, respGet)
 
@@ -84,6 +84,8 @@ func TestAttestationStatusMgrClient_UpdateInstanceAttestationStatusByHostGuid(t 
 	// Validate that SB Verified status translates to Inventory status Idle
 	inst1 := GetInstanceByResourceID(t, instInv1.GetResourceId())
 	assert.Equal(t, inst1.TrustedAttestationStatusIndicator, statusv1.StatusIndication_STATUS_INDICATION_IDLE)
+	assert.Equal(t, inst1.TrustedAttestationStatus, "Verified")
+	assert.GreaterOrEqual(t, uint64(time.Now().Unix()), inst1.TrustedAttestationStatusTimestamp)
 
 	// create another host and instance in Inventory
 	hostInv2 := dao.CreateHost(t, tenant1)
@@ -93,7 +95,7 @@ func TestAttestationStatusMgrClient_UpdateInstanceAttestationStatusByHostGuid(t 
 	reqAttFail := &attestmgr_sb.UpdateInstanceAttestationStatusByHostGuidRequest{
 		HostGuid:                hostInv2.GetUuid(),
 		AttestationStatus:       attestmgr_sb.AttestationStatus_ATTESTATION_STATUS_FAILED,
-		AttestationStatusDetail: "Failed to Attesst",
+		AttestationStatusDetail: "Failed to Attest",
 	}
 
 	respGet, err = AttestMgrTestClient.UpdateInstanceAttestationStatusByHostGuid(ctx, reqAttFail)
