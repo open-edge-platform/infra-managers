@@ -8,8 +8,10 @@ path = [
   "VERSION",
   "go.sum",
 
-  "pkg/api/buf.lock",
-  "pkg/api/attestmgr/v1/attestmgr*.go",
+  "**.md",
+  "**.svg",
+  "pkg/api/telemetrymgr/v1/*.pb*.go",
+  "api/buf.lock",
 ]
 
 SPDX-FileCopyrightText = "2025 Intel Corporation"
