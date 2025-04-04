@@ -50,7 +50,6 @@ linters:
     - stylecheck
     - tagliatelle
     - testpackage
-    - tenv
     - testableexamples
     - thelper
     - tparallel
@@ -59,6 +58,7 @@ linters:
     - unparam
     - unused
     - usestdlibvars
+    - usetesting
     - whitespace
 
 run:
@@ -222,6 +222,8 @@ issues:
   new: false
   fix: false
 
+  uniq-by-line: false
+
 output:
   # Format:
   # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
@@ -235,7 +237,5 @@ output:
   formats: colored-line-number:stdout,html:out/golangci-lint_report.html
 
   print-linter-name: true
-
-  uniq-by-line: false
 
   sort-results: true

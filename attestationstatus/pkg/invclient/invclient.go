@@ -129,7 +129,7 @@ func UpdateInstanceAttestationStatus(
 	defer cancel()
 
 	// Set Timestamp
-	instRes.InstanceStatusTimestamp = uint64(time.Now().Unix())
+	instRes.TrustedAttestationStatusTimestamp = uint64(time.Now().Unix())
 
 	// only PATCH these fields per Fieldmaks
 	fieldMask := &fieldmaskpb.FieldMask{
