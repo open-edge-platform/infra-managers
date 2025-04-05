@@ -1,104 +1,88 @@
 # SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+SHELL	:= bash -eu -o pipefail
+
 SUBPROJECTS := host networking maintenance os-resource telemetry attestationstatus
 
 .DEFAULT_GOAL := help
 .PHONY: all build clean clean-all help lint test
 
-all: build lint test
-	@# Help: Runs build, lint, test stages for all subprojects
+# Repo root directory, where base makefiles are located
+REPO_ROOT := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-build:
-	@# Help: Runs build stage in all subprojects
-	@echo "---MAKEFILE BUILD---"
-	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir build; done
-	@echo "---END MAKEFILE Build---"
+#### Python venv Target ####
+VENV_DIR := venv_managers
 
-lint:
-	@# Help: Runs lint stage in all subprojects
-	@echo "---MAKEFILE LINT---"
-	@for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir lint; done
-	@echo "---END MAKEFILE LINT---"
-
-mdlint:
-	@# Help: Runs md files linting
-	@echo "---MAKEFILE LINT README---"
-	@markdownlint --version
-	@markdownlint "*.md"
-	@echo "---END MAKEFILE LINT README---"
-
-test:
-	@# Help: Runs test stage in all subprojects
-	@echo "---MAKEFILE TEST---"
-	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir test; done
-	@echo "---END MAKEFILE TEST---"
-
-clean:
-	@# Help: Runs clean stage in all subprojects
-	@echo "---MAKEFILE CLEAN---"
-	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir clean; done
-	@echo "---END MAKEFILE CLEAN---"
-
-clean-all:
-	@# Help: Runs clean-all stage in all subprojects
-	@echo "---MAKEFILE CLEAN-ALL---"
-	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir clean-all; done
-	@echo "---END MAKEFILE CLEAN-ALL---"
-
-h-%:
-	@# Help: Runs host subproject's tasks, e.g. h-test
-	$(MAKE) -C host $*
-
-n-%:
-	@# Help: Runs networking subproject's tasks, e.g. n-test
-	$(MAKE) -C networking $*
-
-m-%:
-	@# Help: Runs maintenance subproject's tasks, e.g. m-test
-	$(MAKE) -C maintenance $*
-
-osr-%:
-	@# Help: Runs os-resource subproject's tasks, e.g. osr-test
-	$(MAKE) -C os-resource $*
-
-t-%:
-	@# Help: Runs telemetry subproject's tasks, e.g. t-test
-	$(MAKE) -C telemetry $*
-
-a-%:
-	@# Help: Runs attestation subproject's tasks, e.g. a-test
-	$(MAKE) -C attestationstatus $*
-
-# TODO: move to a common file shared with common.mk
-venv_infra: requirements.txt ## Create Python venv
+$(VENV_DIR): requirements.txt ## Create Python venv
 	python3 -m venv $@ ;\
   set +u; . ./$@/bin/activate; set -u ;\
   python -m pip install --upgrade pip ;\
   python -m pip install -r requirements.txt
 
-license: venv_infra ## Check licensing with the reuse tool
+all: build lint test ## Runs build, lint, test stages for all subprojects
+
+dependency-check: $(VENV_DIR)
+
+lint: $(VENV_DIR) mdlint license ## lint common and all subprojects
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir lint; done
+
+MD_FILES := $(shell find . -type f \( -name '*.md' \) -print )
+mdlint: ## lint all markdown README.md files
+	markdownlint --version
+	markdownlint *.md
+
+license: $(VENV_DIR) ## Check licensing with the reuse tool
 	set +u; . ./$</bin/activate; set -u ;\
   reuse --version ;\
   reuse --root . lint
 
-dependency-check:
-	echo "No-op to enable CI to pass"
+build: ## build in all subprojects
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir build; done
 
-help:
-	@printf "%-20s %s\n" "Target" "Description"
-	@printf "%-20s %s\n" "------" "-----------"
-	@grep -E '^[a-zA-Z0-9_%-]+:|^[[:space:]]+@# Help:' Makefile | \
-	awk '\
-		/^[a-zA-Z0-9_%-]+:/ { \
-			target = $$1; \
-			sub(":", "", target); \
-		} \
-		/^[[:space:]]+@# Help:/ { \
-			if (target != "") { \
-				help_line = $$0; \
-				sub("^[[:space:]]+@# Help: ", "", help_line); \
-				printf "%-20s %s\n", target, help_line; \
-				target = ""; \
-			} \
-		}'
+docker-build: ## build all docker containers
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir $@; done
+
+docker-push: ## push all docker containers
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir $@; done
+
+docker-list: ## list all docker containers
+	@echo "images:"
+	@for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir $@; done
+
+test: ## test in all subprojects
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir test; done
+
+clean: ## clean in all subprojects
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir clean; done
+
+clean-all: ## clean-all in all subprojects, and delete virtualenv
+	for dir in $(SUBPROJECTS); do $(MAKE) -C $$dir clean-all; done
+	rm -rf $(VENV_DIR)
+
+h-%: ## Runs host subproject's tasks, e.g. h-test
+	$(MAKE) -C host $*
+
+n-%: ## Runs networking subproject's tasks, e.g. n-test
+	$(MAKE) -C networking $*
+
+m-%: ## Runs maintenance subproject's tasks, e.g. m-test
+	$(MAKE) -C maintenance $*
+
+osr-%: ## Runs os-resource subproject's tasks, e.g. osr-test
+	$(MAKE) -C os-resource $*
+
+t-%: ## Runs telemetry subproject's tasks, e.g. t-test
+	$(MAKE) -C telemetry $*
+
+a-%: ## Runs attestationstatus subproject's tasks, e.g. a-test
+	$(MAKE) -C attestationstatus $*
+
+#### Help Target ####
+help: ## print help for each target
+	@echo infra-managers make targets
+	@echo "Target               Makefile:Line    Description"
+	@echo "-------------------- ---------------- -----------------------------------------"
+	@grep -H -n '^[[:alnum:]%_-]*:.* ##' $(MAKEFILE_LIST) \
+    | sort -t ":" -k 3 \
+    | awk 'BEGIN  {FS=":"}; {sub(".* ## ", "", $$4)}; {printf "%-20s %-16s %s\n", $$3, $$1 ":" $$2, $$4};'
