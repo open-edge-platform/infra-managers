@@ -51,6 +51,7 @@ type OSProfileManifest struct {
 		OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 		SecurityFeature      string                 `yaml:"securityFeature"`
 		PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+		Description          string                 `yaml:"description"`
 	} `yaml:"spec"`
 }
 
