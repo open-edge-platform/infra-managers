@@ -40,9 +40,10 @@ For support, start with \[Troubleshooting\](<https://website-name.com>) or
 
 ## License
 
-Each Edge Infrastructure Manager is licensed under [Apache 2.0][https://www.apache.org/licenses/LICENSE-2.0].
+Each component of the Edge Infrastructure core is licensed under
+[Apache 2.0][apache-license].
 
 Last Updated Date: April 7, 2025
 
 [user-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html
-[resource-managers-architecture-url]: https://intel.com
+[apache-license]: https://www.apache.org/licenses/LICENSE-2.0
