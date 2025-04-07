@@ -40,8 +40,7 @@ For support, start with \[Troubleshooting\](<https://website-name.com>) or
 
 ## License
 
-{Project Name} is licensed under \[license
-name\](<https://website-name.com>).
+Each Edge Infrastructure Manager is licensed under [Apache 2.0][https://www.apache.org/licenses/LICENSE-2.0].
 
 Last Updated Date: April 7, 2025
 
