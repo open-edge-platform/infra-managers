@@ -34,7 +34,7 @@ var (
 )
 
 var (
-	sbservaddr     = flag.String(flags.ServerAddress, "0.0.0.0:50001", flags.ServerAddressDescription)
+	sbservaddr     = flag.String(flags.ServerAddress, "0.0.0.0:50007", flags.ServerAddressDescription)
 	invsvcaddr     = flag.String(client.InventoryAddress, "localhost:50051", client.InventoryAddressDescription)
 	oamservaddr    = flag.String(oam.OamServerAddress, "", oam.OamServerAddressDescription)
 	insecureGrpc   = flag.Bool(client.InsecureGrpc, true, client.InsecureGrpcDescription)

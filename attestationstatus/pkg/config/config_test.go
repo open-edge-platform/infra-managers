@@ -33,7 +33,7 @@ func TestAttestationStatusMgrConfig_Validate(t *testing.T) {
 		{
 			name: "Success",
 			fields: fields{
-				InventoryAddr: "localhost:50001",
+				InventoryAddr: "localhost:50051",
 				CACertPath:    "",
 				TLSKeyPath:    "",
 				TLSCertPath:   "",
@@ -62,7 +62,7 @@ func TestAttestationStatusMgrConfig_Validate(t *testing.T) {
 		{
 			name: "Failed_NoSecrets",
 			fields: fields{
-				InventoryAddr: "localhost:50001",
+				InventoryAddr: "localhost:50051",
 				CACertPath:    "",
 				TLSKeyPath:    "",
 				TLSCertPath:   "",
