@@ -7,7 +7,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -15,6 +14,7 @@ import (
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-managers/networking/internal/reconcilers"
 	"github.com/open-edge-platform/infra-managers/networking/internal/utils"
+	"github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
 const (

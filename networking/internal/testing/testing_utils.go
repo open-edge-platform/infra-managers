@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"
 	"github.com/open-edge-platform/infra-managers/networking/internal/handlers"
 	"github.com/open-edge-platform/infra-managers/networking/internal/reconcilers"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
 // CreateNetworkingClient is an helper function to create a new Networking Client.

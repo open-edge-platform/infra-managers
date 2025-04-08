@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
-
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
@@ -17,6 +15,7 @@ import (
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"
 	"github.com/open-edge-platform/infra-managers/networking/internal/reconcilers"
 	"github.com/open-edge-platform/infra-managers/networking/internal/utils"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
 // Misc variables.
