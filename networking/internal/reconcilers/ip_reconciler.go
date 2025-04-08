@@ -6,13 +6,13 @@ package reconcilers
 import (
 	"context"
 
-	rec_v2 "github.com/onosproject/onos-lib-go/pkg/controller/v2"
 	"google.golang.org/protobuf/proto"
 
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
 // Misc variables.
