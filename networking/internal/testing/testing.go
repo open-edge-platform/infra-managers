@@ -4,7 +4,7 @@
 package testing
 
 import (
-	rec_v2 "github.com/onosproject/onos-lib-go/pkg/controller/v2"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"

@@ -7,7 +7,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/onosproject/onos-lib-go/pkg/controller/v2"
+	"github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"

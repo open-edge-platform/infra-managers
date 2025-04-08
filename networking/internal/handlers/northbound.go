@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	rec_v2 "github.com/onosproject/onos-lib-go/pkg/controller/v2"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"

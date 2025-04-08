@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	rec_v2 "github.com/onosproject/onos-lib-go/pkg/controller/v2"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 	grpc_status "google.golang.org/grpc/status"
 
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
