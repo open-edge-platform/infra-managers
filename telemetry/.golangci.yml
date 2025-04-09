@@ -83,7 +83,6 @@ linters-settings:
         allow:
           - $gostd
           - github.com/open-edge-platform
-          - github.com/onosproject/onos-lib-go/pkg/controller/v2
           - github.com/stretchr/testify/require
           - github.com/prometheus/client_golang/prometheus
         deny:
@@ -95,7 +94,6 @@ linters-settings:
           - github.com/open-edge-platform
           - github.com/stretchr/testify/require
           - github.com/stretchr/testify/assert
-          - github.com/onosproject/onos-lib-go/pkg/controller/v2
           - github.com/mennanov/fmutils
         deny:
 

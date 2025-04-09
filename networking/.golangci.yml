@@ -154,7 +154,6 @@ linters-settings:
           - github.com/open-edge-platform
           - github.com/google
           - github.com/stretchr/testify
-          - github.com/onosproject
           - github.com/prometheus/client_golang/prometheus
         deny:
       Test:
@@ -164,7 +163,6 @@ linters-settings:
           - $gostd
           - github.com/open-edge-platform
           - github.com/stretchr/testify
-          - github.com/onosproject
         deny:
 
 issues:
