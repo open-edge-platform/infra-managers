@@ -23,6 +23,7 @@ import (
 	mmgr_error "github.com/open-edge-platform/infra-managers/maintenance/pkg/errors"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/statusdetail"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 var zlog = logging.GetLogger("MaintenanceManagerUtils")
@@ -32,6 +33,16 @@ const (
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
 	UbuntuAPTRepo                    = "http://archive.ubuntu.com/ubuntu"
 )
+
+func IsHostNotProvisioned(hostres *computev1.HostResource) bool {
+	hostInstance := hostres.GetInstance()
+	if hostInstance == nil {
+		// If a host has no Instance, it's not provisioned yet
+		return true
+	}
+	return hostInstance.ProvisioningStatusIndicator != om_status.ProvisioningStatusDone.StatusIndicator &&
+		hostInstance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
+}
 
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
 	// this can mean a state inconsistency if desired state != current state, but for safety we check both.
