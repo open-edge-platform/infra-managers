@@ -6,6 +6,7 @@ package maintmgr_test
 
 import (
 	"context"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"strings"
 	"testing"
 	"time"
@@ -64,6 +65,16 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 	dao.CreateInstance(t, mm_testing.Tenant1, host2, os)
+	_, err := dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host2.GetInstance().GetResourceId(),
+		&fieldmaskpb.FieldMask{Paths: []string{}}, &inv_v1.Resource{
+			Resource: &inv_v1.Resource_Instance{
+				Instance: &computev1.InstanceResource{
+					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
+					ProvisioningStatusIndicator: om_status.ProvisioningStatusDone.StatusIndicator,
+				},
+			},
+		})
+	require.NoError(t, err)
 
 	// Host3 has no instance associated
 	h3 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
@@ -75,6 +86,16 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h4.Uuid = uuid.NewString()
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
 	dao.CreateInstance(t, mm_testing.Tenant1, host4, immutableOs)
+	_, err = dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host4.GetInstance().GetResourceId(),
+		&fieldmaskpb.FieldMask{Paths: []string{}}, &inv_v1.Resource{
+			Resource: &inv_v1.Resource_Instance{
+				Instance: &computev1.InstanceResource{
+					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
+					ProvisioningStatusIndicator: om_status.ProvisioningStatusDone.StatusIndicator,
+				},
+			},
+		})
+	require.NoError(t, err)
 
 	testCases := map[string]struct {
 		in          *pb.PlatformUpdateStatusRequest
