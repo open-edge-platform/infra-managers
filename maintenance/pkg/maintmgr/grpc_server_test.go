@@ -6,7 +6,6 @@ package maintmgr_test
 
 import (
 	"context"
-	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/maintmgr"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 //nolint:funlen // long function due to matrix-based test
