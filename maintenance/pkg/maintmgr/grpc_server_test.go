@@ -65,7 +65,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 	dao.CreateInstance(t, mm_testing.Tenant1, host2, os)
-	_, err := dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host2.GetInstance().GetResourceId(),
+	_, err := dao.GetRMClient().Update(ctx, mm_testing.Tenant1, host2.GetInstance().GetResourceId(),
 		&fieldmaskpb.FieldMask{Paths: []string{
 			computev1.InstanceResourceFieldProvisioningStatus,
 			computev1.InstanceResourceFieldProvisioningStatusIndicator,
@@ -89,7 +89,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h4.Uuid = uuid.NewString()
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
 	dao.CreateInstance(t, mm_testing.Tenant1, host4, immutableOs)
-	_, err = dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host4.GetInstance().GetResourceId(),
+	_, err = dao.GetRMClient().Update(ctx, mm_testing.Tenant1, host4.GetInstance().GetResourceId(),
 		&fieldmaskpb.FieldMask{Paths: []string{
 			computev1.InstanceResourceFieldProvisioningStatus,
 			computev1.InstanceResourceFieldProvisioningStatusIndicator,
