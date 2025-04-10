@@ -65,7 +65,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 			"Host [tID=%s, UUID=%s] is not trusted, the message will not be handled", tenantID, guid)
 	}
 
-	if maintgmr_util.IsHostNotProvisioned(hostRes) {
+	if maintgmr_util.IsInstanceNotProvisioned(instRes) {
 		zlog.InfraSec().
 			InfraError("Host tID=%s, UUID=%s is not yet provisioned, skipping update", tenantID, hostRes.GetUuid()).
 			Msg("PlatformUpdateStatus")

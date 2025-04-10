@@ -31,17 +31,15 @@ var zlog = logging.GetLogger("MaintenanceManagerUtils")
 const (
 	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
-	UbuntuAPTRepo                    = "http://archive.ubuntu.com/ubuntu"
 )
 
-func IsHostNotProvisioned(hostres *computev1.HostResource) bool {
-	hostInstance := hostres.GetInstance()
-	if hostInstance == nil {
+func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
+	if instance == nil {
 		// If a host has no Instance, it's not provisioned yet
 		return true
 	}
-	return hostInstance.ProvisioningStatusIndicator != om_status.ProvisioningStatusDone.StatusIndicator &&
-		hostInstance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
+	return instance.ProvisioningStatusIndicator != om_status.ProvisioningStatusDone.StatusIndicator &&
+		instance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
 }
 
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
