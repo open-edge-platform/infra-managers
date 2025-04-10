@@ -66,7 +66,10 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 	dao.CreateInstance(t, mm_testing.Tenant1, host2, os)
 	_, err := dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host2.GetInstance().GetResourceId(),
-		&fieldmaskpb.FieldMask{Paths: []string{}}, &inv_v1.Resource{
+		&fieldmaskpb.FieldMask{Paths: []string{
+			computev1.InstanceResourceFieldProvisioningStatus,
+			computev1.InstanceResourceFieldProvisioningStatusIndicator,
+		}}, &inv_v1.Resource{
 			Resource: &inv_v1.Resource_Instance{
 				Instance: &computev1.InstanceResource{
 					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
@@ -87,7 +90,10 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
 	dao.CreateInstance(t, mm_testing.Tenant1, host4, immutableOs)
 	_, err = dao.GetAPIClient().Update(ctx, mm_testing.Tenant1, host4.GetInstance().GetResourceId(),
-		&fieldmaskpb.FieldMask{Paths: []string{}}, &inv_v1.Resource{
+		&fieldmaskpb.FieldMask{Paths: []string{
+			computev1.InstanceResourceFieldProvisioningStatus,
+			computev1.InstanceResourceFieldProvisioningStatusIndicator,
+		}}, &inv_v1.Resource{
 			Resource: &inv_v1.Resource_Instance{
 				Instance: &computev1.InstanceResource{
 					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
