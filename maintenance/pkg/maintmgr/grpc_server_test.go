@@ -54,7 +54,10 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1.Uuid = uuid.NewString()
 	host1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1)
-	dao.CreateInstance(t, mm_testing.Tenant1, host1, os)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	sSched1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1, host1, nil)
 	rSched1 := mm_testing.RepeatedSchedule1 //nolint:govet // ok to copy locks in test
@@ -64,20 +67,10 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
-	dao.CreateInstance(t, mm_testing.Tenant1, host2, os)
-	_, err := dao.GetRMClient().Update(ctx, mm_testing.Tenant1, host2.GetInstance().GetResourceId(),
-		&fieldmaskpb.FieldMask{Paths: []string{
-			computev1.InstanceResourceFieldProvisioningStatus,
-			computev1.InstanceResourceFieldProvisioningStatusIndicator,
-		}}, &inv_v1.Resource{
-			Resource: &inv_v1.Resource_Instance{
-				Instance: &computev1.InstanceResource{
-					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
-					ProvisioningStatusIndicator: om_status.ProvisioningStatusDone.StatusIndicator,
-				},
-			},
-		})
-	require.NoError(t, err)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	// Host3 has no instance associated
 	h3 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
@@ -88,20 +81,10 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h4 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h4.Uuid = uuid.NewString()
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
-	dao.CreateInstance(t, mm_testing.Tenant1, host4, immutableOs)
-	_, err = dao.GetRMClient().Update(ctx, mm_testing.Tenant1, host4.GetInstance().GetResourceId(),
-		&fieldmaskpb.FieldMask{Paths: []string{
-			computev1.InstanceResourceFieldProvisioningStatus,
-			computev1.InstanceResourceFieldProvisioningStatusIndicator,
-		}}, &inv_v1.Resource{
-			Resource: &inv_v1.Resource_Instance{
-				Instance: &computev1.InstanceResource{
-					ProvisioningStatus:          om_status.ProvisioningStatusDone.Status,
-					ProvisioningStatusIndicator: om_status.ProvisioningStatusDone.StatusIndicator,
-				},
-			},
-		})
-	require.NoError(t, err)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host4, immutableOs, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testCases := map[string]struct {
 		in          *pb.PlatformUpdateStatusRequest
