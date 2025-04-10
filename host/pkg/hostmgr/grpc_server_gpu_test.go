@@ -19,7 +19,9 @@ import (
 // the expected behavior is that HRM will accept the proto message, but ignore deprecated SystemGPU.
 func TestUpdateGPUInfoDeprecated(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	os := dao.CreateOs(t, tenant1)
 	hostInv := dao.CreateHost(t, tenant1)
+	dao.CreateInstance(t, tenant1, hostInv, os)
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
 	defer cancel()
