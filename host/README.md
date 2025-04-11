@@ -11,14 +11,14 @@
 
 ## Overview
 
-The purpose of the Host Manager is to manage a host’s hardware information. It also implements connection tracking
+The purpose of the Host Resource Manager is to manage a host’s hardware information. It also implements connection tracking
 and reconciliation.
-Host Resource Manager collects all of this data, such as CPU, Memory, Disk, GPU, Interfaces and such, with the help
+The Host Resource Manager collects all of this data, such as CPU, Memory, Disk, GPU, Interfaces and such, with the help
 of Hardware Discovery Agent (HDA) on the Edge Node.
 The Host Resource Manager stores this data in the Inventory so that other components (like UI and Cluster Orchestration)
 can retrieve and act on it.
 
-Host Manager uses TLS with JWT (Json Web Tokens) technology to make the communication from the orchestrator to the edge
+The Host Resource Manager uses TLS with JWT (Json Web Tokens) technology to make the communication from the orchestrator to the edge
 node secure.
 
 ## Features
@@ -29,7 +29,7 @@ node secure.
 
 ## Get Started
 
-Instructions on how to install and set up Host Resource Manager on your development machine.
+Instructions on how to install and set up the Host Resource Manager on your development machine.
 
 ### Dependencies
 
