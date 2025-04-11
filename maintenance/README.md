@@ -16,7 +16,7 @@ It acts as a bridge, passing down the maintenance and update requests (Schedules
 managed Edge Nodes. This service is responsible for ensuring that Edge Nodes can perform the required maintenance
 and update tasks.
 
-Maintenance Manager handles `schedule` resources used to model time-based events, such as administrative downtime,
+The Maintenance Manager handles `schedule` resources used to model time-based events, such as administrative downtime,
 maintenance windows, or other events that may happen either a single time or repeated on a schedule.
 
 For more information on the schedule and how this trasnaltes on the Edge Node please check
