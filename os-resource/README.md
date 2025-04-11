@@ -30,18 +30,18 @@ To learn more about internals and software architecture, see
 
 The OS Resource Manager monitors the Release Service, periodically quering the Release Service
 to retrieve all immutable OS manifest files and mutable OS manifests, within a configurable interval.
-Upon retrieving the manifests, OS Resource Manager will parse them to extract information that identifies
+Upon retrieving the manifests, the OS Resource Manager parses them to extract information that identifies
 the corresponding OS Resource.
-OS Resource Manager will have a cache of OS Resources, Tenant Resourcesd, Provider Resources and Instance Resource.
-The cache for Tenant Resourcesd, Provider Resources and Instance Resource will be updated based on notifications
-from the Inventory. OS Resource Manager will search the cache to verify the existence of OS Resources per all tenants.
-If any OS Resource is missing, OS Resource Manager will create it and add to the Inventory.
+The OS Resource Manager maintains a cache of OS Resources, Tenant Resourcesd, Provider Resources and Instance Resource.
+The cache for Tenant Resourcesd, Provider Resources and Instance Resource is updated based on notifications
+from the Inventory. OS Resource Manager searches the cache to verify the existence of OS Resources per all tenants.
+If any OS Resource is missing, OS Resource Manager creates it and adds to the Inventory.
 
 For more information please check the [architecture and internals page](docs/architecture-internals.md).
 
 ## Get Started
 
-Instructions on how to install and set up Networking Manger on your development machine.
+Instructions on how to install and set up the OS Resource Manger on your development machine.
 
 ### Dependencies
 
@@ -54,19 +54,19 @@ make dependency-check
 
 This code requires the following tools to be installed on your development machine:
 
-- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](Makefile)
-- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](Makefile)
-- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](Makefile)
-- [gocover-cobertura](github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](Makefile)
-- [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) - check [$PROTOCGENDOCVERSION_REQ](Makefile)
-- [buf](https://github.com/bufbuild/buf) - check [$BUFVERSION_REQ](Makefile)
-- [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf) - check [$PROTOCGENGOVERSION_REQ](Makefile)
-- [protoc-gen-go-grpc](https://pkg.go.dev/google.golang.org/grpc) - check [$PROTOCGENGOGRPCVERSION_REQ](Makefile)
-- [gnostic](https://pkg.go.dev/github.com/google/gnostic) - check [GNOSTICVERSION_REQ](Makefile)
-- [protoc-gen-validate](https://pkg.go.dev/github.com/envoyproxy/protoc-gen-validate) - check [PROTOCGENVALIDATEGOVERSION_REQ](Makefile)
-- [gnostic-grpc](https://pkg.go.dev/github.com/googleapis/gnostic-grpc) - check [GNOSTICGRPCVERSION_REQ](Makefile)
+- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](../version.mk)
+- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](../version.mk)
+- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](../version.mk)
+- [gocover-cobertura](https://github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](../version.mk)
+- [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) - check [$PROTOCGENDOCVERSION_REQ](../version.mk)
+- [buf](https://github.com/bufbuild/buf) - check [$BUFVERSION_REQ](../version.mk)
+- [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf) - check [$PROTOCGENGOVERSION_REQ](../version.mk)
+- [protoc-gen-go-grpc](https://pkg.go.dev/google.golang.org/grpc) - check [$PROTOCGENGOGRPCVERSION_REQ](../version.mk)
+- [gnostic](https://pkg.go.dev/github.com/google/gnostic) - check [GNOSTICVERSION_REQ](../version.mk)
+- [protoc-gen-validate](https://pkg.go.dev/github.com/envoyproxy/protoc-gen-validate) - check [PROTOCGENVALIDATEGOVERSION_REQ](../version.mk)
+- [gnostic-grpc](https://pkg.go.dev/github.com/googleapis/gnostic-grpc) - check [GNOSTICGRPCVERSION_REQ](../version.mk)
 - [protoc-gen-grpc-gateway](https://pkg.go.dev/github.com/grpc-ecosystem/grpc-gateway/v2@v2.26.0/protoc-gen-grpc-gateway)
-  - check [PROTOCGENGRPCGATEWAY_REQ](Makefile)
+  - check [PROTOCGENGRPCGATEWAY_REQ](../version.mk)
 
 You can install Go dependencies by running `make go-dependency`.
 
@@ -83,12 +83,12 @@ The binary is installed in the [$OUT_DIR](../common.mk) folder.
 
 ## Usage
 
-This guide shows how to deploy OS Resource Manger for local development or testing.
+This guide shows how to deploy the OS Resource Manger for local development or testing.
 For production deployments use the [Edge Infrastructure Manager charts][inframanager-charts].
 
-> Note: To run host manager, Inventory need to be running as the host manager need to register as an inventory client.
-> Please refer to the TODO
-> [instruction of Inventory](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
+> Note: To run the OS Resource Manager, Inventory must be running as the manager needs to register as an Inventory client.
+> Please refer to the
+> [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
 > for more information about how to run inventory.
 
@@ -127,8 +127,8 @@ targets. The following is a list of makefile targets that support developer acti
 - `build` to build the project and generate executable files
 - `docker-build` to build the Inventory Docker container
 
-[user-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html
-[inframanager-dev-guide-url]: (https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html)
-[contributors-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/index.html
-[troubleshooting-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/troubleshooting/troubleshooting.html
+[user-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/get_started_guide/index.html
+[inframanager-dev-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/infra_manager/index.html
+[contributors-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/contributor_guide/index.html
+[troubleshooting-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/troubleshooting/index.html
 [inframanager-charts]: https://github.com/open-edge-platform/infra-charts

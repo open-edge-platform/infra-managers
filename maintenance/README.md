@@ -16,18 +16,18 @@ Maintenance Manager acts as a bridge, passing down the maintenance and update re
 managed Edge Nodes. This service is responsible for ensuring that Edge Nodes can perform the required maintenance
 and update tasks.
 
-Maintenance manager handles `schedule` resources are used to model time-based events, such as administrative downtime,
+Maintenance manager handles `schedule` resources used to model time-based events, such as administrative downtime,
 maintenance windows, or other events that may happen either a single time or repeated on a schedule.
 
-For more information on the schedule and how this trasnalte on the Edge Node please check
+For more information on the schedule and how this trasnaltes on the Edge Node please check
 the [Schedule](docs/schedule.md).
 
 ## Features
 
 - Top-down Edge Node maintenance scheduling, one off or recurring at specific times
 - Single or per-group Edge Node updates
-- Mutable OS Update: Day 2 update of mutable Ubuntu OS using apt package manager (as per past releases).
-- Immutable OS Update: Day 2 update of immutable Edge Microvisor Toolkit via A/B partition swap and install of new OS image.
+- Mutable OS Update: Day 2 update of the mutable Ubuntu OS using APT package manager (as per past releases).
+- Immutable OS Update: Day 2 update of the immutable Edge Microvisor Toolkit via A/B partition swap and installation of a new OS image.
 
 ## Get Started
 
@@ -44,15 +44,15 @@ make dependency-check
 
 This code requires the following tools to be installed on your development machine:
 
-- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](Makefile)
-- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](Makefile)
-- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](Makefile)
-- [gocover-cobertura](github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](Makefile)
-- [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) - check [$PROTOCGENDOCVERSION_REQ](Makefile)
-- [buf](https://github.com/bufbuild/buf) - check [$BUFVERSION_REQ](Makefile)
-- [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf) - check [$PROTOCGENGOVERSION_REQ](Makefile)
-- [protoc-gen-go-grpc](https://pkg.go.dev/google.golang.org/grpc) - check [$PROTOCGENGOGRPCVERSION_REQ](Makefile)
-- [protoc-gen-validate](https://pkg.go.dev/github.com/envoyproxy/protoc-gen-validate) - check [PROTOCGENVALIDATEGOVERSION_REQ](Makefile)
+- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](../version.mk)
+- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](../version.mk)
+- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](../version.mk)
+- [gocover-cobertura](https://github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](Makefile)
+- [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) - check [$PROTOCGENDOCVERSION_REQ](../version.mk)
+- [buf](https://github.com/bufbuild/buf) - check [$BUFVERSION_REQ](../version.mk)
+- [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf) - check [$PROTOCGENGOVERSION_REQ](../version.mk)
+- [protoc-gen-go-grpc](https://pkg.go.dev/google.golang.org/grpc) - check [$PROTOCGENGOGRPCVERSION_REQ](../version.mk)
+- [protoc-gen-validate](https://pkg.go.dev/github.com/envoyproxy/protoc-gen-validate) - check [PROTOCGENVALIDATEGOVERSION_REQ](../version.mk)
 
 You can install Go dependencies by running `make go-dependency`.
 
@@ -72,9 +72,8 @@ The binary is installed in the [$OUT_DIR](../common.mk) folder.
 This guide shows how to deploy Maintenance Manger for local development or testing.
 For production deployments use the [Edge Infrastructure Manager charts][inframanager-charts].
 
-> Note: To run host manager, Inventory need to be running as the host manager need to register as an inventory client.
-> Please refer to the TODO
-> [instruction of Inventory](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
+> Note: To run the Maintenance Manager, Inventory must be running as the manager needs to register as an Inventory client.
+> Please refer to [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
 > for more information about how to run inventory.
 
@@ -141,8 +140,8 @@ For additional information:
 - See[Edge Infrastructure Manager developer documentation][inframanager-dev-guide-url] for internals and
   software architecture.
 
-[user-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html
-[inframanager-dev-guide-url]: (https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html)
-[contributors-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/index.html
-[troubleshooting-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/troubleshooting/troubleshooting.html
+[user-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/get_started_guide/index.html
+[inframanager-dev-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/infra_manager/index.html
+[contributors-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/contributor_guide/index.html
+[troubleshooting-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/troubleshooting/index.html
 [inframanager-charts]: https://github.com/open-edge-platform/infra-charts
