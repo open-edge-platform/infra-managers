@@ -41,10 +41,13 @@ DEPS       := go.mod go.sum
 
 # Docker variables
 DOCKER_ENV              := DOCKER_BUILDKIT=1
-DOCKER_REGISTRY         ?= 080137407410.dkr.ecr.us-west-2.amazonaws.com
-DOCKER_REPOSITORY       ?= edge-orch/infra
-DOCKER_TAG              := $(DOCKER_REGISTRY)/$(DOCKER_REPOSITORY)/$(DOCKER_IMG_NAME):$(VERSION)
-DOCKER_TAG_BRANCH	    := $(DOCKER_REGISTRY)/$(DOCKER_REPOSITORY)/$(DOCKER_IMG_NAME):$(DOCKER_VERSION)
+OCI_REGISTRY            ?= 080137407410.dkr.ecr.us-west-2.amazonaws.com
+OCI_REPOSITORY          ?= edge-orch
+DOCKER_SECTION          := infra
+DOCKER_REGISTRY         ?= $(OCI_REGISTRY)
+DOCKER_REPOSITORY       ?= $(OCI_REPOSITORY)
+DOCKER_TAG              := $(DOCKER_REGISTRY)/$(DOCKER_REPOSITORY)/$(DOCKER_SECTION)/$(DOCKER_IMG_NAME):$(VERSION)
+DOCKER_TAG_BRANCH       := $(DOCKER_REGISTRY)/$(DOCKER_REPOSITORY)/$(DOCKER_SECTION)/$(DOCKER_IMG_NAME):$(DOCKER_VERSION)
 # Decides if we shall push image tagged with the branch name or not.
 DOCKER_TAG_BRANCH_PUSH	?= true
 LABEL_REPO_URL          ?= $(shell git remote get-url $(shell git remote | head -n 1))
@@ -111,7 +114,7 @@ docker-build: ## Build Docker image
 	$(GOCMD) mod vendor
 	cp ../common.mk ../version.mk .
 	docker build . -f Dockerfile \
-		-t $(DOCKER_IMG_NAME):$(DOCKER_VERSION) \
+		-t $(DOCKER_IMG_NAME):$(VERSION) \
 		--build-arg http_proxy="$(http_proxy)" --build-arg HTTP_PROXY="$(HTTP_PROXY)" \
 		--build-arg https_proxy="$(https_proxy)" --build-arg HTTPS_PROXY="$(HTTPS_PROXY)" \
 		--build-arg no_proxy="$(no_proxy)" --build-arg NO_PROXY="$(NO_PROXY)" \
@@ -124,15 +127,19 @@ docker-build: ## Build Docker image
 docker-push: ## Tag and push Docker image
 	# TODO: remove ecr create
 	aws ecr create-repository --region us-west-2 --repository-name $(DOCKER_REPOSITORY)/$(DOCKER_IMG_NAME) || true
-	docker tag $(DOCKER_IMG_NAME):$(DOCKER_VERSION) $(DOCKER_TAG_BRANCH)
-	docker tag $(DOCKER_IMG_NAME):$(DOCKER_VERSION) $(DOCKER_TAG)
+	docker tag $(DOCKER_IMG_NAME):$(VERSION) $(DOCKER_TAG_BRANCH)
+	docker tag $(DOCKER_IMG_NAME):$(VERSION) $(DOCKER_TAG)
 	docker push $(DOCKER_TAG)
 ifeq ($(DOCKER_TAG_BRANCH_PUSH), true)
 	docker push $(DOCKER_TAG_BRANCH)
 endif
 
-docker-list: ## Print all container image names with tags
-	docker images --format "{{.Repository}}:{{.Tag}}"
+docker-list: ## Print name of docker container image
+	@echo "  $(DOCKER_IMG_NAME):"
+	@echo "    name: '$(DOCKER_TAG)'"
+	@echo "    version: '$(VERSION)'"
+	@echo "    gitTagPrefix: '$(GIT_TAG_PREFIX)'"
+	@echo "    buildTarget: '$(PROJECT_NICKNAME)-docker-build'"
 
 #### Python venv Target ####
 
