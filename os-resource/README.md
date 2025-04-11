@@ -90,7 +90,7 @@ For production deployments use the [Edge Infrastructure Manager charts][inframan
 > Please refer to the
 > [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
-> for more information about how to run inventory.
+> for more information about how to run Inventory.
 
 ### Run OS Resource Manger
 

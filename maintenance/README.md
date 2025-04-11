@@ -12,11 +12,11 @@
 ## Overview
 
 The Maintenance Manager service is designed to help manage maintenance tasks for Edge Nodes.
-Maintenance Manager acts as a bridge, passing down the maintenance and update requests (Schedules) to the
+It acts as a bridge, passing down the maintenance and update requests (Schedules) to the
 managed Edge Nodes. This service is responsible for ensuring that Edge Nodes can perform the required maintenance
 and update tasks.
 
-Maintenance manager handles `schedule` resources used to model time-based events, such as administrative downtime,
+Maintenance Manager handles `schedule` resources used to model time-based events, such as administrative downtime,
 maintenance windows, or other events that may happen either a single time or repeated on a schedule.
 
 For more information on the schedule and how this trasnaltes on the Edge Node please check
@@ -31,7 +31,7 @@ the [Schedule](docs/schedule.md).
 
 ## Get Started
 
-Instructions on how to install and set up Maintenance Manger on your development machine.
+Instructions on how to install and set up the Maintenance Manger on your development machine.
 
 ### Dependencies
 
@@ -47,7 +47,7 @@ This code requires the following tools to be installed on your development machi
 - [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](../version.mk)
 - [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](../version.mk)
 - [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](../version.mk)
-- [gocover-cobertura](https://github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](Makefile)
+- [gocover-cobertura](https://github.com/boumenot/gocover-cobertura) - check [$GOCOBERTURAVERSION_REQ](../version.mk)
 - [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) - check [$PROTOCGENDOCVERSION_REQ](../version.mk)
 - [buf](https://github.com/bufbuild/buf) - check [$BUFVERSION_REQ](../version.mk)
 - [protoc-gen-go](https://pkg.go.dev/google.golang.org/protobuf) - check [$PROTOCGENGOVERSION_REQ](../version.mk)
@@ -75,7 +75,7 @@ For production deployments use the [Edge Infrastructure Manager charts][inframan
 > Note: To run the Maintenance Manager, Inventory must be running as the manager needs to register as an Inventory client.
 > Please refer to [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
-> for more information about how to run inventory.
+> for more information about how to run Inventory.
 
 ### Run Maintenance Manger
 

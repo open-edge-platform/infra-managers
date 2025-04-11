@@ -15,7 +15,7 @@ The purpose of the Host Manager is to manage a host’s hardware information. It
 and reconciliation.
 Host Resource Manager collects all of this data, such as CPU, Memory, Disk, GPU, Interfaces and such, with the help
 of Hardware Discovery Agent (HDA) on the Edge Node.
-The Host Resource Manager stores this data in the inventory so that other components (like UI and Cluster Orchestration)
+The Host Resource Manager stores this data in the Inventory so that other components (like UI and Cluster Orchestration)
 can retrieve and act on it.
 
 Host Manager uses TLS with JWT (Json Web Tokens) technology to make the communication from the orchestrator to the edge
@@ -71,13 +71,13 @@ The binary is installed in the [$OUT_DIR](../common.mk) folder.
 
 ## Usage
 
-This guide shows how to deploy Host Resource Manger for local development or testing.
+This guide shows how to deploy the Host Resource Manger for local development or testing.
 For production deployments use the [Edge Infrastructure Manager charts][inframanager-charts].
 
-> Note: To run the Host Resource Manager, Inventory must be running as the manager needs to register as an inventory client.
-> Please refer to [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
+> Note: To run the Host Resource Manager, Inventory must be running as the manager needs to register as an Inventory client.
+> Please refer to the [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
-> for more information about how to run inventory.
+> for more information about how to run Inventory.
 
 ### Run Host Resource Manager
 

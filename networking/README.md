@@ -64,11 +64,11 @@ The binary is installed in the [$OUT_DIR](../common.mk) folder.
 This guide shows how to deploy Networking Manger for local development or testing.
 For production deployments use the [Edge Infrastructure Manager charts][inframanager-charts].
 
-> Note: To run the Networking Manager, Inventory must to be running as the manager needs to register as an inventory client.
+> Note: To run the Networking Manager, Inventory must to be running as the manager needs to register as an Inventory client.
 > Please refer to the
 > [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
-> for more information about how to run inventory.
+> for more information about how to run Inventory.
 
 ### Run Networking Manger
 
