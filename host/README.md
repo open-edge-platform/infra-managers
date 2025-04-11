@@ -91,7 +91,7 @@ For any issues, refer to the  [Troubleshooting guide][troubleshooting-url].
 
 ## Functional Test
 
-Run the make target `test` to mock agents to perform the relative behaviors for host resources.
+Run the make target `test` to mock agents to simulate the relative behaviors for host resources.
 
 ```bash
 make test
