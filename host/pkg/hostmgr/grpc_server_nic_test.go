@@ -13,12 +13,20 @@ import (
 	networkv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 // Verify Add/Remove of SystemNetwork resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_AddRemoveNetwork(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testcases := map[string]struct {
 		in    []*pb.SystemNetwork
@@ -120,9 +128,16 @@ func TestHostManagerClient_AddRemoveNetwork(t *testing.T) {
 }
 
 // Verify update of the SystemNetwork resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_UpdateNetwork1(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHostnicResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	testcases := map[string]struct {
@@ -229,6 +244,11 @@ func TestHostManagerClient_UpdateNetwork1(t *testing.T) {
 func TestHostManagerClient_UpdateNetworkNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHostnicResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
@@ -265,6 +285,11 @@ func TestHostManagerClient_UpdateNetworkNoChanges(t *testing.T) {
 func TestHostManagerClient_AddRemoveIP(t *testing.T) { //nolint:funlen // it is a table-driven test
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testcases := map[string]struct {
 		in    []*pb.SystemNetwork
@@ -436,6 +461,11 @@ func TestHostManagerClient_AddRemoveIP(t *testing.T) { //nolint:funlen // it is 
 func TestHostManagerClient_UpdateIP(t *testing.T) { //nolint:funlen // it is a table-driven test
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	// Purge the entire network
 	t.Cleanup(func() { HardDeleteHostnicResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
@@ -556,6 +586,11 @@ func TestHostManagerClient_UpdateIP(t *testing.T) { //nolint:funlen // it is a t
 func TestHostManagerClient_UpdateIPNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	// Purge the entire network
 	t.Cleanup(func() { HardDeleteHostnicResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 

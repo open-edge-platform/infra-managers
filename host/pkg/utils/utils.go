@@ -25,6 +25,7 @@ import (
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
 	hrm_status "github.com/open-edge-platform/infra-managers/host/pkg/status"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 var mapNodeStatusToHostStatus = map[pb.HostStatus_HostStatus]inv_status.ResourceStatus{
@@ -369,6 +370,16 @@ func UpdateInstanceResourceStateStatusDetails(
 	// instance status timestamp updated later by inv client
 	in.InstanceStatusDetail = instanceStatusDetail
 	return in
+}
+
+func IsHostNotProvisioned(hostres *computev1.HostResource) bool {
+	hostInstance := hostres.GetInstance()
+	if hostInstance == nil {
+		// If a host has no Instance, it's not provisioned yet
+		return true
+	}
+	return hostInstance.ProvisioningStatusIndicator != om_status.ProvisioningStatusDone.StatusIndicator &&
+		hostInstance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
 }
 
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
