@@ -12,12 +12,20 @@ import (
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 // Verify Add/Remove of Storage resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_AddRemoveStorage(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testcases := map[string]struct {
 		in    *pb.Storage
@@ -122,9 +130,16 @@ func TestHostManagerClient_AddRemoveStorage(t *testing.T) {
 }
 
 // Verify update of the Storage resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_UpdateStorage(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHoststoragesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	testcases := map[string]struct {
@@ -231,6 +246,11 @@ func TestHostManagerClient_UpdateStorage(t *testing.T) {
 func TestHostManagerClient_UpdateStorageNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHoststoragesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
