@@ -5,6 +5,7 @@
 package hostmgr_test
 
 import (
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,10 @@ func TestUpdateGPUInfoDeprecated(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	os := dao.CreateOs(t, tenant1)
 	hostInv := dao.CreateHost(t, tenant1)
-	dao.CreateInstance(t, tenant1, hostInv, os)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
 	defer cancel()
@@ -41,6 +45,11 @@ func TestUpdateGPUInfoDeprecated(t *testing.T) {
 func TestHostManagerClient_AddUpdateRemoveGPU(t *testing.T) { //nolint:funlen // it is a table-driven test
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testcases := map[string]struct {
 		in    []*pb.SystemGPU
@@ -187,6 +196,11 @@ func TestHostManagerClient_AddUpdateRemoveGPU(t *testing.T) { //nolint:funlen //
 func TestUpdateGPUNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHostgpusWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)

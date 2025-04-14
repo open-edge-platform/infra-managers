@@ -5,6 +5,7 @@
 package hostmgr_test
 
 import (
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,6 +19,11 @@ import (
 func TestHostManagerClient_AddRemoveUsb(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	testcases := map[string]struct {
 		in    []*pb.SystemUSB
@@ -103,6 +109,11 @@ func TestHostManagerClient_AddRemoveUsb(t *testing.T) {
 func TestHostManagerClient_UpdateUsb(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHostusbResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	testcases := map[string]struct {
@@ -176,6 +187,11 @@ func TestHostManagerClient_UpdateUsb(t *testing.T) {
 func TestHostManagerClient_UpdateUsbNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
+	os := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	t.Cleanup(func() { HardDeleteHostusbResourcesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)

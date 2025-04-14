@@ -258,7 +258,7 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	hT0.TenantId = mm_testing.DefaultTenantID
 	hT0.Uuid = uuid.NewString()
 	hostT0 := mm_testing.CreateHost(t, mm_testing.DefaultTenantID, &hT0)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, hostT0, osT0, true, func(inst *computev1.InstanceResource) {
+	dao.CreateInstanceWithOpts(t, mm_testing.DefaultTenantID, hostT0, osT0, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 	})
