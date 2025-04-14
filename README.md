@@ -22,5 +22,5 @@ Navigate through the folders to get started, develop, and contribute to Edge Inf
 
 Last Updated Date: March 13, 2025
 
-[user-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html
-[resource-managers-architecture-url]: https://intel.com
+[user-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/get_started_guide/index.html
+[resource-managers-architecture-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/infra_manager/arch/orchestrator/architecture.html
