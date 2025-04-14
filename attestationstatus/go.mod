@@ -7,7 +7,7 @@ go 1.24.1
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.23.0
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.23.2
 	github.com/prometheus/client_golang v1.21.1
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.71.0
@@ -76,7 +76,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-edge-platform/orch-library/go v0.5.29 // indirect
+	github.com/open-edge-platform/orch-library/go v0.5.31 // indirect
 	github.com/open-edge-platform/orch-library/go/dazl v0.5.2 // indirect
 	github.com/open-policy-agent/opa v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
