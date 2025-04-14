@@ -233,7 +233,10 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	h1T1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T1.Uuid = uuid.NewString()
 	host1T1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1T1)
-	dao.CreateInstance(t, mm_testing.Tenant1, host1T1, osT1)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1T1, osT1, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	sSched1T1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1T1, host1T1, nil)
 
@@ -242,7 +245,10 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	h1T2.TenantId = mm_testing.Tenant2
 	h1T2.Uuid = uuid.NewString()
 	host1T2 := mm_testing.CreateHost(t, mm_testing.Tenant2, &h1T2)
-	dao.CreateInstance(t, mm_testing.Tenant2, host1T2, osT2)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant2, host1T2, osT2, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	sSched1T2 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSched1T2.TenantId = mm_testing.Tenant2
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant2, &sSched1T2, host1T2, nil)
@@ -252,7 +258,10 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	hT0.TenantId = mm_testing.DefaultTenantID
 	hT0.Uuid = uuid.NewString()
 	hostT0 := mm_testing.CreateHost(t, mm_testing.DefaultTenantID, &hT0)
-	dao.CreateInstance(t, mm_testing.DefaultTenantID, hostT0, osT0)
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, hostT0, osT0, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	sSchedT0 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSchedT0.TenantId = mm_testing.DefaultTenantID
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.DefaultTenantID, &sSchedT0, hostT0, nil)
@@ -377,7 +386,10 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	scheduleCache.LoadAllSchedulesFromInv()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
-	inst := dao.CreateInstance(t, mm_testing.Tenant1, host, os)
+	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant2, host, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	// Host and instance start with RUNNING status
 
 	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
