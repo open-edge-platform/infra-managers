@@ -18,8 +18,8 @@ of Hardware Discovery Agent (HDA) on the Edge Node.
 The Host Resource Manager stores this data in the Inventory so that other components (like UI and Cluster Orchestration)
 can retrieve and act on it.
 
-The Host Resource Manager uses TLS with JWT (Json Web Tokens) technology to make the communication from the orchestrator to the edge
-node secure.
+The Host Resource Manager uses TLS with JWT (Json Web Tokens) technology to make the communication from the orchestrator
+to the edge node secure.
 
 ## Features
 
