@@ -6,8 +6,6 @@ package hostmgr_test
 
 import (
 	"context"
-	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
-	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"testing"
 	"time"
 
@@ -16,11 +14,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
 	hrm_status "github.com/open-edge-platform/infra-managers/host/pkg/status"
 	hmgr_util "github.com/open-edge-platform/infra-managers/host/pkg/utils"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 // ####################################

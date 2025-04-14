@@ -5,7 +5,6 @@
 package hostmgr_test
 
 import (
-	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,9 +13,12 @@ import (
 	networkv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 // Verify Add/Remove of SystemNetwork resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_AddRemoveNetwork(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
@@ -126,6 +128,8 @@ func TestHostManagerClient_AddRemoveNetwork(t *testing.T) {
 }
 
 // Verify update of the SystemNetwork resources.
+//
+//nolint:funlen // it's a test
 func TestHostManagerClient_UpdateNetwork1(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)

@@ -386,7 +386,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	scheduleCache.LoadAllSchedulesFromInv()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
-	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant2, host, os, true, func(inst *computev1.InstanceResource) {
+	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 	})
