@@ -27,7 +27,8 @@ the [Schedule](docs/schedule.md).
 - Top-down Edge Node maintenance scheduling, one off or recurring at specific times
 - Single or per-group Edge Node updates
 - Mutable OS Update: Day 2 update of the mutable Ubuntu OS using APT package manager (as per past releases).
-- Immutable OS Update: Day 2 update of the immutable Edge Microvisor Toolkit via A/B partition swap and installation of a new OS image.
+- Immutable OS Update: Day 2 update of the immutable Edge Microvisor Toolkit via A/B partition swap and installation
+  of a new OS image.
 
 ## Get Started
 
