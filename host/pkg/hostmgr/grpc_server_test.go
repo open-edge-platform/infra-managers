@@ -14,11 +14,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
 	hrm_status "github.com/open-edge-platform/infra-managers/host/pkg/status"
 	hmgr_util "github.com/open-edge-platform/infra-managers/host/pkg/utils"
+	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
 // ####################################
@@ -118,8 +120,27 @@ func TestHostManagerClient_UpdateHostStatusByHostGuid(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, respGet)
 
-	// OK
+	// Not-OK, not yet provisioned with Instance
 	hostInv := dao.CreateHost(t, tenant1)
+
+	inUp = &pb.UpdateHostStatusByHostGuidRequest{
+		HostGuid: hostInv.GetUuid(),
+		HostStatus: &pb.HostStatus{
+			HostStatus:          pb.HostStatus_RUNNING,
+			Details:             hostStatusDetails,
+			HumanReadableStatus: hostStatusHumanReadable,
+		},
+	}
+	respGet, err = HostManagerTestClient.UpdateHostStatusByHostGuid(context.Background(), inUp)
+	require.Error(t, err)
+	require.Nil(t, respGet)
+
+	// OK - with Instance created
+	osInv := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, osInv, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	inUp = &pb.UpdateHostStatusByHostGuidRequest{
 		HostGuid: hostInv.GetUuid(),
@@ -135,28 +156,6 @@ func TestHostManagerClient_UpdateHostStatusByHostGuid(t *testing.T) {
 
 	// Validate
 	host := GetHostbyUUID(t, hostInv.GetUuid())
-	assert.Equal(t, hostInv.GetSerialNumber(), host.GetSerialNumber())
-	assert.Equal(t, hrm_status.HostStatusRunning.Status, host.GetHostStatus())
-	assert.Equal(t, hrm_status.HostStatusRunning.StatusIndicator, host.GetHostStatusIndicator())
-
-	// OK - with Instance created
-	osInv := dao.CreateOs(t, tenant1)
-	_ = dao.CreateInstance(t, tenant1, hostInv, osInv)
-
-	inUp = &pb.UpdateHostStatusByHostGuidRequest{
-		HostGuid: hostInv.GetUuid(),
-		HostStatus: &pb.HostStatus{
-			HostStatus:          pb.HostStatus_RUNNING,
-			Details:             hostStatusDetails,
-			HumanReadableStatus: hostStatusHumanReadable,
-		},
-	}
-	respGet, err = HostManagerTestClient.UpdateHostStatusByHostGuid(ctx, inUp)
-	require.NoError(t, err)
-	require.NotNil(t, respGet)
-
-	// Validate
-	host = GetHostbyUUID(t, hostInv.GetUuid())
 	assert.Equal(t, hostInv.GetSerialNumber(), host.GetSerialNumber())
 	assert.Equal(t, hrm_status.HostStatusRunning.Status, host.GetHostStatus())
 	assert.Equal(t, hrm_status.HostStatusRunning.StatusIndicator, host.GetHostStatusIndicator())
@@ -207,6 +206,11 @@ func TestHostManagerClient_UpdateHostSystemInfoByGUID(t *testing.T) { //nolint:f
 
 	// OK
 	hostInv := dao.CreateHost(t, tenant1)
+	osInv := dao.CreateOs(t, tenant1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInv, osInv, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	systemInfo1.HostGuid = hostInv.GetUuid()
 
 	testcases := map[string]struct {
@@ -530,7 +534,10 @@ func TestHostManagerClient_UpdateInstanceStateStatusByHostGUID(t *testing.T) {
 	require.NotNil(t, osInv)
 
 	// creating Instance resource
-	instInv := dao.CreateInstance(t, tenant1, hostInv, osInv)
+	instInv := dao.CreateInstanceWithOpts(t, tenant1, hostInv, osInv, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	require.NotNil(t, instInv)
 
 	testcases := map[string]struct {
@@ -667,10 +674,16 @@ func TestHostManagerClient_TenantIsolation(t *testing.T) {
 
 	hostInvT1 := dao.CreateHost(t, tenant1)
 	osInvT1 := dao.CreateOs(t, tenant1)
-	_ = dao.CreateInstance(t, tenant1, hostInvT1, osInvT1)
+	dao.CreateInstanceWithOpts(t, tenant1, hostInvT1, osInvT1, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 	hostInvT2 := dao.CreateHost(t, tenant2)
 	osInvT2 := dao.CreateOs(t, tenant2)
-	_ = dao.CreateInstance(t, tenant2, hostInvT2, osInvT2)
+	dao.CreateInstanceWithOpts(t, tenant2, hostInvT2, osInvT2, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+	})
 
 	// UpdateHostStatusbyHostGuid
 	t.Run("IsolationUpdateHostStatusByHostGUID", func(t *testing.T) {
