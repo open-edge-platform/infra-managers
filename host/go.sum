@@ -695,10 +695,10 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/open-edge-platform/infra-core/inventory/v2 v2.23.2 h1:UhRxgwWeQfcPc+ZR1sKni3C8lUhgR2gJUWDB+Ahw0VA=
 github.com/open-edge-platform/infra-core/inventory/v2 v2.23.2/go.mod h1:NC18hEm1VyzEBST5QmAfpMj38RBIy82O5Asrff7tdwM=
-github.com/open-edge-platform/infra-managers/maintenance v1.21.0 h1:38twhZVAo0fYBDhfHWmsZUBcf6h+ZmXgodQrG7J8uNE=
-github.com/open-edge-platform/infra-managers/maintenance v1.21.0/go.mod h1:NorikKbZAwJQFEIlQZK+4R3lIESuQqCDZ5kHb5itpXo=
-github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.33.1 h1:xgBPSu1pNe2lNnNlFJXTueUUav9lU3MgYZrvvgfCNf4=
-github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.33.1/go.mod h1:7SL3s3QWqg+Z+yp/J6wJZmMnug04G8NGlLKma1SCwX4=
+github.com/open-edge-platform/infra-managers/maintenance v1.21.1 h1:WcPFKSWdVgvZYaOCfhRXvPdP5GZLsCFpJ48nXF5so7c=
+github.com/open-edge-platform/infra-managers/maintenance v1.21.1/go.mod h1:4IOnwaOp/ZadsSDVZB8KSBM8yNDiPufc/nrYt0Qq8Y8=
+github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.34.2 h1:7iAvjo29hD7hDq4PIpgkxiiQLsEqkK8tZNvxSafcFxg=
+github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.34.2/go.mod h1:sLZXeFth0nDI8HEH4FpWkF3nJNOR6e7ocDBq0VKCg9w=
 github.com/open-edge-platform/orch-library/go v0.5.29 h1:LfOaRcRYXpQdcyHrVwN4wC2l11wbdUnBLkc2P7vrZNY=
 github.com/open-edge-platform/orch-library/go v0.5.29/go.mod h1:Wm6A5AJx4DCIOi4u+y1IMJxgFZ4n27f5FLSqW0QPW9k=
 github.com/open-edge-platform/orch-library/go/dazl v0.5.2 h1:YajSGrup0GtzILvXOGL5slbZQMrge513ATBKtadQq38=
