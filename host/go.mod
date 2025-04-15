@@ -78,7 +78,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-edge-platform/orch-library/go v0.5.29 // indirect
+	github.com/open-edge-platform/orch-library/go v0.5.31 // indirect
 	github.com/open-edge-platform/orch-library/go/dazl v0.5.2 // indirect
 	github.com/open-policy-agent/opa v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
