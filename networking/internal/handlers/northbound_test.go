@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	rec_v2 "github.com/onosproject/onos-lib-go/pkg/controller/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/open-edge-platform/infra-managers/networking/internal/handlers"
 	"github.com/open-edge-platform/infra-managers/networking/internal/reconcilers"
 	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testing"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
 func TestMain(m *testing.M) {

@@ -11,7 +11,7 @@
 
 ## Overview
 
-The Networking manager constantly verifies the correctness of the networking configuration and IP
+The Networking Manager constantly verifies the correctness of the networking configuration and IP
 uniqueness on of the Edge Nodes within a site.
 
 The Networking Manager handles Network Resources representing the network infrastructure of a site and its
@@ -42,9 +42,9 @@ make dependency-check
 
 This code requires the following tools to be installed on your development machine:
 
-- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](Makefile)
-- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](Makefile)
-- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](Makefile)
+- [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](../version.mk)
+- [golangci-lint](https://github.com/golangci/golangci-lint) - check [$GOLINTVERSION_REQ](../version.mk)
+- [go-junit-report](https://github.com/jstemmer/go-junit-report) - check [$GOJUNITREPORTVERSION_REQ](../version.mk)
 
 You can install Go dependencies by running `make go-dependency`.
 
@@ -64,11 +64,11 @@ The binary is installed in the [$OUT_DIR](../common.mk) folder.
 This guide shows how to deploy Networking Manger for local development or testing.
 For production deployments use the [Edge Infrastructure Manager charts][inframanager-charts].
 
-> Note: To run host manager, Inventory need to be running as the host manager need to register as an inventory client.
-> Please refer to the TODO
-> [instruction of Inventory](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
+> Note: To run the Networking Manager, Inventory must to be running as the manager needs to register as an Inventory client.
+> Please refer to the
+> [Inventory instructions](https://github.com/open-edge-platform/infra-core/tree/main/inventory#usage)
 > and [Database in Inventory](https://github.com/open-edge-platform/infra-core/blob/main/inventory/docs/database.md)
-> for more information about how to run inventory.
+> for more information about how to run Inventory.
 
 ### Run Networking Manger
 
@@ -80,7 +80,7 @@ See the [documentation][user-guide-url] if you want to learn more about using Ed
 
 ## Functional Test
 
-Run the make target `test` to mock agents to perform the relative behaviors for host resources.
+Run the make target `test` to mock agents to simulate the relative behaviors for host resources.
 
 ```bash
 make test
@@ -105,8 +105,8 @@ targets. The following is a list of makefile targets that support developer acti
 - `build` to build the project and generate executable files
 - `docker-build` to build the Inventory Docker container
 
-[user-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html
-[inframanager-dev-guide-url]: (https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/get_started_guide/gsg_content.html)
-[contributors-guide-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/index.html
-[troubleshooting-url]: https://literate-adventure-7vjeyem.pages.github.io/edge_orchestrator/user_guide_main/content/user_guide/troubleshooting/troubleshooting.html
+[user-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/get_started_guide/index.html
+[inframanager-dev-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/infra_manager/index.html
+[contributors-guide-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/developer_guide/contributor_guide/index.html
+[troubleshooting-url]: https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/troubleshooting/index.html
 [inframanager-charts]: https://github.com/open-edge-platform/infra-charts
