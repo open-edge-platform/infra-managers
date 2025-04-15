@@ -10,7 +10,7 @@ For more information about Resource Manger please read the TODO [resource manage
 
 The repository comprises the following components and services:
 
-- [**Host Resource Manager**](host/): manage a host’s hardware information, provides the interfaces to other
+- [**Host Resource Manager**](host/): manages a host’s hardware information, provides the interfaces to other
   components to fetch such information. It also implements connection tracking and reconciliation.
 - [**Maintenance Manager**](maintenance/): manages maintenance tasks for Edge Nodes' software updates.
 - [**Networking Manager**](networking/): verifies network configuration and IP correctness and uniqueness for Edge
