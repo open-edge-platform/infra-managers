@@ -29,6 +29,8 @@ are required:
   - [protoc-gen-go-grpc](https://pkg.go.dev/google.golang.org/grpc)
   - [protoc-gen-validate](https://pkg.go.dev/github.com/envoyproxy/protoc-gen-validate)
 
+- [python 3](https://www.python.org) for testing and generation
+
 - [Docker](https://docs.docker.com) for test and build
 
 The versions required are specified in `../version.mk`, and you can verify that
