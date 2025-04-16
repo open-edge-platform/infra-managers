@@ -6,7 +6,7 @@ status fields on Instance resources for an Edge Node.
 
 It receives attestation  status updates from the Privileged Attestation Pod
 component running on the Edge Node, determines which Instance to update (Using
-the SMBIOS UUID of the device), then updates Inventory with the status data,
+the System Hardware UUID of the device), then updates Inventory with the status data,
 which can then be queried by the northbound REST API or UI and displayed to the
 user.
 
