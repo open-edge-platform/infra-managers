@@ -45,6 +45,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -56,6 +57,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  nil,
+						Description:     "test-description",
 					},
 				},
 			},
@@ -70,6 +72,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsType:          osv1.OsType_OS_TYPE_MUTABLE,
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "",
+				Description:     "test-description",
 			},
 			wantErr: false,
 		},
@@ -95,6 +98,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -108,6 +112,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						PlatformBundle: map[string]interface{}{
 							"artifactName": "artifact",
 						},
+						Description: "test-description",
 					},
 				},
 			},
@@ -122,6 +127,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsType:          osv1.OsType_OS_TYPE_MUTABLE,
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "{\"artifactName\":\"artifact\"}",
+				Description:     "test-description",
 			},
 			wantErr: false,
 		},
@@ -147,6 +153,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -158,6 +165,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -172,6 +180,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsType:          osv1.OsType_OS_TYPE_MUTABLE,
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "",
+				Description:     "test-description",
 			},
 			wantErr: false,
 		},
@@ -197,6 +206,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_INVALID",
@@ -208,6 +218,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -235,6 +246,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_UNSPECIFIED",
@@ -246,6 +258,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -273,6 +286,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_IMMUTABLE",
@@ -284,6 +298,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -311,6 +326,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_IMMUTABLE",
@@ -322,6 +338,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -349,6 +366,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -360,6 +378,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_INVALID",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
@@ -387,6 +406,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
+						Description          string                 `yaml:"description"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -398,6 +418,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageVersion:  "1.0",
 						SecurityFeature: "SECURITY_FEATURE_UNSPECIFIED",
 						PlatformBundle:  map[string]interface{}{},
+						Description:     "test-description",
 					},
 				},
 			},
