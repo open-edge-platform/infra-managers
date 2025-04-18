@@ -74,6 +74,8 @@ func hostStorageToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 		// make a fair comparison. Otherwise resources will be different.
 		hostRes := hostStorage.GetHost()
 		hostStorage.Host = nil
+		hostStorage.CreatedAt = invStorage.CreatedAt
+		hostStorage.UpdatedAt = invStorage.UpdatedAt
 		hostStorage.ResourceId = invStorage.GetResourceId()
 		// Nop or update the storage
 		if !proto.Equal(hostStorage, invStorage) {
@@ -81,9 +83,10 @@ func hostStorageToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 			if err := inv_mgr_cli.UpdateHoststorage(ctx, invClientInstance, tenantID, hostStorage); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostStorage update: tenantID=%s, hostStorage=%v", tenantID, hostStorage)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostStorage update: tenantID=%s, hostStorage=%v", tenantID, hostStorage)
 	} else {
 		// Add the storage
 		id, err := inv_mgr_cli.CreateHoststorage(ctx, invClientInstance, tenantID, hostStorage)
@@ -165,6 +168,8 @@ func hostNicToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 		// make a fair comparison. Otherwise resources will be different.
 		hostRes := hostNic.GetHost()
 		hostNic.Host = nil
+		hostNic.CreatedAt = invNic.CreatedAt
+		hostNic.UpdatedAt = invNic.UpdatedAt
 		hostNic.ResourceId = invNic.GetResourceId()
 		// Nop or update the nic
 		if !proto.Equal(hostNic, invNic) {
@@ -172,9 +177,10 @@ func hostNicToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 			if err := inv_mgr_cli.UpdateHostnic(ctx, invClientInstance, tenantID, hostNic); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostNic update: tenantID=%s, hostNIC=%v", tenantID, hostNic)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostNic update: tenantID=%s, hostNIC=%v", tenantID, hostNic)
 	} else {
 		// Add the nic
 		id, err := inv_mgr_cli.CreateHostnic(ctx, invClientInstance, tenantID, hostNic)
@@ -256,14 +262,17 @@ func hostIPToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 		update, tenantID, hostIP.GetResourceId())
 	if update {
 		hostIP.ResourceId = invIP.GetResourceId()
+		hostIP.CreatedAt = invIP.CreatedAt
+		hostIP.UpdatedAt = invIP.UpdatedAt
 		// Nop or update the ip
 		if !proto.Equal(hostIP, invIP) {
 			if err := inv_mgr_cli.UpdateIPAddress(ctx, invClientInstance, tenantID, hostIP); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostIP update: tenantID=%s, IPAddress=%v", tenantID, hostIP)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostIP update: tenantID=%s, IPAddress=%v", tenantID, hostIP)
 	} else {
 		// Add the nic
 		_, err := inv_mgr_cli.CreateIPAddress(ctx, invClientInstance, tenantID, hostIP)
@@ -345,6 +354,8 @@ func hostUsbToAddOrUpdate(ctx context.Context, tenantID string, update bool, hos
 		// make a fair comparison. Otherwise resources will be different.
 		hostRes := hostUsb.GetHost()
 		hostUsb.Host = nil
+		hostUsb.CreatedAt = invUsb.CreatedAt
+		hostUsb.UpdatedAt = invUsb.UpdatedAt
 		hostUsb.ResourceId = invUsb.GetResourceId()
 		// Nop or update the usb
 		if !proto.Equal(hostUsb, invUsb) {
@@ -352,9 +363,10 @@ func hostUsbToAddOrUpdate(ctx context.Context, tenantID string, update bool, hos
 			if err := inv_mgr_cli.UpdateHostusb(ctx, invClientInstance, tenantID, hostUsb); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostUsb update: tenantID=%s, hostUSB=%v", tenantID, hostUsb)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostUsb update: tenantID=%s, hostUSB=%v", tenantID, hostUsb)
 	} else {
 		// Add the usb
 		id, err := inv_mgr_cli.CreateHostusb(ctx, invClientInstance, tenantID, hostUsb)
@@ -435,6 +447,8 @@ func hostGpuToAddOrUpdate(ctx context.Context, tenantID string, update bool, hos
 		// make a fair comparison. Otherwise resources will be different.
 		hostRes := hostGpu.GetHost()
 		hostGpu.Host = nil
+		hostGpu.CreatedAt = invGpu.CreatedAt
+		hostGpu.UpdatedAt = invGpu.UpdatedAt
 		hostGpu.ResourceId = invGpu.GetResourceId()
 		// Nop or update the GPU
 		if !proto.Equal(hostGpu, invGpu) {
@@ -442,9 +456,10 @@ func hostGpuToAddOrUpdate(ctx context.Context, tenantID string, update bool, hos
 			if err := inv_mgr_cli.UpdateHostgpu(ctx, invClientInstance, tenantID, hostGpu); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostGpu update: tenantID=%s, hostGPU=%v", tenantID, hostGpu)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostGpu update: tenantID=%s, hostGPU=%v", tenantID, hostGpu)
 	} else {
 		id, err := inv_mgr_cli.CreateHostgpu(ctx, invClientInstance, tenantID, hostGpu)
 		if err != nil {
