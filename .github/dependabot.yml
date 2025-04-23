@@ -11,8 +11,6 @@ updates:
       - "/os-resource"
       - "/telemetry"
       - "/attestationstatus"
-    registries:
-      - github
     schedule:
       interval: daily
     open-pull-requests-limit: 3
