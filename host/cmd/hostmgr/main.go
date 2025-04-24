@@ -27,6 +27,9 @@ import (
 
 var zlog = logging.GetLogger("HostManagerMain")
 
+// TODO: move these const definition to Inventory client.
+const DefaultInvCacheStaleTimeoutOffset = 30
+
 var (
 	RepoURL   = "https://github.com/open-edge-platform/infra-managers/host.git"
 	Version   = "<unset>"
@@ -54,6 +57,10 @@ var (
 	invCacheUUIDEnable   = flag.Bool(client.InvCacheUUIDEnable, false, client.InvCacheUUIDEnableDescription)
 	invCacheStaleTimeout = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
+	invCacheStaleTimeoutOffset = flag.Uint(
+		"invCacheStaleTimeoutOffset", DefaultInvCacheStaleTimeoutOffset,
+		"Parameter to set the timeout offset for the Inventory UUID cache")
+
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
 )
@@ -111,6 +118,7 @@ func main() {
 		EnableHostDiscovery: *allowHostDiscovery,
 		EnableUUIDCache:     *invCacheUUIDEnable,
 		UUIDCacheTTL:        *invCacheStaleTimeout,
+		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset),
 	}
 	if err := conf.Validate(); err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Failed to start due to invalid configuration: %v", conf)
