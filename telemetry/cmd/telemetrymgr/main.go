@@ -23,6 +23,9 @@ import (
 	"github.com/open-edge-platform/infra-managers/telemetry/internal/invclient"
 )
 
+// TODO: move these const definition to Inventory client.
+const DefaultInvCacheStaleTimeoutOffset = 30
+
 var (
 	name = "TelemetryManager"
 	zlog = logging.GetLogger(name + "Main")
@@ -42,6 +45,9 @@ var (
 	invCacheUUIDEnable   = flag.Bool(client.InvCacheUUIDEnable, false, client.InvCacheUUIDEnableDescription)
 	invCacheStaleTimeout = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
+	invCacheStaleTimeoutOffset = flag.Uint(
+		"invCacheStaleTimeoutOffset", DefaultInvCacheStaleTimeoutOffset,
+		"Parameter to set the timeout offset for the Inventory UUID cache")
 
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
@@ -119,6 +125,7 @@ func main() {
 		invclient.WithEnableTracing(*enableTracing),
 		invclient.WithEnableUUIDCache(*invCacheUUIDEnable),
 		invclient.WithUUIDCacheTTL(*invCacheStaleTimeout),
+		invclient.WithUUIDCacheTTLOffset(*invCacheStaleTimeoutOffset),
 		invclient.WithEnableMetrics(*enableMetrics),
 	)
 	if err != nil {
