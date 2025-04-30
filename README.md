@@ -4,7 +4,7 @@
 
 The repository includes different Managers, many of which communicate on the southbound with Edge Nodes.
 The Managers are implemented as micro-services part of the Edge Infrastructure Manager of the Edge Manageability Framework.
-For more information about Resource Manger please read the TODO [resource managers architecture][resource-managers-architecture-url].
+For more information about Resource Manger please read the [resource managers architecture][resource-managers-architecture-url].
 
 ## Get Started
 
