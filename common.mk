@@ -41,7 +41,7 @@ BASE_BRANCH := main
 
 # Docker variables
 DOCKER_ENV              := DOCKER_BUILDKIT=1
-OCI_REGISTRY            ?= 08013740741.dkr.ecr.us-west-2.amazonaws.com
+OCI_REGISTRY            ?= 080137407410.dkr.ecr.us-west-2.amazonaws.com
 OCI_REPOSITORY          ?= edge-orch
 DOCKER_SECTION          := infra
 DOCKER_REGISTRY         ?= $(OCI_REGISTRY)
