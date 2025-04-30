@@ -24,6 +24,7 @@ type server struct {
 	authEnabled bool
 }
 
+//nolint:cyclop // cyclomatic complexity is 11 due to validation logic
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
@@ -62,6 +63,13 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 			Msg("PlatformUpdateStatus")
 		return nil, inv_errors.Errorfc(codes.Unauthenticated,
 			"Host [tID=%s, UUID=%s] is not trusted, the message will not be handled", tenantID, guid)
+	}
+
+	if maintgmr_util.IsInstanceNotProvisioned(instRes) {
+		zlog.InfraSec().
+			InfraError("Host tID=%s, UUID=%s is not yet provisioned, skipping update", tenantID, hostRes.GetUuid()).
+			Msg("PlatformUpdateStatus")
+		return nil, inv_errors.Errorfc(codes.FailedPrecondition, "")
 	}
 
 	updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
