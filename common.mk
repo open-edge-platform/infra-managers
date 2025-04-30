@@ -37,6 +37,9 @@ GOPATH     := $(shell go env GOPATH)
 RBAC       := "$(OUT_DIR)/rego/authz.rego"
 SRC        := $(shell find . -type f -name '*.go' ! -name '*_test.go')
 DEPS       := go.mod go.sum
+BASE_BRANCH := main
+
+
 
 # Docker variables
 DOCKER_ENV              := DOCKER_BUILDKIT=1
@@ -224,7 +227,7 @@ db-shell: ## Run the postgres shell connected to a local database. See: db-start
 #### Buf protobuf code generation tooling ###
 
 common-buf-update: $(VENV_NAME) ## Update buf modules
-	set +u; . ./$</bin/activate; set -u ;\
+	. ./$</bin/activate; set -u ;\
   buf --version ;\
   pushd ${APIPKG_DIR}; buf dep update; popd ;\
   buf build
@@ -232,7 +235,9 @@ common-buf-update: $(VENV_NAME) ## Update buf modules
 common-buf-lint: $(VENV_NAME) ## Lint and format protobuf files
 	buf --version
 	buf format -d --exit-code
-	buf lint
+	buf lint --verbose
+	buf breaking --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH}'
+
 
 common-buf-gen: ## Compile protoc files into code
 	buf --version ;\
