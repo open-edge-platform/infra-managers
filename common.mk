@@ -30,20 +30,18 @@ CURRENT_UID := $(shell id -u)
 CURRENT_GID := $(shell id -g)
 
 # Path variables
-OUT_DIR	   := out
-APIPKG_DIR := pkg/api
-BIN_DIR    := $(OUT_DIR)/bin
-GOPATH     := $(shell go env GOPATH)
-RBAC       := "$(OUT_DIR)/rego/authz.rego"
-SRC        := $(shell find . -type f -name '*.go' ! -name '*_test.go')
-DEPS       := go.mod go.sum
+OUT_DIR	    := out
+APIPKG_DIR  := pkg/api
+BIN_DIR     := $(OUT_DIR)/bin
+GOPATH      := $(shell go env GOPATH)
+RBAC        := "$(OUT_DIR)/rego/authz.rego"
+SRC         := $(shell find . -type f -name '*.go' ! -name '*_test.go')
+DEPS        := go.mod go.sum
 BASE_BRANCH := main
-
-
 
 # Docker variables
 DOCKER_ENV              := DOCKER_BUILDKIT=1
-OCI_REGISTRY            ?= 080137407410.dkr.ecr.us-west-2.amazonaws.com
+OCI_REGISTRY            ?= 08013740741.dkr.ecr.us-west-2.amazonaws.com
 OCI_REPOSITORY          ?= edge-orch
 DOCKER_SECTION          := infra
 DOCKER_REGISTRY         ?= $(OCI_REGISTRY)
@@ -227,7 +225,7 @@ db-shell: ## Run the postgres shell connected to a local database. See: db-start
 #### Buf protobuf code generation tooling ###
 
 common-buf-update: $(VENV_NAME) ## Update buf modules
-	. ./$</bin/activate; set -u ;\
+  set +u; . ./$</bin/activate; set -u ;\
   buf --version ;\
   pushd ${APIPKG_DIR}; buf dep update; popd ;\
   buf build
@@ -235,7 +233,7 @@ common-buf-update: $(VENV_NAME) ## Update buf modules
 common-buf-lint: $(VENV_NAME) ## Lint and format protobuf files
 	buf --version
 	buf format -d --exit-code
-	buf lint --verbose
+	buf lint
 	buf breaking --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH}'
 
 
