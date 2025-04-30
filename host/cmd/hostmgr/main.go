@@ -27,9 +27,6 @@ import (
 
 var zlog = logging.GetLogger("HostManagerMain")
 
-// TODO: move these const definition to Inventory client.
-const DefaultInvCacheStaleTimeoutOffset = 30
-
 var (
 	RepoURL   = "https://github.com/open-edge-platform/infra-managers/host.git"
 	Version   = "<unset>"
@@ -58,8 +55,7 @@ var (
 	invCacheStaleTimeout = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
 	invCacheStaleTimeoutOffset = flag.Uint(
-		"invCacheStaleTimeoutOffset", DefaultInvCacheStaleTimeoutOffset,
-		"Parameter to set the timeout offset for the Inventory UUID cache")
+		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutDescription)
 
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)

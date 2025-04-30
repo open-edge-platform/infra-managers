@@ -693,10 +693,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.2 h1:UhRxgwWeQfcPc+ZR1sKni3C8lUhgR2gJUWDB+Ahw0VA=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.2/go.mod h1:NC18hEm1VyzEBST5QmAfpMj38RBIy82O5Asrff7tdwM=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250424132827-9ac9a79b2278 h1:oMThL4hXNws3w5N87M9lEbKiBWbyKAJ5VD1OYUkG6Vs=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250424132827-9ac9a79b2278/go.mod h1:NC18hEm1VyzEBST5QmAfpMj38RBIy82O5Asrff7tdwM=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250430124027-3ced92213ee2 h1:pitZ8d9nWbce0cYrcH5CXfCe3qAiTuClI6YBbBAIbkA=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250430124027-3ced92213ee2/go.mod h1:fcm+LZ95UNuSGlcx7GYX76Xt3f6Y4q3PJpcdncHn+zk=
 github.com/open-edge-platform/orch-library/go v0.5.29 h1:LfOaRcRYXpQdcyHrVwN4wC2l11wbdUnBLkc2P7vrZNY=
 github.com/open-edge-platform/orch-library/go v0.5.29/go.mod h1:Wm6A5AJx4DCIOi4u+y1IMJxgFZ4n27f5FLSqW0QPW9k=
 github.com/open-edge-platform/orch-library/go/dazl v0.5.2 h1:YajSGrup0GtzILvXOGL5slbZQMrge513ATBKtadQq38=
@@ -919,8 +917,8 @@ golang.org/x/net v0.0.0-20221012135044-0b7e1fb9d458/go.mod h1:YDH+HFinaLZZlnHAfS
 golang.org/x/net v0.0.0-20221014081412-f15817d10f9b/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
 golang.org/x/net v0.10.0/go.mod h1:0qNGK6F8kojg2nk9dLZ2mShWaEBan6FAoqfSigmmuDg=
-golang.org/x/net v0.37.0 h1:1zLorHbz+LYj7MQlSf1+2tPIIgibq2eL5xkrGk6f+2c=
-golang.org/x/net v0.37.0/go.mod h1:ivrbrMbzFq5J41QOQh0siUuly180yBYtLp+CKbEaFx8=
+golang.org/x/net v0.38.0 h1:vRMAPTMaeGqVhG5QyLJHqNDwecKTomGeqbnfZyKlBI8=
+golang.org/x/net v0.38.0/go.mod h1:ivrbrMbzFq5J41QOQh0siUuly180yBYtLp+CKbEaFx8=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=
 golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=

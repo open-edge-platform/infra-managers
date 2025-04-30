@@ -20,6 +20,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/oam"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
+	inv_util "github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/maintmgr"
 	util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
@@ -49,6 +50,9 @@ var (
 	invCacheUUIDEnable    = flag.Bool(client.InvCacheUUIDEnable, false, client.InvCacheUUIDEnableDescription)
 	invCacheStaleTimeout  = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
+	invCacheStaleTimeoutOffset = flag.Uint(
+		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutDescription)
+
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
 )
@@ -115,13 +119,19 @@ func main() {
 		}()
 	}
 
-	err := maintmgr.StartInvGrpcCli(
+	cacheStaleTimeoutOffset, err := inv_util.UintToInt(*invCacheStaleTimeoutOffset)
+	if err != nil {
+		zlog.InfraSec().Fatal().Err(err).Msgf("Couldn't properly parse Cache Stale Timeout Offset")
+	}
+
+	err = maintmgr.StartInvGrpcCli(
 		&wg,
 		*enableTracing,
 		*invsvcaddr,
 		*caCertPath, *tlsKeyPath, *tlsCertPath,
 		*insecureGrpc,
 		*invCacheUUIDEnable, *invCacheStaleTimeout,
+		cacheStaleTimeoutOffset,
 		*enableMetrics,
 	)
 	if err != nil {
