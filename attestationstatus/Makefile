@@ -55,7 +55,7 @@ DIR_TO_CLEAN 		 := $(APIPKG_DIR)/attestmgr/v1/*.go
 
 generate: buf-gen ## Generate all the code
 
-lint: generate license yamllint go-lint hadolint buf-lint ## Run all linters and generate targets
+lint: generate license yamllint buf-lint go-lint hadolint ## Run all linters and generate targets
 
 test: go-test ## Run all tests
 
@@ -68,15 +68,6 @@ go-run: build ## Run go run
 	$(GOCMD) run $(GOEXTRAFLAGS) cmd/main.go
 
 buf-update: common-buf-update ## Update buf modules
-#	buf --version ;\
-
-#	buf format -d --exit-code ;\
-	
-#	buf lint --debug ;\
-
-#	ls -al ;\
-
-#	buf breaking --verbose --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH}'
 
 buf-gen: common-buf-gen ## Compile protoc files into code
 

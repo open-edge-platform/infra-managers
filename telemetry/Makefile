@@ -52,7 +52,7 @@ include ../common.mk
 
 generate: buf-gen
 
-lint: generate license yamllint go-lint hadolint buf-lint mdlint ## Run all linters
+lint: generate license yamllint buf-lint go-lint hadolint mdlint ## Run all linters
 
 test: go-test ## Run all tests
 

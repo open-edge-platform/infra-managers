@@ -57,7 +57,7 @@ include ../common.mk
 
 generate: buf-gen ## Generate all the code
 
-lint: generate license yamllint go-lint hadolint buf-lint mdlint ## Run all linters and generate targets
+lint: generate license yamllint buf-lint go-lint hadolint mdlint ## Run all linters and generate targets
 
 test: go-test ## Run all tests
 

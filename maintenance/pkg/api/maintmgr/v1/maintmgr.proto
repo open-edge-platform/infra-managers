@@ -18,7 +18,7 @@ message UpdateStatus {
     STATUS_TYPE_UPDATED = 3; // Status when the EN update is completed succesfully
     STATUS_TYPE_FAILED = 4; // Status when the EN update fails; a detailed log is also sent
     STATUS_TYPE_DOWNLOADING = 5; // Status when the EN is downloading update artifacts
-    // STATUS_TYPE_DOWNLOADED = 6; // Status when the EN completes downloading update artifacts
+    STATUS_TYPE_DOWNLOADED = 6; // Status when the EN completes downloading update artifacts
   }
   string status_detail = 2;
   string profile_name = 3;
