@@ -54,7 +54,7 @@ include ../common.mk
 
 generate: buf-gen ## Generate types, server and client
 
-lint: generate license go-lint hadolint buf-lint mdlint ## Run all linters
+lint: generate license buf-lint go-lint hadolint mdlint ## Run all linters
 
 test: go-test ## Run all tests
 
