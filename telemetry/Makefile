@@ -24,6 +24,7 @@ PROTOCGENVALIDATEGO  := true
 PROJECT_NAME         := telemetrymgr
 PROJECT_NICKNAME     := t
 BINARY_NAME          := $(PROJECT_NAME)
+SUBPROJECT_DIR       := telemetry
 
 # Code Versions
 VERSION              := $(shell cat VERSION)

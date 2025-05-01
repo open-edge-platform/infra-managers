@@ -30,6 +30,7 @@ PROTOCGENGRPCGATEWAY := true
 PROJECT_NAME         := hostmgr
 PROJECT_NICKNAME     := h
 BINARY_NAME          := $(PROJECT_NAME)
+SUBPROJECT_DIR       := host
 
 # Code versions, tags, and so on
 VERSION              := $(shell cat VERSION)

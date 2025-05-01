@@ -27,6 +27,7 @@ PROTOCGENVALIDATEGO := true
 PROJECT_NAME        := maintmgr
 PROJECT_NICKNAME    := m
 BINARY_NAME         := $(PROJECT_NAME)
+SUBPROJECT_DIR      := maintenance
 
 # Code versions, tags, and so on
 VERSION             := $(shell cat VERSION)

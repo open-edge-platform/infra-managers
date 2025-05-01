@@ -226,7 +226,7 @@ db-shell: ## Run the postgres shell connected to a local database. See: db-start
 
 common-buf-update: $(VENV_NAME) ## Update buf modules
 	set +u; . ./$</bin/activate; set -u ;\
-  	buf --version ;\
+	buf --version ;\
   	pushd ${APIPKG_DIR}; buf dep update; popd ;\
   	buf build
 
@@ -234,7 +234,7 @@ common-buf-lint: $(VENV_NAME) ## Lint and format protobuf files
 	buf --version
 	buf format -d --exit-code
 	buf lint
-	buf breaking --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH}'
+	buf breaking --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH},subdir=${SUBPROJECT_DIR}' --debug
 
 common-buf-gen: ## Compile protoc files into code
 	buf --version ;\

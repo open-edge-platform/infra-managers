@@ -28,6 +28,7 @@ PROTOCGENGRPCGATEWAY := true
 PROJECT_NAME         := attestationstatusmgr
 PROJECT_NICKNAME     := a
 BINARY_NAME          := ${PROJECT_NAME}
+SUBPROJECT_DIR       := attestationstatus
 
 # Code versions, tags, and so on
 VERSION              := $(shell cat VERSION)
@@ -67,6 +68,15 @@ go-run: build ## Run go run
 	$(GOCMD) run $(GOEXTRAFLAGS) cmd/main.go
 
 buf-update: common-buf-update ## Update buf modules
+#	buf --version ;\
+
+#	buf format -d --exit-code ;\
+	
+#	buf lint --debug ;\
+
+#	ls -al ;\
+
+#	buf breaking --verbose --against 'https://github.com/open-edge-platform/infra-managers.git#branch=${BASE_BRANCH}'
 
 buf-gen: common-buf-gen ## Compile protoc files into code
 
