@@ -70,7 +70,5 @@ buf-gen: common-buf-gen ## Compile protoc files into code
 
 buf-lint: ## Lint and format protobuf files
 	buf --version
-	# TODO: currently failing lint, need to fix
-	#buf format -d --exit-code
-	#buf lint
+	# TODO: currently failing lint, need to be fixed
 	# TODO: disabling breaking check, re-enable when breaking change is merged
