@@ -51,7 +51,7 @@ var (
 	invCacheStaleTimeout  = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
 	invCacheStaleTimeoutOffset = flag.Uint(
-		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutDescription)
+		client.InvCacheStaleTimeoutOffset, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutOffsetDescription)
 
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
