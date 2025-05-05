@@ -1698,3 +1698,189 @@ func TestMarshalHostCPUTopology(t *testing.T) {
 		})
 	}
 }
+
+//nolint:funlen // this is a table-driven test
+func TestProtoEqualSubset(t *testing.T) {
+	tests := []struct {
+		name     string
+		res1     *computev1.HostResource
+		res2     *computev1.HostResource
+		included []string
+		equal    bool
+	}{
+		{
+			"IdenticalFieldsIncluded",
+			&computev1.HostResource{
+				SerialNumber: "ABC123",
+				ProductName:  "TestProduct",
+			},
+			&computev1.HostResource{
+				SerialNumber: "ABC123",
+				ProductName:  "TestProduct",
+				MemoryBytes:  1024,
+			},
+			[]string{
+				computev1.HostResourceFieldSerialNumber,
+				computev1.HostResourceFieldProductName,
+			},
+			true,
+		},
+		{
+			"IdenticalSubresourceFieldIncluded",
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name: "InstanceName1",
+				},
+			},
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name:          "InstanceName1",
+					VmMemoryBytes: 100000,
+				},
+			},
+			[]string{computev1.HostResourceEdgeInstance + "." + computev1.InstanceResourceFieldName},
+			true,
+		},
+		{
+			"IdenticalSubresourceIncluded",
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name: "InstanceName1",
+				},
+			},
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name: "InstanceName1",
+				},
+			},
+			[]string{computev1.HostResourceEdgeInstance},
+			true,
+		},
+		{
+			"DifferentSubresourceIncluded",
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name: "InstanceName1",
+				},
+			},
+			&computev1.HostResource{
+				Instance: &computev1.InstanceResource{
+					Name: "InstanceName2",
+				},
+			},
+			[]string{computev1.HostResourceEdgeInstance},
+			false,
+		},
+		{
+			"IdenticalFieldsIncludedZero",
+			&computev1.HostResource{
+				SerialNumber: "ABC123",
+				ProductName:  "TestProduct",
+			},
+			&computev1.HostResource{
+				SerialNumber: "ABC123",
+				ProductName:  "TestProduct",
+				MemoryBytes:  1024, // Different field not included in comparison
+			},
+			[]string{
+				computev1.HostResourceFieldSerialNumber,
+				computev1.HostResourceFieldProductName,
+				computev1.HostResourceFieldBiosVersion, // Compare also on an unset field
+			},
+			true,
+		},
+		{
+			"DifferentIncludedField",
+			&computev1.HostResource{
+				SerialNumber: "ABC123",
+				ProductName:  "TestProduct",
+			},
+			&computev1.HostResource{
+				SerialNumber: "XYZ789",
+				ProductName:  "TestProduct",
+			},
+			[]string{
+				computev1.HostResourceFieldSerialNumber,
+				computev1.HostResourceFieldProductName,
+			},
+			false,
+		},
+		{
+			"NoOverlapInIncludedFields",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductB",
+			},
+			[]string{
+				computev1.HostResourceFieldSerialNumber, // both empty
+			},
+			true,
+		},
+		{
+			"DifferentWithEmptyIncludedField",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductB",
+			},
+			[]string{},
+			false,
+		},
+		{
+			"SameWithEmptyIncludedField",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			[]string{},
+			true,
+		},
+		{
+			"DifferentInvalidIncludedField",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductB",
+			},
+			[]string{"NON_EXISTENT_FIELD"},
+			false,
+		},
+		{
+			"SameInvalidIncludedField",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			[]string{"NON_EXISTENT_FIELD"},
+			true,
+		},
+		{
+			"DifferentResourcesKind",
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			&computev1.HostResource{
+				ProductName: "TestProductA",
+			},
+			[]string{"NON_EXISTENT_FIELD"},
+			true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := util.ProtoEqualSubset(tc.res1, tc.res2, tc.included...)
+			if result != tc.equal {
+				t.Errorf("Expected %v, got %v", tc.equal, result)
+			}
+		})
+	}
+}

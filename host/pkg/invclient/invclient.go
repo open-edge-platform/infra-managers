@@ -46,6 +46,68 @@ var (
 		ListAllDefaultTimeout,
 		"Timeout used when listing all resources for a given type from Inventory",
 	)
+
+	UpdateHoststorageFieldMask = []string{
+		computev1.HoststorageResourceFieldKind,
+		computev1.HoststorageResourceFieldDeviceName,
+		computev1.HoststorageResourceEdgeHost,
+		computev1.HoststorageResourceFieldWwid,
+		computev1.HoststorageResourceFieldSerial,
+		computev1.HoststorageResourceFieldVendor,
+		computev1.HoststorageResourceFieldModel,
+		computev1.HoststorageResourceFieldCapacityBytes,
+	}
+	UpdateHostnicFieldMask = []string{
+		computev1.HostnicResourceFieldKind,
+		computev1.HostnicResourceFieldDeviceName,
+		computev1.HostnicResourceEdgeHost,
+		computev1.HostnicResourceFieldPciIdentifier,
+		computev1.HostnicResourceFieldMacAddr,
+		computev1.HostnicResourceFieldSriovEnabled,
+		computev1.HostnicResourceFieldSriovVfsNum,
+		computev1.HostnicResourceFieldSriovVfsTotal,
+		computev1.HostnicResourceFieldPeerName,
+		computev1.HostnicResourceFieldPeerDescription,
+		computev1.HostnicResourceFieldPeerMac,
+		computev1.HostnicResourceFieldPeerMgmtIp,
+		computev1.HostnicResourceFieldPeerPort,
+		computev1.HostnicResourceFieldSupportedLinkMode,
+		computev1.HostnicResourceFieldAdvertisingLinkMode,
+		computev1.HostnicResourceFieldCurrentSpeedBps,
+		computev1.HostnicResourceFieldCurrentDuplex,
+		computev1.HostnicResourceFieldFeatures,
+		computev1.HostnicResourceFieldMtu,
+		computev1.HostnicResourceFieldLinkState,
+		computev1.HostnicResourceFieldBmcInterface,
+	}
+	UpdateIPAddressFieldMask = []string{
+		network_v1.IPAddressResourceFieldAddress,
+		network_v1.IPAddressResourceFieldConfigMethod,
+		network_v1.IPAddressResourceEdgeNic,
+		network_v1.IPAddressResourceFieldStatus,
+		network_v1.IPAddressResourceFieldStatusDetail,
+		network_v1.IPAddressResourceFieldCurrentState,
+	}
+	UpdateHostusbFieldMask = []string{
+		computev1.HostusbResourceFieldKind,
+		computev1.HostusbResourceFieldDeviceName,
+		computev1.HostusbResourceEdgeHost,
+		computev1.HostusbResourceFieldIdvendor,
+		computev1.HostusbResourceFieldIdproduct,
+		computev1.HostusbResourceFieldBus,
+		computev1.HostusbResourceFieldAddr,
+		computev1.HostusbResourceFieldClass,
+		computev1.HostusbResourceFieldSerial,
+	}
+	UpdateHostgpuFieldMask = []string{
+		computev1.HostgpuResourceEdgeHost,
+		computev1.HostgpuResourceFieldPciId,
+		computev1.HostgpuResourceFieldProduct,
+		computev1.HostgpuResourceFieldVendor,
+		computev1.HostgpuResourceFieldDescription,
+		computev1.HostgpuResourceFieldDeviceName,
+		computev1.HostgpuResourceFieldFeatures,
+	}
 )
 
 // List resources by the provided filter. Filter is done only on fields that are set (not default values of the
@@ -190,17 +252,7 @@ func UpdateHostusb(
 
 	zlog.Debug().Msgf("Update Hostusb: %s", details)
 
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostusb, []string{
-		computev1.HostusbResourceFieldKind,
-		computev1.HostusbResourceFieldDeviceName,
-		computev1.HostusbResourceEdgeHost,
-		computev1.HostusbResourceFieldIdvendor,
-		computev1.HostusbResourceFieldIdproduct,
-		computev1.HostusbResourceFieldBus,
-		computev1.HostusbResourceFieldAddr,
-		computev1.HostusbResourceFieldClass,
-		computev1.HostusbResourceFieldSerial,
-	})
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostusb, UpdateHostusbFieldMask)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostusb resource: %s", details)
 		return err
@@ -261,15 +313,7 @@ func UpdateHostgpu(
 	details := fmt.Sprintf("tenantID=%s, hostGPU=%v", tenantID, hostgpu)
 	zlog.Debug().Msgf("Update Hostgpu: %s", details)
 
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostgpu, []string{
-		computev1.HostgpuResourceEdgeHost,
-		computev1.HostgpuResourceFieldPciId,
-		computev1.HostgpuResourceFieldProduct,
-		computev1.HostgpuResourceFieldVendor,
-		computev1.HostgpuResourceFieldDescription,
-		computev1.HostgpuResourceFieldDeviceName,
-		computev1.HostgpuResourceFieldFeatures,
-	})
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostgpu, UpdateHostgpuFieldMask)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostgpu resource: %s", details)
 	}
@@ -343,16 +387,7 @@ func UpdateHoststorage(ctx context.Context, c inv_client.TenantAwareInventoryCli
 	details := fmt.Sprintf("tenantID=%s, hostStorage=%v", tenantID, hostStorage)
 	zlog.Debug().Msgf("Update Hoststorage: %s", details)
 
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostStorage, []string{
-		computev1.HoststorageResourceFieldKind,
-		computev1.HoststorageResourceFieldDeviceName,
-		computev1.HoststorageResourceEdgeHost,
-		computev1.HoststorageResourceFieldWwid,
-		computev1.HoststorageResourceFieldSerial,
-		computev1.HoststorageResourceFieldVendor,
-		computev1.HoststorageResourceFieldModel,
-		computev1.HoststorageResourceFieldCapacityBytes,
-	})
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostStorage, UpdateHoststorageFieldMask)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hoststorage resource: %s", details)
 		return err
@@ -415,29 +450,7 @@ func UpdateHostnic(
 	details := fmt.Sprintf("tenantID=%s, hostNIC=%v", tenantID, hostNic)
 	zlog.Debug().Msgf("Update Hostnic: %s", details)
 
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostNic, []string{
-		computev1.HostnicResourceFieldKind,
-		computev1.HostnicResourceFieldDeviceName,
-		computev1.HostnicResourceEdgeHost,
-		computev1.HostnicResourceFieldPciIdentifier,
-		computev1.HostnicResourceFieldMacAddr,
-		computev1.HostnicResourceFieldSriovEnabled,
-		computev1.HostnicResourceFieldSriovVfsNum,
-		computev1.HostnicResourceFieldSriovVfsTotal,
-		computev1.HostnicResourceFieldPeerName,
-		computev1.HostnicResourceFieldPeerDescription,
-		computev1.HostnicResourceFieldPeerMac,
-		computev1.HostnicResourceFieldPeerMgmtIp,
-		computev1.HostnicResourceFieldPeerPort,
-		computev1.HostnicResourceFieldSupportedLinkMode,
-		computev1.HostnicResourceFieldAdvertisingLinkMode,
-		computev1.HostnicResourceFieldCurrentSpeedBps,
-		computev1.HostnicResourceFieldCurrentDuplex,
-		computev1.HostnicResourceFieldFeatures,
-		computev1.HostnicResourceFieldMtu,
-		computev1.HostnicResourceFieldLinkState,
-		computev1.HostnicResourceFieldBmcInterface,
-	})
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostNic, UpdateHostnicFieldMask)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostnic resource: %s", details)
 		return err
@@ -518,14 +531,7 @@ func UpdateIPAddress(
 ) error {
 	details := fmt.Sprintf("tenantID=%s, IPAddress=%v", tenantID, hostIP)
 	zlog.Debug().Msgf("Update IPAddress: %s", details)
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostIP, []string{
-		network_v1.IPAddressResourceFieldAddress,
-		network_v1.IPAddressResourceFieldConfigMethod,
-		network_v1.IPAddressResourceEdgeNic,
-		network_v1.IPAddressResourceFieldStatus,
-		network_v1.IPAddressResourceFieldStatusDetail,
-		network_v1.IPAddressResourceFieldCurrentState,
-	})
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostIP, UpdateIPAddressFieldMask)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed update IPAddress resource %s", details)
 		return err
