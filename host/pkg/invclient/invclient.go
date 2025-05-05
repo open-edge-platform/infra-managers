@@ -50,7 +50,6 @@ var (
 	UpdateHoststorageFieldMask = []string{
 		computev1.HoststorageResourceFieldKind,
 		computev1.HoststorageResourceFieldDeviceName,
-		computev1.HoststorageResourceEdgeHost,
 		computev1.HoststorageResourceFieldWwid,
 		computev1.HoststorageResourceFieldSerial,
 		computev1.HoststorageResourceFieldVendor,
@@ -60,7 +59,6 @@ var (
 	UpdateHostnicFieldMask = []string{
 		computev1.HostnicResourceFieldKind,
 		computev1.HostnicResourceFieldDeviceName,
-		computev1.HostnicResourceEdgeHost,
 		computev1.HostnicResourceFieldPciIdentifier,
 		computev1.HostnicResourceFieldMacAddr,
 		computev1.HostnicResourceFieldSriovEnabled,
@@ -83,7 +81,6 @@ var (
 	UpdateIPAddressFieldMask = []string{
 		network_v1.IPAddressResourceFieldAddress,
 		network_v1.IPAddressResourceFieldConfigMethod,
-		network_v1.IPAddressResourceEdgeNic,
 		network_v1.IPAddressResourceFieldStatus,
 		network_v1.IPAddressResourceFieldStatusDetail,
 		network_v1.IPAddressResourceFieldCurrentState,
@@ -91,7 +88,6 @@ var (
 	UpdateHostusbFieldMask = []string{
 		computev1.HostusbResourceFieldKind,
 		computev1.HostusbResourceFieldDeviceName,
-		computev1.HostusbResourceEdgeHost,
 		computev1.HostusbResourceFieldIdvendor,
 		computev1.HostusbResourceFieldIdproduct,
 		computev1.HostusbResourceFieldBus,
@@ -100,7 +96,6 @@ var (
 		computev1.HostusbResourceFieldSerial,
 	}
 	UpdateHostgpuFieldMask = []string{
-		computev1.HostgpuResourceEdgeHost,
 		computev1.HostgpuResourceFieldPciId,
 		computev1.HostgpuResourceFieldProduct,
 		computev1.HostgpuResourceFieldVendor,
