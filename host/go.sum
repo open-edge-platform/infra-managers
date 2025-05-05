@@ -693,8 +693,8 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250430124027-3ced92213ee2 h1:pitZ8d9nWbce0cYrcH5CXfCe3qAiTuClI6YBbBAIbkA=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250430124027-3ced92213ee2/go.mod h1:fcm+LZ95UNuSGlcx7GYX76Xt3f6Y4q3PJpcdncHn+zk=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250505134717-7eda3a3ab743 h1:JlL2SMvUvSEozdjjdMhXuJj23i2qjDi0mpd+neKZRXY=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.23.3-0.20250505134717-7eda3a3ab743/go.mod h1:fcm+LZ95UNuSGlcx7GYX76Xt3f6Y4q3PJpcdncHn+zk=
 github.com/open-edge-platform/infra-managers/maintenance v1.21.1 h1:WcPFKSWdVgvZYaOCfhRXvPdP5GZLsCFpJ48nXF5so7c=
 github.com/open-edge-platform/infra-managers/maintenance v1.21.1/go.mod h1:4IOnwaOp/ZadsSDVZB8KSBM8yNDiPufc/nrYt0Qq8Y8=
 github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.34.2 h1:7iAvjo29hD7hDq4PIpgkxiiQLsEqkK8tZNvxSafcFxg=
