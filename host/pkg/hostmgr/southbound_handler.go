@@ -66,6 +66,7 @@ func hostStorageToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 ) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host storage: tenantID=%s, hostStorage=%v", update, tenantID, hostStorage)
 	if update {
+		hostStorage.ResourceId = invStorage.GetResourceId()
 		// Nop or update the storage
 		if !hmgr_util.ProtoEqualSubset(hostStorage, invStorage, inv_mgr_cli.UpdateHoststorageFieldMask...) {
 			if err := inv_mgr_cli.UpdateHoststorage(ctx, invClientInstance, tenantID, hostStorage); err != nil {
@@ -150,6 +151,7 @@ func hostNicToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host NIC with tenantID=%s, ID=%s with system network: %v",
 		update, tenantID, hostNic.GetResourceId(), network)
 	if update {
+		hostNic.ResourceId = invNic.GetResourceId()
 		// Nop or update the nic
 		if !hmgr_util.ProtoEqualSubset(hostNic, invNic, inv_mgr_cli.UpdateHostnicFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostnic(ctx, invClientInstance, tenantID, hostNic); err != nil {
@@ -239,6 +241,7 @@ func hostIPToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host IP with tenantID=%s ID=%s",
 		update, tenantID, hostIP.GetResourceId())
 	if update {
+		hostIP.ResourceId = invIP.GetResourceId()
 		if !hmgr_util.ProtoEqualSubset(hostIP, invIP, inv_mgr_cli.UpdateIPAddressFieldMask...) {
 			if err := inv_mgr_cli.UpdateIPAddress(ctx, invClientInstance, tenantID, hostIP); err != nil {
 				return err
@@ -322,6 +325,7 @@ func findUsbInList(usbToFind *computev1.HostusbResource, listOfUsbs []*computev1
 func hostUsbToAddOrUpdate(ctx context.Context, tenantID string, update bool, hostUsb, invUsb *computev1.HostusbResource) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host usb: tenantID=%s, hostUSB=%v", update, tenantID, hostUsb)
 	if update {
+		hostUsb.ResourceId = invUsb.GetResourceId()
 		// Nop or update the usb
 		if !hmgr_util.ProtoEqualSubset(hostUsb, invUsb, inv_mgr_cli.UpdateHostusbFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostusb(ctx, invClientInstance, tenantID, hostUsb); err != nil {
@@ -405,6 +409,7 @@ func findGpuInList(gpuToFind *computev1.HostgpuResource, listOfGpus []*computev1
 func hostGpuToAddOrUpdate(ctx context.Context, tenantID string, update bool, hostGpu, invGpu *computev1.HostgpuResource) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host GPU: tenantID=%s, hostGPU=%v", update, tenantID, hostGpu)
 	if update {
+		hostGpu.ResourceId = invGpu.GetResourceId()
 		// Nop or update the GPU
 		if !hmgr_util.ProtoEqualSubset(hostGpu, invGpu, inv_mgr_cli.UpdateHostgpuFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostgpu(ctx, invClientInstance, tenantID, hostGpu); err != nil {
