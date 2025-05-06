@@ -226,7 +226,7 @@ func (s *server) updateHostStatusIfNeeded(
 	hostStatusName := pb.HostStatus_HostStatus_name[int32(status.GetHostStatus())]
 	zlog.Debug().Msgf("Update host resc (tID=%s, resID=%v) status: %v", tenantID, host.GetResourceId(),
 		hostStatusName)
-
+	zlog.Info().Msgf("Update host resc (tID=%s, resID=%v) status: %v", tenantID, host.GetResourceId(), hostStatusName)
 	if err := inv_mgr_cli.SetHostStatus(ctx, invClientInstance, tenantID, host.GetResourceId(),
 		hmgr_util.GetHostStatus(status.GetHostStatus()),
 	); err != nil {

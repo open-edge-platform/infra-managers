@@ -489,6 +489,7 @@ func updateInstanceStateStatusByHostGUID(ctx context.Context, tenantID string, i
 	instRes = hmgr_util.UpdateInstanceResourceStateStatusDetails(instRes, in.GetInstanceState(), in.GetInstanceStatus(),
 		in.GetProviderStatusDetail(), instRes.GetResourceId())
 
+	zlog.Info().Msgf("Update instance resc (tID=%s, resID=%v) state: %v, details: %v", tenantID, instRes.GetResourceId(), instRes.GetInstanceStatus(), instRes.GetInstanceStatusDetail())
 	// updating an Instance
 	err := inv_mgr_cli.UpdateInstanceStateStatusByHostGUID(ctx, invClientInstance, tenantID, instRes.GetResourceId(), instRes)
 	if err != nil {
