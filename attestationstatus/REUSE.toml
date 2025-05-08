@@ -7,6 +7,7 @@ version = 1
 path = [
   "VERSION",
   "go.sum",
+  "README.md",
 
   "pkg/api/buf.lock",
   "pkg/api/attestmgr/v1/attestmgr*.go",
