@@ -5,8 +5,4 @@
 yamllint~=1.29.0
 
 # license check
-python-debian==0.1.44
-reuse~=1.0.0
-
-# OpenAPI validator
-openapi-spec-validator~=0.4.0
+reuse~=5.0.2
