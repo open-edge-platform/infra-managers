@@ -24,6 +24,7 @@ PROTOCGENVALIDATEGO  := true
 PROJECT_NAME         := telemetrymgr
 PROJECT_NICKNAME     := t
 BINARY_NAME          := $(PROJECT_NAME)
+SUBPROJECT_DIR       := telemetry
 
 # Code Versions
 VERSION              := $(shell cat VERSION)
@@ -51,7 +52,7 @@ include ../common.mk
 
 generate: buf-gen
 
-lint: generate license yamllint go-lint hadolint buf-lint mdlint ## Run all linters
+lint: generate license yamllint buf-lint go-lint hadolint mdlint ## Run all linters
 
 test: go-test ## Run all tests
 
@@ -69,7 +70,5 @@ buf-gen: common-buf-gen ## Compile protoc files into code
 
 buf-lint: ## Lint and format protobuf files
 	buf --version
-	# TODO: currently failing lint, need to fix
-	#buf format -d --exit-code
-	#buf lint
+	# TODO: currently failing lint, need to be fixed
 	# TODO: disabling breaking check, re-enable when breaking change is merged

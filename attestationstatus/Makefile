@@ -28,6 +28,7 @@ PROTOCGENGRPCGATEWAY := true
 PROJECT_NAME         := attestationstatusmgr
 PROJECT_NICKNAME     := a
 BINARY_NAME          := ${PROJECT_NAME}
+SUBPROJECT_DIR       := attestationstatus
 
 # Code versions, tags, and so on
 VERSION              := $(shell cat VERSION)
@@ -54,7 +55,7 @@ DIR_TO_CLEAN 		 := $(APIPKG_DIR)/attestmgr/v1/*.go
 
 generate: buf-gen ## Generate all the code
 
-lint: generate license yamllint go-lint hadolint buf-lint ## Run all linters and generate targets
+lint: generate license yamllint buf-lint go-lint hadolint ## Run all linters and generate targets
 
 test: go-test ## Run all tests
 
