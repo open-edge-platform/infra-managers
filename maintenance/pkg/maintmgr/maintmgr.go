@@ -92,7 +92,7 @@ func StartInvGrpcCli(
 	enableTracing bool,
 	invsvcaddr, caCertPath, tlsKeyPath, tlsCertPath string,
 	insecureGrpc, enableUUIDCache bool,
-	uuidCacheTTL time.Duration, enableMetrics bool,
+	uuidCacheTTL time.Duration, uuidCacheTTLOffset int, enableMetrics bool,
 ) error {
 	zlog.InfraSec().Info().Msgf("Starting Inventory client. invAddress=%s", invsvcaddr)
 
@@ -126,6 +126,7 @@ func StartInvGrpcCli(
 		ClientCache: inv_client.InvClientCacheConfig{
 			EnableUUIDCache: enableUUIDCache,
 			StaleTime:       uuidCacheTTL,
+			StateTimeOffset: uuidCacheTTLOffset,
 		},
 	}
 	gcli, err := inv_client.NewTenantAwareInventoryClient(ctx, cfg)

@@ -54,6 +54,9 @@ var (
 	invCacheUUIDEnable   = flag.Bool(client.InvCacheUUIDEnable, false, client.InvCacheUUIDEnableDescription)
 	invCacheStaleTimeout = flag.Duration(
 		client.InvCacheStaleTimeout, client.InvCacheStaleTimeoutDefault, client.InvCacheStaleTimeoutDescription)
+	invCacheStaleTimeoutOffset = flag.Uint(
+		client.InvCacheStaleTimeoutOffset, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutOffsetDescription)
+
 	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
 )
@@ -111,6 +114,7 @@ func main() {
 		EnableHostDiscovery: *allowHostDiscovery,
 		EnableUUIDCache:     *invCacheUUIDEnable,
 		UUIDCacheTTL:        *invCacheStaleTimeout,
+		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset),
 	}
 	if err := conf.Validate(); err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Failed to start due to invalid configuration: %v", conf)
