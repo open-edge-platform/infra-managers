@@ -10,6 +10,6 @@ breaking:
     - FILE
 lint:
   use:
-    - DEFAULT
+    - STANDARD
     - ENUM_FIRST_VALUE_ZERO
   allow_comment_ignores: true

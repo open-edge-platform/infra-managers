@@ -10,5 +10,5 @@ breaking:
     - FILE  # use most stringent breaking policy
 lint:
   use:
-    - DEFAULT
+    - STANDARD
     - ENUM_FIRST_VALUE_ZERO
