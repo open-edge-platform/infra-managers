@@ -468,3 +468,37 @@ func NewTenantIDResourceIDTupleFromHost(host *computev1.HostResource) TenantIDRe
 		ResourceID: host.GetResourceId(),
 	}
 }
+
+// ProtoEqualSubset compares two proto messages but only compares the specified fields.
+// If no fields are specified, it compares the entire messages.
+// If the includedFields are not valid, it falls back to a full comparison.
+// If the includedFields are not valid for the messages, it falls back to a full comparison.
+// TODO: move to inventory shared library.
+func ProtoEqualSubset[T proto.Message](a, b T, includedFields ...string) bool {
+	// If no fields specified, compare everything
+	if len(includedFields) == 0 {
+		return proto.Equal(a, b)
+	}
+
+	// Clone the messages to avoid modifying the originals
+	aClone := proto.Clone(a)
+	bClone := proto.Clone(b)
+
+	// Create a fieldmask from the included fields
+	mask := &fieldmaskpb.FieldMask{
+		Paths: includedFields,
+	}
+
+	// Filter both messages to only include the specified fields
+	if err := util.ValidateMaskAndFilterMessage(aClone, mask, true); err != nil {
+		// Fall back to equality check if filtering fails
+		return proto.Equal(a, b)
+	}
+	if err := util.ValidateMaskAndFilterMessage(bClone, mask, true); err != nil {
+		// Fall back to equality check if filtering fails
+		return proto.Equal(a, b)
+	}
+
+	// Compare the filtered messages
+	return proto.Equal(aClone, bClone)
+}

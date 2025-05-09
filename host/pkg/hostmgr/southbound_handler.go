@@ -7,8 +7,6 @@ package hostmgr
 import (
 	"context"
 
-	"google.golang.org/protobuf/proto"
-
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
@@ -68,22 +66,16 @@ func hostStorageToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 ) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host storage: tenantID=%s, hostStorage=%v", update, tenantID, hostStorage)
 	if update {
-		// NOTE resource id is copied from Inventory resource; at the same
-		// time Storage from Inventory, coming from the eager loading done in
-		// GetHostX call, does not have the host set - we nil temporary to
-		// make a fair comparison. Otherwise resources will be different.
-		hostRes := hostStorage.GetHost()
-		hostStorage.Host = nil
 		hostStorage.ResourceId = invStorage.GetResourceId()
 		// Nop or update the storage
-		if !proto.Equal(hostStorage, invStorage) {
-			hostStorage.Host = hostRes
+		if !hmgr_util.ProtoEqualSubset(hostStorage, invStorage, inv_mgr_cli.UpdateHoststorageFieldMask...) {
 			if err := inv_mgr_cli.UpdateHoststorage(ctx, invClientInstance, tenantID, hostStorage); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostStorage update: tenantID=%s, hostStorage=%v", tenantID, hostStorage)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostStorage update: tenantID=%s, hostStorage=%v", tenantID, hostStorage)
 	} else {
 		// Add the storage
 		id, err := inv_mgr_cli.CreateHoststorage(ctx, invClientInstance, tenantID, hostStorage)
@@ -159,22 +151,16 @@ func hostNicToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host NIC with tenantID=%s, ID=%s with system network: %v",
 		update, tenantID, hostNic.GetResourceId(), network)
 	if update {
-		// NOTE resource id is copied from Inventory resource; at the same
-		// time NIC from Inventory, coming from the eager loading done in
-		// GetHostX call, does not have the host set - we nil temporary to
-		// make a fair comparison. Otherwise resources will be different.
-		hostRes := hostNic.GetHost()
-		hostNic.Host = nil
 		hostNic.ResourceId = invNic.GetResourceId()
 		// Nop or update the nic
-		if !proto.Equal(hostNic, invNic) {
-			hostNic.Host = hostRes
+		if !hmgr_util.ProtoEqualSubset(hostNic, invNic, inv_mgr_cli.UpdateHostnicFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostnic(ctx, invClientInstance, tenantID, hostNic); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostNic update: tenantID=%s, hostNIC=%v", tenantID, hostNic)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostNic update: tenantID=%s, hostNIC=%v", tenantID, hostNic)
 	} else {
 		// Add the nic
 		id, err := inv_mgr_cli.CreateHostnic(ctx, invClientInstance, tenantID, hostNic)
@@ -256,14 +242,14 @@ func hostIPToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 		update, tenantID, hostIP.GetResourceId())
 	if update {
 		hostIP.ResourceId = invIP.GetResourceId()
-		// Nop or update the ip
-		if !proto.Equal(hostIP, invIP) {
+		if !hmgr_util.ProtoEqualSubset(hostIP, invIP, inv_mgr_cli.UpdateIPAddressFieldMask...) {
 			if err := inv_mgr_cli.UpdateIPAddress(ctx, invClientInstance, tenantID, hostIP); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostIP update: tenantID=%s, IPAddress=%v", tenantID, hostIP)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostIP update: tenantID=%s, IPAddress=%v", tenantID, hostIP)
 	} else {
 		// Add the nic
 		_, err := inv_mgr_cli.CreateIPAddress(ctx, invClientInstance, tenantID, hostIP)
@@ -339,22 +325,16 @@ func findUsbInList(usbToFind *computev1.HostusbResource, listOfUsbs []*computev1
 func hostUsbToAddOrUpdate(ctx context.Context, tenantID string, update bool, hostUsb, invUsb *computev1.HostusbResource) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host usb: tenantID=%s, hostUSB=%v", update, tenantID, hostUsb)
 	if update {
-		// NOTE resource id is copied from Inventory resource; at the same
-		// time USB from Inventory, coming from the eager loading done in
-		// GetHostX call, does not have the host set - we nil temporary to
-		// make a fair comparison. Otherwise resources will be different.
-		hostRes := hostUsb.GetHost()
-		hostUsb.Host = nil
 		hostUsb.ResourceId = invUsb.GetResourceId()
 		// Nop or update the usb
-		if !proto.Equal(hostUsb, invUsb) {
-			hostUsb.Host = hostRes
+		if !hmgr_util.ProtoEqualSubset(hostUsb, invUsb, inv_mgr_cli.UpdateHostusbFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostusb(ctx, invClientInstance, tenantID, hostUsb); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostUsb update: tenantID=%s, hostUSB=%v", tenantID, hostUsb)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostUsb update: tenantID=%s, hostUSB=%v", tenantID, hostUsb)
 	} else {
 		// Add the usb
 		id, err := inv_mgr_cli.CreateHostusb(ctx, invClientInstance, tenantID, hostUsb)
@@ -429,22 +409,16 @@ func findGpuInList(gpuToFind *computev1.HostgpuResource, listOfGpus []*computev1
 func hostGpuToAddOrUpdate(ctx context.Context, tenantID string, update bool, hostGpu, invGpu *computev1.HostgpuResource) error {
 	zlog.Debug().Msgf("AddOrUpdate (update=%v) host GPU: tenantID=%s, hostGPU=%v", update, tenantID, hostGpu)
 	if update {
-		// NOTE resource id is copied from Inventory resource; at the same
-		// time GPU from Inventory, coming from the eager loading done in
-		// GetHostX call, does not have the host set - we nil temporary to
-		// make a fair comparison. Otherwise resources will be different.
-		hostRes := hostGpu.GetHost()
-		hostGpu.Host = nil
 		hostGpu.ResourceId = invGpu.GetResourceId()
 		// Nop or update the GPU
-		if !proto.Equal(hostGpu, invGpu) {
-			hostGpu.Host = hostRes
+		if !hmgr_util.ProtoEqualSubset(hostGpu, invGpu, inv_mgr_cli.UpdateHostgpuFieldMask...) {
 			if err := inv_mgr_cli.UpdateHostgpu(ctx, invClientInstance, tenantID, hostGpu); err != nil {
 				return err
 			}
+		} else {
+			// this is here just to verify that ut are covering this branch
+			zlog.Debug().Msgf("Skip hostGpu update: tenantID=%s, hostGPU=%v", tenantID, hostGpu)
 		}
-		// this is here just to verify that ut are covering this branch
-		zlog.Debug().Msgf("Skip hostGpu update: tenantID=%s, hostGPU=%v", tenantID, hostGpu)
 	} else {
 		id, err := inv_mgr_cli.CreateHostgpu(ctx, invClientInstance, tenantID, hostGpu)
 		if err != nil {
