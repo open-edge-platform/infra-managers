@@ -17,8 +17,12 @@ concurrency:
 env:
   MARKDOWNLINT_CLI_VER: 0.44.0
 
+permissions: {}
+
 jobs:
   pre-checks:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     outputs:
       filtered_projects: ${{ steps.filter-changes.outputs.filtered_projects }}
@@ -42,6 +46,8 @@ jobs:
           echo "filtered_projects=$filtered_projects" >> $GITHUB_OUTPUT
           echo "other_changed_projects=$other_changed_projects" >> $GITHUB_OUTPUT
   pre-merge-root:
+    permissions:
+      contents: read
     needs: pre-checks
     if: ${{ contains(needs.pre-checks.outputs.other_changed_projects, '.github') || contains(needs.pre-checks.outputs.other_changed_projects, '.reuse') || contains(needs.pre-checks.outputs.other_changed_projects, 'LICENSES') || contains(needs.pre-checks.outputs.other_changed_projects, '""')}}
     runs-on: ubuntu-latest
@@ -68,6 +74,8 @@ jobs:
       - name: Run license check
         run: make license
   pre-merge-pipeline:
+    permissions:
+      contents: read
     needs: pre-checks
     if: ${{ needs.pre-checks.outputs.filtered_projects != '[]' }}
     strategy:
@@ -90,6 +98,8 @@ jobs:
       trivy_image_skip:  "postgres:16.4"
     secrets: inherit
   final-check:
+    permissions:
+      contents: read
       runs-on: ubuntu-latest
       if: ${{ always() }}
       needs: [pre-merge-root, pre-merge-pipeline]
@@ -116,6 +126,3 @@ jobs:
               echo "All pre-merge checks failed or were skipped. PR can't get merged"
               exit 1
             fi
-
-permissions:
-  contents: read
