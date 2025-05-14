@@ -29,6 +29,9 @@ import (
 
 var zlog = logging.GetLogger("MaintenanceManager")
 
+// eventsWatcherBufSize is the buffer size for the events channel.
+var eventsWatcherBufSize = 10
+
 // TODO(max): remove global instances.
 var invMgrCli invclient.InvGrpcClient
 
@@ -104,7 +107,7 @@ func StartInvGrpcCli(
 		inv_v1.ResourceKind_RESOURCE_KIND_REPEATEDSCHEDULE,
 	}
 
-	events := make(chan *inv_client.WatchEvents)
+	events := make(chan *inv_client.WatchEvents, eventsWatcherBufSize)
 
 	cfg := inv_client.InventoryClientConfig{
 		Name:                      "maintmgr",

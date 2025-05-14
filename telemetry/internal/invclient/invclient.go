@@ -31,6 +31,8 @@ var (
 	zlog       = logging.GetLogger(clientName)
 
 	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 type TelemetryInventoryClient struct {
@@ -107,7 +109,7 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 		opt(&options)
 	}
 
-	eventsWatcher := make(chan *client.WatchEvents)
+	eventsWatcher := make(chan *client.WatchEvents, eventsWatcherBufSize)
 	cfg := client.InventoryClientConfig{
 		Name:                      clientName,
 		Address:                   options.InventoryAddress,

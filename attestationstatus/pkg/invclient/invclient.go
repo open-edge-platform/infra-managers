@@ -29,6 +29,8 @@ const (
 	//  and 600ms per request on average.
 	// TODO: fine tune this longer timeout based on target scale and inventory client batch size.
 	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 var (
@@ -44,7 +46,7 @@ func StartInventoryClient(wg *sync.WaitGroup, conf config.AttestationStatusMgrCo
 
 	zlog.InfraSec().Info().Msg("Starting Inventory gRPC Client")
 
-	events := make(chan *inv_client.WatchEvents)
+	events := make(chan *inv_client.WatchEvents, eventsWatcherBufSize)
 	cfg := inv_client.InventoryClientConfig{
 		Name:                      "attestmgr",
 		Address:                   conf.InventoryAddr,

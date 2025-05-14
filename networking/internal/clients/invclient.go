@@ -30,6 +30,8 @@ const (
 
 	// TODO: fine tune this longer timeout based on target scale and inventory client batch size.
 	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 var (
@@ -94,7 +96,7 @@ func NewNetInventoryClientWithOptions(opts ...Option) (*NetInventoryClient, erro
 	for _, opt := range opts {
 		opt(&options)
 	}
-	eventsWatcher := make(chan *client.WatchEvents)
+	eventsWatcher := make(chan *client.WatchEvents, eventsWatcherBufSize)
 	wg := sync.WaitGroup{}
 	clientCfg := client.InventoryClientConfig{
 		Name:                      clientName,
