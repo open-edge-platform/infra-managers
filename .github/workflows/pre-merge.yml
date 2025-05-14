@@ -100,29 +100,29 @@ jobs:
   final-check:
     permissions:
       contents: read
-      runs-on: ubuntu-latest
-      if: ${{ always() }}
-      needs: [pre-merge-root, pre-merge-pipeline]
-      steps:
-        - name: Final Status Check
-          run: |
-            pre_merge_root_pipeline="${{ needs.pre-merge-root.result }}"
-            pre_merge_pipeline="${{ needs.pre-merge-pipeline.result }}"
-            
-            results=("pre_merge_root_pipeline" "pre_merge_pipeline")
-            status="OK"
-            
-            for result in "${results[@]}"; do
-              pipeline_result=$(eval echo \$$result)
-              echo "${result} result: $pipeline_result"
-              if [[ "$pipeline_result" != "success" && "$pipeline_result" != "skipped" ]]; then
-                status="KO"
-              fi
-            done
-            
-            if [[ "$status" == "OK" ]]; then
-              echo "Pre-merge check passed successfully."
-            else
-              echo "All pre-merge checks failed or were skipped. PR can't get merged"
-              exit 1
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [pre-merge-root, pre-merge-pipeline]
+    steps:
+      - name: Final Status Check
+        run: |
+          pre_merge_root_pipeline="${{ needs.pre-merge-root.result }}"
+          pre_merge_pipeline="${{ needs.pre-merge-pipeline.result }}"
+          
+          results=("pre_merge_root_pipeline" "pre_merge_pipeline")
+          status="OK"
+          
+          for result in "${results[@]}"; do
+            pipeline_result=$(eval echo \$$result)
+            echo "${result} result: $pipeline_result"
+            if [[ "$pipeline_result" != "success" && "$pipeline_result" != "skipped" ]]; then
+              status="KO"
             fi
+          done
+          
+          if [[ "$status" == "OK" ]]; then
+            echo "Pre-merge check passed successfully."
+          else
+            echo "All pre-merge checks failed or were skipped. PR can't get merged"
+            exit 1
+          fi
