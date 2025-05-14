@@ -126,6 +126,7 @@ func StartInvGrpcCli(
 		ClientCache: inv_client.InvClientCacheConfig{
 			EnableUUIDCache: conf.EnableUUIDCache,
 			StaleTime:       conf.UUIDCacheTTL,
+			StateTimeOffset: conf.UUIDCacheTTLOffset,
 		},
 	}
 

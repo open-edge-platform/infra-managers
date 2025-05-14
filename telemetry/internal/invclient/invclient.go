@@ -40,12 +40,13 @@ type TelemetryInventoryClient struct {
 }
 
 type Options struct {
-	InventoryAddress string
-	EnableTracing    bool
-	EnableUUIDCache  bool
-	UUIDCacheTTL     time.Duration
-	DialOptions      []grpc.DialOption
-	EnableMetrics    bool
+	InventoryAddress   string
+	EnableTracing      bool
+	EnableUUIDCache    bool
+	UUIDCacheTTL       time.Duration
+	UUIDCacheTTLOffset uint
+	DialOptions        []grpc.DialOption
+	EnableMetrics      bool
 }
 
 type Option func(*Options)
@@ -75,6 +76,13 @@ func WithEnableUUIDCache(enableUUIDCache bool) Option {
 func WithUUIDCacheTTL(uuidCacheTTL time.Duration) Option {
 	return func(options *Options) {
 		options.UUIDCacheTTL = uuidCacheTTL
+	}
+}
+
+// WithUUIDCacheTTLOffset sets the UUID cache TTL offset percentage.
+func WithUUIDCacheTTLOffset(uuidCacheTTLOffset uint) Option {
+	return func(options *Options) {
+		options.UUIDCacheTTLOffset = uuidCacheTTLOffset
 	}
 }
 
@@ -123,6 +131,7 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 		ClientCache: client.InvClientCacheConfig{
 			EnableUUIDCache: options.EnableUUIDCache,
 			StaleTime:       options.UUIDCacheTTL,
+			StateTimeOffset: int(options.UUIDCacheTTLOffset),
 		},
 		DialOptions: options.DialOptions,
 	}

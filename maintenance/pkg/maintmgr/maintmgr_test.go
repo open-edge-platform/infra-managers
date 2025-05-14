@@ -18,7 +18,7 @@ func TestMaintManager_InvClient(t *testing.T) {
 	wg := sync.WaitGroup{}
 
 	// Error with invalid Inventory Address
-	err := maintmgr.StartInvGrpcCli(&wg, true, "", "", "", "", true, false, 0, false)
+	err := maintmgr.StartInvGrpcCli(&wg, true, "", "", "", "", true, false, 0, 0, false)
 	require.Error(t, err)
 
 	invGrpcClient := invclient.NewInvGrpcClient(nil, nil)
