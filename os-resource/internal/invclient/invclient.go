@@ -35,6 +35,8 @@ var (
 const (
 	DefaultInventoryTimeout = 5 * time.Second
 	ListAllDefaultTimeout   = time.Minute // Longer timeout for reconciling all resources
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 type InventoryClient struct {
@@ -57,7 +59,7 @@ func NewInventoryClient(
 		inv_v1.ResourceKind_RESOURCE_KIND_TENANT,
 	}
 
-	events := make(chan *inv_client.WatchEvents)
+	events := make(chan *inv_client.WatchEvents, eventsWatcherBufSize)
 	cfg := inv_client.InventoryClientConfig{
 		Name:                      "osrm_clientsrv",
 		Address:                   invsvcaddr,
