@@ -10,7 +10,7 @@ require (
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.24.1-0.20250513072245-43f8a24ec94f
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
-	google.golang.org/grpc v1.72.0
+	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.6
 )
 
