@@ -31,6 +31,8 @@ var (
 	zlog       = logging.GetLogger(clientName)
 
 	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 type TelemetryInventoryClient struct {
@@ -40,12 +42,13 @@ type TelemetryInventoryClient struct {
 }
 
 type Options struct {
-	InventoryAddress string
-	EnableTracing    bool
-	EnableUUIDCache  bool
-	UUIDCacheTTL     time.Duration
-	DialOptions      []grpc.DialOption
-	EnableMetrics    bool
+	InventoryAddress   string
+	EnableTracing      bool
+	EnableUUIDCache    bool
+	UUIDCacheTTL       time.Duration
+	UUIDCacheTTLOffset uint
+	DialOptions        []grpc.DialOption
+	EnableMetrics      bool
 }
 
 type Option func(*Options)
@@ -78,6 +81,13 @@ func WithUUIDCacheTTL(uuidCacheTTL time.Duration) Option {
 	}
 }
 
+// WithUUIDCacheTTLOffset sets the UUID cache TTL offset percentage.
+func WithUUIDCacheTTLOffset(uuidCacheTTLOffset uint) Option {
+	return func(options *Options) {
+		options.UUIDCacheTTLOffset = uuidCacheTTLOffset
+	}
+}
+
 // WithEnableMetrics enables client-side gRPC metrics.
 func WithEnableMetrics(enableMetrics bool) Option {
 	return func(options *Options) {
@@ -99,7 +109,7 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 		opt(&options)
 	}
 
-	eventsWatcher := make(chan *client.WatchEvents)
+	eventsWatcher := make(chan *client.WatchEvents, eventsWatcherBufSize)
 	cfg := client.InventoryClientConfig{
 		Name:                      clientName,
 		Address:                   options.InventoryAddress,
@@ -123,6 +133,7 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 		ClientCache: client.InvClientCacheConfig{
 			EnableUUIDCache: options.EnableUUIDCache,
 			StaleTime:       options.UUIDCacheTTL,
+			StateTimeOffset: int(options.UUIDCacheTTLOffset),
 		},
 		DialOptions: options.DialOptions,
 	}

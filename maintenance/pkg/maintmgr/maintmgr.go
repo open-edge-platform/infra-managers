@@ -29,6 +29,9 @@ import (
 
 var zlog = logging.GetLogger("MaintenanceManager")
 
+// eventsWatcherBufSize is the buffer size for the events channel.
+var eventsWatcherBufSize = 10
+
 // TODO(max): remove global instances.
 var invMgrCli invclient.InvGrpcClient
 
@@ -92,7 +95,7 @@ func StartInvGrpcCli(
 	enableTracing bool,
 	invsvcaddr, caCertPath, tlsKeyPath, tlsCertPath string,
 	insecureGrpc, enableUUIDCache bool,
-	uuidCacheTTL time.Duration, enableMetrics bool,
+	uuidCacheTTL time.Duration, uuidCacheTTLOffset int, enableMetrics bool,
 ) error {
 	zlog.InfraSec().Info().Msgf("Starting Inventory client. invAddress=%s", invsvcaddr)
 
@@ -104,7 +107,7 @@ func StartInvGrpcCli(
 		inv_v1.ResourceKind_RESOURCE_KIND_REPEATEDSCHEDULE,
 	}
 
-	events := make(chan *inv_client.WatchEvents)
+	events := make(chan *inv_client.WatchEvents, eventsWatcherBufSize)
 
 	cfg := inv_client.InventoryClientConfig{
 		Name:                      "maintmgr",
@@ -126,6 +129,7 @@ func StartInvGrpcCli(
 		ClientCache: inv_client.InvClientCacheConfig{
 			EnableUUIDCache: enableUUIDCache,
 			StaleTime:       uuidCacheTTL,
+			StateTimeOffset: uuidCacheTTLOffset,
 		},
 	}
 	gcli, err := inv_client.NewTenantAwareInventoryClient(ctx, cfg)

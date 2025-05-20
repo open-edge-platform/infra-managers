@@ -44,6 +44,8 @@ const (
 	backoffRetries  = uint64(5)
 	// SetHostConnectionLost does 2 operation with Inventory, plus we leave some slack time.
 	nOperationInventoryHostConnLost = 2.05
+	// eventsWatcherBufSize is the buffer size for the events channel.
+	eventsWatcherBufSize = 10
 )
 
 func EnableAuth(enable bool) Option {
@@ -105,7 +107,7 @@ func StartInvGrpcCli(
 	}
 	zlog.InfraSec().Info().Msg("initial Inv Grpc Client start.")
 
-	events := make(chan *inv_client.WatchEvents)
+	events := make(chan *inv_client.WatchEvents, eventsWatcherBufSize)
 	cfg := inv_client.InventoryClientConfig{
 		Name:                      "hostmgr",
 		Address:                   conf.InventoryAddr,
@@ -126,6 +128,7 @@ func StartInvGrpcCli(
 		ClientCache: inv_client.InvClientCacheConfig{
 			EnableUUIDCache: conf.EnableUUIDCache,
 			StaleTime:       conf.UUIDCacheTTL,
+			StateTimeOffset: conf.UUIDCacheTTLOffset,
 		},
 	}
 

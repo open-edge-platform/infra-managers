@@ -10,5 +10,9 @@ breaking:
     - FILE  # use most stringent breaking policy
 lint:
   use:
-    - DEFAULT
+    - STANDARD
     - ENUM_FIRST_VALUE_ZERO
+  except:
+    - SERVICE_SUFFIX
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME

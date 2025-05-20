@@ -46,7 +46,6 @@ Firstly, please verify that all dependencies have been installed.
 make dependency-check
 ```
 
-[//]: # (TODO, ensure dependencies )
 This code requires the following tools to be installed on your development machine:
 
 - [Go\* programming language](https://go.dev) - check [$GOVERSION_REQ](../version.mk)
@@ -119,8 +118,6 @@ targets. The following is a list of makefile targets that support developer acti
 ### Building Protobuf
 
 Make sure that buf style is enforced for protobuf file by running:
-
-[//]: # (TODO check if it works. )
 
 ```bash
 make buf-lint

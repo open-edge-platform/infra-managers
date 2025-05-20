@@ -25,6 +25,7 @@ type HostMgrConfig struct {
 	EnableHostDiscovery bool
 	EnableUUIDCache     bool
 	UUIDCacheTTL        time.Duration
+	UUIDCacheTTLOffset  int
 }
 
 func (c HostMgrConfig) Validate() error {

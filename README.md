@@ -1,10 +1,13 @@
 # Edge Infrastructure Managers
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/open-edge-platform/infra-managers/badge)](https://scorecard.dev/viewer/?uri=github.com/open-edge-platform/infra-managers)
+
 ## Overview
 
 The repository includes different Managers, many of which communicate on the southbound with Edge Nodes.
 The Managers are implemented as micro-services part of the Edge Infrastructure Manager of the Edge Manageability Framework.
-For more information about Resource Manger please read the TODO [resource managers architecture][resource-managers-architecture-url].
+For more information about Resource Manger please read the [resource managers architecture][resource-managers-architecture-url].
 
 ## Get Started
 
