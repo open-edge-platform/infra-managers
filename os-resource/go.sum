@@ -204,8 +204,8 @@ github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c h1:cqn374
 github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.24.1-0.20250520130454-b5ba8b83edcc h1:e/2TzxLPG1WVPwhqOW0Qkbi0EiV5zY1QjAvT6apjeYc=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.24.1-0.20250520130454-b5ba8b83edcc/go.mod h1:/bg3cDaZgXU88DOzGLJSkbK4ETpwibhmJnhkpvid7v0=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.24.1-0.20250521090423-6f893422cbff h1:jz4wFvYX+5rR65pmEQI+M0XjXc42q8PveoiZa376iBA=
+github.com/open-edge-platform/infra-core/inventory/v2 v2.24.1-0.20250521090423-6f893422cbff/go.mod h1:/bg3cDaZgXU88DOzGLJSkbK4ETpwibhmJnhkpvid7v0=
 github.com/open-edge-platform/orch-library/go v0.6.1 h1:IGR2ic73f3obnhlxTRfHcyYMbPbYu7BSqa9UYyEZ78Q=
 github.com/open-edge-platform/orch-library/go v0.6.1/go.mod h1:3Tes/GJfwYbnQa/1scbKiLbjZrL4fJEouFk28oo5/c8=
 github.com/open-edge-platform/orch-library/go/dazl v0.5.4 h1:Rx/bSAZiLjEEBjUiJEzBvT0fQv5huT5FQ2Ke3IMUhiE=
