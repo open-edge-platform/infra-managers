@@ -101,7 +101,9 @@ jobs:
       prefix_tag_separator: "/"
       project_folder: ${{ matrix.project_folder }}
       trivy_image_skip:  "postgres:16.4"
-    secrets: inherit
+    secrets:
+      NO_AUTH_ECR_PUSH_USERNAME: ${{ secrets.NO_AUTH_ECR_PUSH_USERNAME }}
+      NO_AUTH_ECR_PUSH_PASSWD: ${{ secrets.NO_AUTH_ECR_PUSH_PASSWD }}
   final-check:
     permissions:
       contents: read
