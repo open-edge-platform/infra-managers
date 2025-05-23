@@ -9,8 +9,8 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.25.0
-	github.com/open-edge-platform/infra-managers/maintenance v1.21.1
-	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.35.2
+	github.com/open-edge-platform/infra-managers/maintenance v1.22.0
+	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.36.0
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.72.1
@@ -21,7 +21,7 @@ require (
 	ariga.io/atlas v0.33.0 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.6-20250425153114-8976f5be98c1.1 // indirect
 	cel.dev/expr v0.23.1 // indirect
-	cloud.google.com/go/compute/metadata v0.6.0 // indirect
+	cloud.google.com/go/compute/metadata v0.7.0 // indirect
 	entgo.io/contrib v0.6.0 // indirect
 	entgo.io/ent v0.14.4 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
