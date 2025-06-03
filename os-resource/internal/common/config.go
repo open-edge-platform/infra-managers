@@ -26,7 +26,7 @@ func (c OsConfig) validateDefaultProfile() error {
 		}
 	}
 
-	if !foundDefaultProfile {
+	if c.AutoProvision && !foundDefaultProfile {
 		return inv_errors.Errorfc(codes.InvalidArgument,
 			"Default profile '%s' is not included in enabled profiles [%s]",
 			c.DefaultProfile, c.EnabledProfiles)
