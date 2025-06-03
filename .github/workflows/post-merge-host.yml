@@ -31,7 +31,7 @@ jobs:
       run_artifact: false
       prefix_tag_separator: "/"
       project_folder: "host"
-   secrets:
+    secrets:
       SYS_ORCH_GITHUB: ${{ secrets.SYS_ORCH_GITHUB }}
       COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}

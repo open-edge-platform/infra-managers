@@ -97,6 +97,9 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 		return nil
 	}
 
+	zlogTenant.Info().Msgf("Creating Provider for tenant %s with autoProvision=%v and default profile %q",
+		tenant.GetTenantId(), tr.osConfig.AutoProvision, tr.osConfig.DefaultProfile)
+
 	if tenant.GetWatcherOsmanager() {
 		zlogTenant.Debug().Msgf("Tenant is already acknowledged, skipping auto-creation.")
 		return nil
@@ -112,20 +115,23 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 		return nil
 	}
 
-	defaultOSProfile, exists := allOsProfiles[tr.osConfig.DefaultProfile]
-	if !exists {
-		errMsg := inv_errors.Errorf("Default profile %s is not included in the list of OS profiles",
-			tr.osConfig.DefaultProfile)
-		zlogTenant.Error().Err(errMsg).Msg("")
-		return errMsg
-	}
+	defaultOSResourceID := ""
+	if tr.osConfig.AutoProvision {
+		defaultOSProfile, exists := allOsProfiles[tr.osConfig.DefaultProfile]
+		if !exists {
+			errMsg := inv_errors.Errorf("Default profile %s is not included in the list of OS profiles",
+				tr.osConfig.DefaultProfile)
+			zlogTenant.Error().Err(errMsg).Msg("")
+			return errMsg
+		}
 
-	defaultOSResourceID, err := tr.invClient.FindOSResourceID(ctx, tenant.GetTenantId(),
-		defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
-	if err != nil {
-		zlogTenant.Error().Err(err).Msgf("Cannot find OS resource ID based on profile name %s"+
-			"and OS image version %s", defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
-		return err
+		defaultOSResourceID, err = tr.invClient.FindOSResourceID(ctx, tenant.GetTenantId(),
+			defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
+		if err != nil {
+			zlogTenant.Error().Err(err).Msgf("Cannot find OS resource ID based on profile name %s"+
+				"and OS image version %s", defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
+			return err
+		}
 	}
 
 	providerRes, err := util.GetOnboardingProviderResource(tenant.GetTenantId(), defaultOSResourceID,
