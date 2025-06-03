@@ -97,6 +97,9 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 		return nil
 	}
 
+	zlogTenant.Info().Msgf("Creating Provider for tenant %s with autoProvision=%v and default profile %q",
+		tenant.GetTenantId(), tr.osConfig.AutoProvision, tr.osConfig.DefaultProfile)
+
 	if tenant.GetWatcherOsmanager() {
 		zlogTenant.Debug().Msgf("Tenant is already acknowledged, skipping auto-creation.")
 		return nil
