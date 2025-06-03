@@ -112,7 +112,7 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 		return nil
 	}
 
-	var defaultOSResourceID = ""
+	defaultOSResourceID := ""
 	if tr.osConfig.AutoProvision {
 		defaultOSProfile, exists := allOsProfiles[tr.osConfig.DefaultProfile]
 		if !exists {
