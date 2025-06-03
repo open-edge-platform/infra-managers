@@ -6,9 +6,6 @@ package reconcilers_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/providerconfiguration"
-	"github.com/open-edge-platform/infra-managers/os-resource/internal/common"
-	util2 "github.com/open-edge-platform/infra-managers/os-resource/internal/util"
 	"os"
 	"path/filepath"
 	"testing"
@@ -22,11 +19,14 @@ import (
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	tenantv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/tenant/v1"
 	as "github.com/open-edge-platform/infra-core/inventory/v2/pkg/artifactservice"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/providerconfiguration"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
+	"github.com/open-edge-platform/infra-managers/os-resource/internal/common"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/controller/reconcilers"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/fsclient"
 	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testing"
+	util2 "github.com/open-edge-platform/infra-managers/os-resource/internal/util"
 	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
@@ -181,9 +181,11 @@ func cleanupProvider(t *testing.T, tenantID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	//nolint:errcheck // no need to check for errors
 	provRes, _ := osrm_testing.InvClient.GetProviderSingularByName(ctx, tenantID, util2.InfraOnboardingProviderName)
 
 	if provRes != nil {
+		//nolint:errcheck // ignore any error
 		inv_testing.TestClients[inv_testing.APIClient].Delete(ctx, provRes.GetResourceId())
 	}
 }
