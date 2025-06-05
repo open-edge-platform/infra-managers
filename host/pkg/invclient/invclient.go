@@ -571,7 +571,8 @@ func SetHostAsConnectionLost(
 	// Skip if current status is newer than when we started to try to set the connection lost
 	if hostRes.HostStatusTimestamp < timeStamp &&
 		(hostRes.GetHostStatus() == hrm_status.HostStatusRunning.Status ||
-			hostRes.GetHostStatus() == hrm_status.HostStatusBooting.Status) {
+			hostRes.GetHostStatus() == hrm_status.HostStatusBooting.Status ||
+			hostRes.GetHostStatus() == hrm_status.HostStatusError.Status) {
 		updateHost := computev1.HostResource{
 			ResourceId:          hostRes.GetResourceId(),
 			HostStatus:          hrm_status.HostStatusNoConnection.Status,
