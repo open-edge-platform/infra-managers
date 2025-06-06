@@ -322,7 +322,7 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 		ResourceId: host.GetResourceId(),
 	}
 
-	// Should not update, only in RUNNING or BOOTING state
+	// Should not update, only in RUNNING, BOOTING or ERROR state
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
@@ -340,6 +340,16 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 
 	// set to BOOTING status
 	hostUp.HostStatus = hrm_status.HostStatusBooting.Status
+	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
+	require.NoError(t, err)
+
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	require.NoError(t, err)
+
+	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
+
+	// set to ERROR status
+	hostUp.HostStatus = hrm_status.HostStatusError.Status
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
