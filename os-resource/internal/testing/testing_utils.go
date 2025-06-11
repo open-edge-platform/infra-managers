@@ -20,8 +20,8 @@ var (
 func CreateInventoryClientForTesting() {
 	var err error
 	InvClient, err = invclient.NewOSRMInventoryClient(
-		inv_testing.TestClients[inv_testing.APIClient].GetTenantAwareInventoryClient(),
-		inv_testing.TestClientsEvents[inv_testing.APIClient], nil)
+		inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient(),
+		inv_testing.TestClientsEvents[inv_testing.RMClient], nil)
 	if err != nil {
 		zlog.Fatal().Err(err).Msg("Cannot create Inventory client")
 	}
@@ -30,6 +30,6 @@ func CreateInventoryClientForTesting() {
 func DeleteInventoryClientForTesting() {
 	InvClient.Close()
 	time.Sleep(1 * time.Second)
-	delete(inv_testing.TestClients, inv_testing.APIClient)
-	delete(inv_testing.TestClientsEvents, inv_testing.APIClient)
+	delete(inv_testing.TestClients, inv_testing.RMClient)
+	delete(inv_testing.TestClientsEvents, inv_testing.RMClient)
 }
