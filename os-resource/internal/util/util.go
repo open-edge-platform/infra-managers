@@ -22,6 +22,7 @@ const (
 
 var zlogUtil = logging.GetLogger(loggerName)
 
+//nolint:cyclop // complexity is 11 due to extensive validation
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
 	platformBundle := ""
 	metadata := ""
