@@ -18,7 +18,7 @@ const (
 	UbuntuProfile = `# SPDX-FileCopyrightText: (C) 2024 Intel Corporation
 appVersion: apps/v1
 metadata:
-  release: 25.04.0-dev-0064a30
+  release: 25.04.0
   version: 0.1.0
 spec:
   name: Ubuntu 22.04.5 LTS

@@ -22,8 +22,10 @@ const (
 
 var zlogUtil = logging.GetLogger(loggerName)
 
+//nolint:cyclop // complexity is 11 due to extensive validation
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
 	platformBundle := ""
+	metadata := ""
 
 	if len(osProfile.Spec.PlatformBundle) != 0 {
 		pbData, err := json.Marshal(&osProfile.Spec.PlatformBundle)
@@ -32,6 +34,15 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 			return nil, inv_errors.Errorf("Failed to convert OS platform bundle for profile %s", osProfile.Spec.ProfileName)
 		}
 		platformBundle = string(pbData)
+	}
+
+	if len(osProfile.Metadata) != 0 {
+		mdData, err := json.Marshal(&osProfile.Metadata)
+		if err != nil {
+			zlogUtil.Error().Err(err).Msg("")
+			return nil, inv_errors.Errorf("Failed to convert OS metadata for profile %s", osProfile.Spec.ProfileName)
+		}
+		metadata = string(mdData)
 	}
 
 	_osType, valid := osv1.OsType_value[osProfile.Spec.Type]
@@ -81,6 +92,7 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 
 	return &osv1.OperatingSystemResource{
 		Name:            osProfile.Spec.Name,
+		Metadata:        metadata,
 		ImageUrl:        osProfile.Spec.OsImageURL,
 		ImageId:         osProfile.Spec.OsImageVersion,
 		Sha256:          osProfile.Spec.OsImageSha256,
