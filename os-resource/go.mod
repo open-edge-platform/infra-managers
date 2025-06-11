@@ -6,7 +6,7 @@ module github.com/open-edge-platform/infra-managers/os-resource
 go 1.24.1
 
 require (
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.26.3-0.20250610225233-a668e7d11e39
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.26.3-0.20250611155559-8a62ff9d844d
 	github.com/open-edge-platform/orch-library/go v0.6.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
