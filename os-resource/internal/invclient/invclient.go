@@ -67,7 +67,7 @@ func NewInventoryClient(
 		EnableRegisterRetry:       false,
 		AbortOnUnknownClientError: true,
 		// TODO: Use dedicated client type: ITEP-14459
-		ClientKind:    inv_v1.ClientKind_CLIENT_KIND_API,
+		ClientKind:    inv_v1.ClientKind_CLIENT_KIND_RESOURCE_MANAGER,
 		ResourceKinds: kinds,
 		EnableTracing: enableTracing,
 		EnableMetrics: enableMetrics,
