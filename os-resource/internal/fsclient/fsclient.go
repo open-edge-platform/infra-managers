@@ -34,8 +34,8 @@ var (
 //
 //nolint:tagliatelle // Renaming the yaml keys may effect while unmarshalling/marshaling so, used nolint.
 type OSProfileManifest struct {
-	AppVersion string                 `yaml:"appVersion"`
-	Metadata   map[string]interface{} `yaml:"metadata"`
+	AppVersion string            `yaml:"appVersion"`
+	Metadata   map[string]string `yaml:"metadata"`
 	Spec       struct {
 		Name                 string                 `yaml:"name"`
 		Type                 string                 `yaml:"type"`

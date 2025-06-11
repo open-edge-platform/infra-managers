@@ -29,7 +29,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata: map[string]interface{}{
+					Metadata: map[string]string{
 						"key1": "value1",
 						"key2": "value2",
 					},
@@ -83,7 +83,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -135,7 +135,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -185,7 +185,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -222,7 +222,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -259,7 +259,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -296,7 +296,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -333,7 +333,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
@@ -370,7 +370,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				//nolint:tagliatelle // must be in sync with OS profiles
 				&fsclient.OSProfileManifest{
 					AppVersion: "",
-					Metadata:   map[string]interface{}{},
+					Metadata:   map[string]string{},
 					Spec: struct {
 						Name                 string                 `yaml:"name"`
 						Type                 string                 `yaml:"type"`
