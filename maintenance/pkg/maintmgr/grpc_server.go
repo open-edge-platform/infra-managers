@@ -92,17 +92,16 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 	}
 
 	var osRes *osv1.OperatingSystemResource
-	// osRes := instRes.GetDesiredOs()
 	var osType osv1.OsType
-	//osType := osRes.GetOsType()
 	osUpdatePolicyRes := instRes.GetOsUpdatePolicy()
 
 	osType = instRes.GetOs().GetOsType()
+	//get OS Resource based on Update policy for immutable.
+	// (Mutable has only one scenario )
 	if osType == osv1.OsType_OS_TYPE_IMMUTABLE {
 		osRes, err = getUpdateOS(ctx, invMgrCli.InvClient, tenantID, instRes.GetOs().GetProfileName(), osUpdatePolicyRes)
 	}
 
-	//osUpdatePolicyRes.GetTargetOs()
 	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
 
 	upSources := maintgmr_util.PopulateUpdateSource(osType, osUpdatePolicyRes)
