@@ -97,18 +97,18 @@ func PopulateUpdateSchedule(rsResources []*schedule_v1.RepeatedScheduleResource,
 }
 
 // PopulateUpdateSource populates a valid SB UpdateSource given the provided Inventory OS Resource.
-func PopulateUpdateSource(os *os_v1.OperatingSystemResource) *pb.UpdateSource {
+func PopulateUpdateSource(osType os_v1.OsType, policy *computev1.OSUpdatePolicyResource) *pb.UpdateSource {
 	// TODO: this will never happen once we enforce OS presence in the Instance.
 	upSrc := &pb.UpdateSource{}
-	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
+	if policy == nil {
+		err := inv_errors.Errorfc(codes.Internal, "missing OSPolicyUpdate resource")
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return upSrc
 	}
 
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		upSrc.KernelCommand = os.KernelCommand
-		upSrc.CustomRepos = os.UpdateSources
+	if osType == os_v1.OsType_OS_TYPE_MUTABLE {
+		upSrc.KernelCommand = policy.GetKernelCommand()
+		upSrc.CustomRepos = policy.GetUpdateSources()
 
 		if err := upSrc.ValidateAll(); err != nil {
 			zlog.InfraSec().InfraErr(err).Msg("")
@@ -121,7 +121,7 @@ func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProf
 	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
 
 	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
+		err := inv_errors.Errorfc(codes.Internal, "missing OSUpdatePolicy resource")
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return osProfileUpdateSource
 	}
@@ -141,15 +141,15 @@ func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProf
 	return osProfileUpdateSource
 }
 
-func PopulateInstalledPackages(os *os_v1.OperatingSystemResource) string {
-	if os == nil {
+func PopulateInstalledPackages(osType os_v1.OsType, policy *computev1.OSUpdatePolicyResource) string {
+	if policy == nil {
 		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return ""
 	}
 
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		return os.InstalledPackages
+	if osType == os_v1.OsType_OS_TYPE_MUTABLE {
+		return policy.GetInstallPackages()
 	}
 
 	return ""

@@ -420,3 +420,92 @@ func TestInvClient_GetOSResourceIDByProfileInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	profileName_1 := "profile name1"
+	profileName_2 := "profile name2"
+	osResName_1 := "name 1"
+	osResName_2 := "name 2"
+	osResName_3 := "name 3"
+
+	osImageSha256_1 := inv_testing.GenerateRandomSha256()
+	osImageSha256_2 := inv_testing.GenerateRandomSha256()
+	osImageSha256_3 := inv_testing.GenerateRandomSha256()
+
+	// OK - gets OS Resource ID
+	t.Run("FindOSResWithProfileName", func(t *testing.T) {
+		osRes := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+			os.Sha256 = osImageSha256_1
+			os.Name = osResName_1
+			os.ProfileName = profileName_1
+			os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+			os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		})
+
+		getOSRes, err := invclient.GetLatestImmutableOSByProfile(ctx, client, mm_testing.Tenant1, profileName_1)
+		require.NoError(t, err)
+		require.NotEmpty(t, getOSRes)
+		require.Equal(t, osRes.ResourceId, getOSRes.GetResourceId())
+	})
+
+	t.Run("FindOSResWithProfileName", func(t *testing.T) {
+		_ = dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+			os.Sha256 = osImageSha256_1
+			os.Name = osResName_1
+			os.ProfileName = profileName_1
+			os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+			os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		})
+
+		_ = dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+			os.Sha256 = osImageSha256_2
+			os.Name = osResName_2
+			os.ProfileName = profileName_2
+			os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+			os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		})
+
+		osRes_3 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+			os.Sha256 = osImageSha256_3
+			os.Name = osResName_3
+			os.ProfileName = profileName_2
+			os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+			os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		})
+
+		getOSRes, err := invclient.GetLatestImmutableOSByProfile(ctx, client, mm_testing.Tenant1, profileName_2)
+		require.NoError(t, err)
+		require.NotEmpty(t, getOSRes)
+		require.Equal(t, osRes_3.ResourceId, getOSRes.GetResourceId())
+	})
+
+	// Error Not Found - nonexisting os resource
+	t.Run("ErrorFindNonexistientOSRes", func(t *testing.T) {
+		_ = dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+			os.Name = osResName_1
+			os.ProfileName = profileName_1
+			os.Sha256 = osImageSha256_3
+			os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+			os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		})
+
+		_, err := invclient.GetLatestImmutableOSByProfile(ctx, client, mm_testing.Tenant1,
+			profileName_2)
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		_ = sts
+		println("Code: %s", sts.Code())
+		assert.Equal(t, codes.NotFound, sts.Code())
+	})
+
+	// Error Not Found - empty profileName
+	t.Run("ErrorNoOSResourceFound", func(t *testing.T) {
+		_, err := invclient.GetLatestImmutableOSByProfile(ctx, client, mm_testing.Tenant1, "")
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.NotFound, sts.Code())
+	})
+}
