@@ -13,45 +13,75 @@ import (
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	inv_client "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
+	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	pb "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/invclient"
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
-func updateInstanceInInv(
+func updateInventory(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
 	tenantID string,
 	mmUpStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
 ) {
-	newInstUpStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
+	newUpdateStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
 		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
 
 	if needed {
-		zlog.Debug().Msgf("Updating Instance UpdateStatus: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+		updateInstance(ctx, client, tenantID, mmUpStatus, newUpdateStatus, instRes)
 
-		newUpdateStatusDetail := maintgmr_util.GetUpdateStatusDetailIfNeeded(
-			newInstUpStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
-
-		newOSResID, err := GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
-			return
+		switch mmUpStatus.StatusType {
+		case pb.UpdateStatus_STATUS_TYPE_STARTED:
+			return createOSUpdateRun()
+		case pb.UpdateStatus_STATUS_TYPE_UPDATED:
+			return updateOSUPdateRun()
+		case pb.UpdateStatus_STATUS_TYPE_FAILED:
+			return updateOSUPdateRun()
 		}
 
-		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
-			return
-		}
 	} else {
-		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+		zlog.Debug().Msgf("No UpdateStatus change needed: old=%v, new=%v",
+			newUpdateStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+	}
+}
+
+// implement in invclient
+func createOSUpdateRun() {
+}
+
+func updateOSUpdateRun() {
+
+}
+
+func updateInstance(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	mmUpStatus *pb.UpdateStatus,
+	newUpdateStatus *inv_status.ResourceStatus,
+	instRes *computev1.InstanceResource,
+) {
+	zlog.Debug().Msgf("Updating Instance UpdateStatus: old=%v, new=%v",
+		newUpdateStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+
+	newUpdateStatusDetail := maintgmr_util.GetUpdateStatusDetailIfNeeded(
+		newUpdateStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
+
+	newOSResID, err := GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
+		return
+	}
+
+	err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
+		*newUpdateStatus, newUpdateStatusDetail, newOSResID)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
+		return
 	}
 }
 

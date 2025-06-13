@@ -72,7 +72,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, inv_errors.Errorfc(codes.FailedPrecondition, "")
 	}
 
-	updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
+	updateInventory(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
 	ssRes, err := invclient.ListSingleSchedules(ctx, invMgrCli, tenantID, hostRes)
 	if err != nil {
