@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
+	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
@@ -90,12 +91,23 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
-	osRes := instRes.GetDesiredOs()
+	var osRes *osv1.OperatingSystemResource
+	// osRes := instRes.GetDesiredOs()
+	var osType osv1.OsType
+	//osType := osRes.GetOsType()
+	osUpdatePolicyRes := instRes.GetOsUpdatePolicy()
+
+	osType = instRes.GetOs().GetOsType()
+	if osType == osv1.OsType_OS_TYPE_IMMUTABLE {
+		osRes, err = getUpdateOS(ctx, invMgrCli.InvClient, tenantID, instRes.GetOs().GetProfileName(), osUpdatePolicyRes)
+	}
+
+	//osUpdatePolicyRes.GetTargetOs()
 	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
-	osType := osRes.GetOsType()
-	upSources := maintgmr_util.PopulateUpdateSource(osRes)
-	installedPackages := maintgmr_util.PopulateInstalledPackages(osRes)
-	osProfileUpdateSource := maintgmr_util.PopulateOsProfileUpdateSource(osRes)
+
+	upSources := maintgmr_util.PopulateUpdateSource(osType, osUpdatePolicyRes)
+	installedPackages := maintgmr_util.PopulateInstalledPackages(osType, osUpdatePolicyRes)
+	osProfileUpdateSource := maintgmr_util.PopulateOsProfileUpdateSource(osRes) // gets information from  OS Profile Resource for IMMUTABLE only
 
 	response := &pb.PlatformUpdateStatusResponse{
 		UpdateSource:          upSources,

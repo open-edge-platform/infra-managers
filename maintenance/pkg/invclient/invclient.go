@@ -248,3 +248,42 @@ func GetOSResourceIDByProfileInfo(ctx context.Context, c inv_client.TenantAwareI
 
 	return osResID, nil
 }
+
+func GetLatestImmutableOSByProfile(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID, profileName string,
+) (*os_v1.OperatingSystemResource, error) {
+	zlog.Debug().Msgf("GetLatestImmutableOSByProfile: tenantID=%s, profileName=%s", tenantID, profileName)
+
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	filter := fmt.Sprintf("%s=%q AND %s=%q",
+		os_v1.OperatingSystemResourceFieldTenantId, tenantID,
+		os_v1.OperatingSystemResourceFieldProfileName, profileName,
+	)
+
+	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
+		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_Os{}},
+		Filter:   filter,
+		OrderBy:  "created_at desc", // string field for ordering
+		Limit:    1,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.GetResources()) == 0 {
+		return nil, errors.Errorfc(codes.NotFound, "OS resource not found: tenantID=%s, profile_name=%s", tenantID, profileName)
+	}
+
+	os := resp.GetResources()[0].GetResource().GetOs()
+	if err := validator.ValidateMessage(os); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	zlog.Debug().Msgf("Found OS resource with resourceID: %s", os.GetResourceId())
+
+	return os, nil
+}
