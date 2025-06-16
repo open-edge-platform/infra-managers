@@ -55,22 +55,23 @@ func updateInstanceInInv(
 	}
 }
 
-func getUpdateOS(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, profileName string, policy *computev1.OSUpdatePolicyResource) (*os_v1.OperatingSystemResource, error) {
-
+func getUpdateOS(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID, profileName string,
+	policy *computev1.OSUpdatePolicyResource,
+) (*os_v1.OperatingSystemResource, error) {
 	var os *os_v1.OperatingSystemResource
 	var err error
 	switch policy.GetUpdatePolicy() {
 	case computev1.UpdatePolicy_UPDATE_POLICY_TARGET:
-
 		os = policy.GetTargetOs()
 		if os == nil {
-			err := errors.Errorfc(codes.Internal, "missing targetOS in OSUpdatePolicy: ResourceID %s, UpdatePolicy: %s",
+			err = errors.Errorfc(codes.Internal, "missing targetOS in OSUpdatePolicy: ResourceID %s, UpdatePolicy: %s",
 				policy.GetResourceId(), policy.GetUpdatePolicy())
 			zlog.InfraSec().InfraErr(err).Msg("")
 		}
-
 	case computev1.UpdatePolicy_UPDATE_POLICY_LATEST:
-
 		os, err = invclient.GetLatestImmutableOSByProfile(ctx, c, tenantID, profileName)
 		if err != nil {
 			return nil, err

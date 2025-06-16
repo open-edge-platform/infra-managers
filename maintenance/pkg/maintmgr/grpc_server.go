@@ -25,10 +25,11 @@ type server struct {
 	authEnabled bool
 }
 
-//nolint:cyclop // cyclomatic complexity is 11 due to validation logic
+//nolint:cyclop,funlen // cyclomatic complexity is 11 due to validation logic
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
+	// TODO: refactor to reduce length and cyclomatic complexity
 	zlog.Info().Msgf("PlatformUpdateStatus: GUID=%s", in.GetHostGuid())
 	zlog.Debug().Msgf("PlatformUpdateStatus: request=%v", in)
 	if s.authEnabled {
@@ -91,33 +92,63 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
-	var osRes *osv1.OperatingSystemResource
-	var osType osv1.OsType
-	osUpdatePolicyRes := instRes.GetOsUpdatePolicy()
-
-	osType = instRes.GetOs().GetOsType()
-	//get OS Resource based on Update policy for immutable.
-	// (Mutable has only one scenario )
-	if osType == osv1.OsType_OS_TYPE_IMMUTABLE {
-		osRes, err = getUpdateOS(ctx, invMgrCli.InvClient, tenantID, instRes.GetOs().GetProfileName(), osUpdatePolicyRes)
+	osUpdatePolicyRes, err := invclient.GetOSUpdatePolicyByInstanceID(ctx, invMgrCli.InvClient, tenantID, instRes.GetResourceId())
+	// Not found is not an error, it means that the instance does not have an OS update policy.
+	if err != nil && !inv_errors.IsNotFound(err) {
+		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+		return nil, err
 	}
 
-	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+	var osRes *osv1.OperatingSystemResource
+	osType := instRes.GetOs().GetOsType()
 
-	upSources := maintgmr_util.PopulateUpdateSource(osType, osUpdatePolicyRes)
-	installedPackages := maintgmr_util.PopulateInstalledPackages(osType, osUpdatePolicyRes)
-	osProfileUpdateSource := maintgmr_util.PopulateOsProfileUpdateSource(osRes) // gets information from  OS Profile Resource for IMMUTABLE only
+	upSources := &pb.UpdateSource{}
+	var installedPackages string
+	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
+	// TODO: Extract this logic to a separate function.
+	if osUpdatePolicyRes != nil {
+		zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+		switch osType {
+		case osv1.OsType_OS_TYPE_MUTABLE:
+			// For mutable OS, retrieve info from the Policy and provide them to the EN.
+			upSources = &pb.UpdateSource{
+				KernelCommand: osUpdatePolicyRes.GetKernelCommand(),
+				CustomRepos:   osUpdatePolicyRes.GetUpdateSources(),
+			}
+			installedPackages = osUpdatePolicyRes.GetInstallPackages()
+		case osv1.OsType_OS_TYPE_IMMUTABLE:
+			// For immutable OS, retrieve the target OS from the OSUpdatePolicy
+			osRes, err = getUpdateOS(ctx, invMgrCli.InvClient, tenantID, instRes.GetOs().GetProfileName(), osUpdatePolicyRes)
+			if err != nil {
+				zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+				return nil, err
+			}
+			osProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
+			if err != nil {
+				zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+				return nil, err
+			}
+		default:
+			// We should never reach this point.
+			err = inv_errors.Errorfc(codes.Internal, "Unsupported OS type: %s", osType)
+			zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+			return nil, err
+		}
+	}
 
 	response := &pb.PlatformUpdateStatusResponse{
-		UpdateSource:          upSources,
 		UpdateSchedule:        scheresp,
+		UpdateSource:          upSources,
 		InstalledPackages:     installedPackages,
 		OsType:                pb.PlatformUpdateStatusResponse_OSType(osType),
 		OsProfileUpdateSource: osProfileUpdateSource,
 	}
-
 	zlog.Debug().Msgf("PlatformUpdateStatus: tenantID%s, response=%v", tenantID, response)
-	// No need to validate, already validated by PopulateUpdateSource and PopulateUpdateSchedule
+
+	if err = response.ValidateAll(); err != nil {
+		zlog.InfraSec().InfraErr(err).Msg("")
+		return nil, mmgr_error.Wrap(err)
+	}
 	return response, nil
 }
 

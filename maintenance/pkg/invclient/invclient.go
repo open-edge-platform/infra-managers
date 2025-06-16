@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -157,6 +158,55 @@ func GetInstanceResourceByHostGUID(
 	return instance, nil
 }
 
+func GetOSUpdatePolicyByInstanceID(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, instanceID string,
+) (*computev1.OSUpdatePolicyResource, error) {
+	// TODO: Optimize and use caches, we could use ResourceID based caches.
+	zlog.Debug().Msgf("GetOSUpdatePolicyByInstanceID: tenantID=%s, InstanceID=%s", tenantID, instanceID)
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	// First retrieve the Instance resource.
+	instanceResp, err := c.Get(childCtx, tenantID, instanceID)
+	if err != nil {
+		return nil, err
+	}
+	if err = validator.ValidateMessage(instanceResp); err != nil {
+		zlog.InfraSec().InfraErr(err).Msg("")
+		return nil, errors.Wrap(err)
+	}
+	instance, err := util.UnwrapResource[*computev1.InstanceResource](instanceResp.GetResource())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to unwrap resource: %s", instanceResp.GetResource())
+		return nil, err
+	}
+	if instance.GetOsUpdatePolicy() == nil {
+		return nil, errors.Errorfc(
+			codes.NotFound,
+			"OSUpdatePolicy not found for Instance: tenantID=%s, instanceID=%s",
+			tenantID, instanceID,
+		)
+	}
+
+	// Now retrieve the OSUpdatePolicy resource, so we get all eager loaded fields.
+	osPolicyUpdateResp, err := c.Get(childCtx, tenantID, instance.GetOsUpdatePolicy().GetResourceId())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf(
+			"Failed to get OSUpdatePolicy: tenantID=%s, instanceID=%s", tenantID, instanceID)
+		return nil, err
+	}
+	if err = validator.ValidateMessage(osPolicyUpdateResp); err != nil {
+		zlog.InfraSec().InfraErr(err).Msg("")
+		return nil, errors.Wrap(err)
+	}
+	osUpdatePolicy, err := util.UnwrapResource[*computev1.OSUpdatePolicyResource](osPolicyUpdateResp.GetResource())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to unwrap resource: %s", instanceResp.GetResource())
+		return nil, err
+	}
+	return osUpdatePolicy, nil
+}
+
 func UpdateInstance(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -223,8 +273,11 @@ func GetOSResourceIDByProfileInfo(ctx context.Context, c inv_client.TenantAwareI
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	filter := fmt.Sprintf("%s = %q AND %s = %q AND %s = %q", os_v1.OperatingSystemResourceFieldProfileName, profileName,
-		os_v1.OperatingSystemResourceFieldImageId, osImageID, os_v1.OperatingSystemResourceFieldTenantId, tenantID)
+	filter := fmt.Sprintf("%s = %q AND %s = %q AND %s = %q",
+		os_v1.OperatingSystemResourceFieldProfileName, profileName,
+		os_v1.OperatingSystemResourceFieldImageId, osImageID,
+		os_v1.OperatingSystemResourceFieldTenantId, tenantID,
+	)
 
 	findResp, err := c.Find(childCtx, &inv_v1.ResourceFilter{
 		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_Os{}},
@@ -254,36 +307,63 @@ func GetLatestImmutableOSByProfile(
 	c inv_client.TenantAwareInventoryClient,
 	tenantID, profileName string,
 ) (*os_v1.OperatingSystemResource, error) {
+	// TODO: Add caching layer
 	zlog.Debug().Msgf("GetLatestImmutableOSByProfile: tenantID=%s, profileName=%s", tenantID, profileName)
 
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	filter := fmt.Sprintf("%s=%q AND %s=%q",
+	filter := fmt.Sprintf("%s=%q AND %s=%s AND %s=%q",
 		os_v1.OperatingSystemResourceFieldTenantId, tenantID,
+		os_v1.OperatingSystemResourceFieldOsType, os_v1.OsType_OS_TYPE_IMMUTABLE.String(),
 		os_v1.OperatingSystemResourceFieldProfileName, profileName,
 	)
 
 	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
 		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_Os{}},
 		Filter:   filter,
-		OrderBy:  "created_at desc", // string field for ordering
-		Limit:    1,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if len(resp.GetResources()) == 0 {
-		return nil, errors.Errorfc(codes.NotFound, "OS resource not found: tenantID=%s, profile_name=%s", tenantID, profileName)
+		return nil, errors.Errorfc(
+			codes.NotFound, "OS resource not found: tenantID=%s, profile_name=%s", tenantID, profileName)
 	}
 
-	os := resp.GetResources()[0].GetResource().GetOs()
-	if err := validator.ValidateMessage(os); err != nil {
-		return nil, errors.Wrap(err)
+	// Find the OS profile with the highest semantic version using Masterminds/semver
+	var latestOS *os_v1.OperatingSystemResource
+	var latestVersion *semver.Version
+
+	for _, resource := range resp.GetResources() {
+		os := resource.GetResource().GetOs()
+		if err := validator.ValidateMessage(os); err != nil {
+			zlog.Warn().Err(err).Msgf("Invalid OS resource: %s", os.GetResourceId())
+			continue // Skip invalid OS resources
+		}
+
+		currentVersionStr := os.GetProfileVersion()
+		currentVersion, err := semver.NewVersion(currentVersionStr)
+		if err != nil {
+			zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", currentVersionStr)
+			continue // Skip this OS if the version is invalid
+		}
+
+		// If this is the first valid version we've seen, or if it's higher than our current latest
+		if latestVersion == nil || currentVersion.GreaterThan(latestVersion) {
+			latestOS = os
+			latestVersion = currentVersion
+		}
 	}
 
-	zlog.Debug().Msgf("Found OS resource with resourceID: %s", os.GetResourceId())
+	if latestOS == nil {
+		return nil, errors.Errorfc(
+			codes.NotFound, "No valid OS resource found: tenantID=%s, profile_name=%s", tenantID, profileName)
+	}
 
-	return os, nil
+	zlog.Debug().Msgf("Found OS resource with resourceID: %s, version: %s",
+		latestOS.GetResourceId(), latestVersion.String())
+
+	return latestOS, nil
 }
