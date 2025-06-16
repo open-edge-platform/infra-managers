@@ -41,23 +41,50 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	defer cancel()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
+	mutableOSUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
 	immutableOsProfileName := "immutable OS profile name"
 	osImageSha256 := inv_testing.GenerateRandomSha256()
+	osImageSha2562 := inv_testing.GenerateRandomSha256()
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = immutableOsProfileName
+		os.ProfileVersion = "1.0.1"
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
+	immutableOs2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "Immutable OS 2"
+		os.Sha256 = osImageSha2562
+		os.ProfileName = immutableOsProfileName
+		os.ProfileVersion = "1.0.1"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+	immmutableOSUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Immutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyTargetOS(immutableOs2),
+	)
 
 	// Host1 has both single and repeated schedule associated to it
 	h1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1.Uuid = uuid.NewString()
 	host1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, os, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, os, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		},
+		inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+	)
 	sSched1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1, host1, nil)
 	rSched1 := mm_testing.RepeatedSchedule1 //nolint:govet // ok to copy locks in test
@@ -67,10 +94,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, os, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, os, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+		inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+	)
 
 	// Host3 has no instance associated
 	h3 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
@@ -81,10 +111,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h4 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h4.Uuid = uuid.NewString()
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host4, immutableOs, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host4, immutableOs, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+		inv_testing.InstanceOsUpdatePolicy(immmutableOSUpdatePolicy),
+	)
 
 	testCases := map[string]struct {
 		in          *pb.PlatformUpdateStatusRequest
@@ -147,11 +180,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: os.GetKernelCommand(),
-					CustomRepos:   os.GetUpdateSources(),
+					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -166,11 +199,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: os.GetKernelCommand(),
-					CustomRepos:   os.GetUpdateSources(),
+					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -188,13 +221,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 				UpdateSource:      &pb.UpdateSource{},
 				UpdateSchedule:    &pb.UpdateSchedule{},
 				InstalledPackages: "",
-				OsType:            pb.PlatformUpdateStatusResponse_OSType(immutableOs.GetOsType()),
+				OsType:            pb.PlatformUpdateStatusResponse_OSType(immutableOs2.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{
-					ProfileName:    immutableOs.GetProfileName(),
-					ProfileVersion: immutableOs.GetProfileVersion(),
-					OsImageUrl:     immutableOs.GetImageUrl(),
-					OsImageId:      immutableOs.GetImageId(),
-					OsImageSha:     immutableOs.GetSha256(),
+					ProfileName:    immutableOs2.GetProfileName(),
+					ProfileVersion: immutableOs2.GetProfileVersion(),
+					OsImageUrl:     immutableOs2.GetImageUrl(),
+					OsImageId:      immutableOs2.GetImageId(),
+					OsImageSha:     immutableOs2.GetSha256(),
 				},
 			},
 		},
@@ -217,6 +250,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	}
 }
 
+//nolint:funlen // long function due to matrix-based test
 func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctxT1, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
@@ -230,17 +264,35 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 
 	osT1 := dao.CreateOs(t, mm_testing.Tenant1)
 
+	osUpdatePolicyT1 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy T1"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T1"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T1"),
+	)
+
 	h1T1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T1.Uuid = uuid.NewString()
 	host1T1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1T1)
 	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1T1, osT1, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT1
 	})
 	sSched1T1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1T1, host1T1, nil)
 
 	osT2 := dao.CreateOs(t, mm_testing.Tenant2)
+	osUpdatePolicyT2 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant2,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+	)
 	h1T2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T2.TenantId = mm_testing.Tenant2
 	h1T2.Uuid = uuid.NewString()
@@ -248,12 +300,21 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao.CreateInstanceWithOpts(t, mm_testing.Tenant2, host1T2, osT2, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT2
 	})
 	sSched1T2 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSched1T2.TenantId = mm_testing.Tenant2
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant2, &sSched1T2, host1T2, nil)
 
 	osT0 := dao.CreateOs(t, mm_testing.DefaultTenantID)
+	osUpdatePolicyT0 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.DefaultTenantID,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+	)
 	hT0 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	hT0.TenantId = mm_testing.DefaultTenantID
 	hT0.Uuid = uuid.NewString()
@@ -261,6 +322,7 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao.CreateInstanceWithOpts(t, mm_testing.DefaultTenantID, hostT0, osT0, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT0
 	})
 	sSchedT0 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSchedT0.TenantId = mm_testing.DefaultTenantID
@@ -386,9 +448,18 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	scheduleCache.LoadAllSchedulesFromInv()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
+	osUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicy
 	})
 	// Host and instance start with RUNNING status
 
@@ -424,10 +495,10 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			RepeatedSchedules: mm_testing.MmRepeatedSchedule1,
 		},
 		UpdateSource: &pb.UpdateSource{
-			KernelCommand: os.GetKernelCommand(),
-			CustomRepos:   os.GetUpdateSources(),
+			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
 		},
-		InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
 		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}

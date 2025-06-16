@@ -96,34 +96,13 @@ func PopulateUpdateSchedule(rsResources []*schedule_v1.RepeatedScheduleResource,
 	return &sche, nil
 }
 
-// PopulateUpdateSource populates a valid SB UpdateSource given the provided Inventory OS Resource.
-func PopulateUpdateSource(os *os_v1.OperatingSystemResource) *pb.UpdateSource {
-	// TODO: this will never happen once we enforce OS presence in the Instance.
-	upSrc := &pb.UpdateSource{}
-	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
-		zlog.InfraSec().InfraErr(err).Msg("")
-		return upSrc
-	}
-
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		upSrc.KernelCommand = os.KernelCommand
-		upSrc.CustomRepos = os.UpdateSources
-
-		if err := upSrc.ValidateAll(); err != nil {
-			zlog.InfraSec().InfraErr(err).Msg("")
-		}
-	}
-	return upSrc
-}
-
-func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProfileUpdateSource {
+func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) (*pb.OSProfileUpdateSource, error) {
 	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
 
 	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
+		err := inv_errors.Errorfc(codes.Internal, "missing OSUpdatePolicy resource")
 		zlog.InfraSec().InfraErr(err).Msg("")
-		return osProfileUpdateSource
+		return nil, err
 	}
 
 	if os.GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
@@ -132,27 +111,12 @@ func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProf
 		osProfileUpdateSource.OsImageUrl = os.ImageUrl
 		osProfileUpdateSource.OsImageId = os.ImageId
 		osProfileUpdateSource.OsImageSha = os.Sha256
-
-		if err := osProfileUpdateSource.ValidateAll(); err != nil {
-			zlog.InfraSec().InfraErr(err).Msg("")
-		}
+	} else {
+		err := inv_errors.Errorfc(codes.Internal, "unsupported OS type: %s", os.GetOsType())
+		zlog.InfraSec().InfraErr(err).Msgf("Wrong OS type, we expect IMMUTABLE")
+		return nil, err
 	}
-
-	return osProfileUpdateSource
-}
-
-func PopulateInstalledPackages(os *os_v1.OperatingSystemResource) string {
-	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
-		zlog.InfraSec().InfraErr(err).Msg("")
-		return ""
-	}
-
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		return os.InstalledPackages
-	}
-
-	return ""
+	return osProfileUpdateSource, nil
 }
 
 // GetClosestSingleSchedule Returns the closest single schedule from time.Now.
