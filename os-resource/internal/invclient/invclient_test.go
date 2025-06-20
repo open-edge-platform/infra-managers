@@ -41,11 +41,13 @@ func TestInventoryClient_FindOSResourceID_NoDuplicates(t *testing.T) {
 		osr.ProfileName = "test-profile1"
 		osr.Sha256 = inv_testing.GenerateRandomSha256()
 		osr.ImageId = "1"
+		osr.Name = "test-1"
 	})
 	os2 := inv_testing.CreateOsWithOpts(t, true, func(osr *osv1.OperatingSystemResource) {
 		osr.ProfileName = "test-profile123"
 		osr.Sha256 = inv_testing.GenerateRandomSha256()
 		osr.ImageId = "1"
+		osr.Name = "test-2"
 	})
 
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
