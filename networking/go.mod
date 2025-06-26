@@ -3,10 +3,10 @@
 
 module github.com/open-edge-platform/infra-managers/networking
 
-go 1.24.1
+go 1.24.4
 
 require (
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.27.0
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.28.0
 	github.com/open-edge-platform/orch-library/go v0.6.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0

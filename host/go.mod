@@ -8,7 +8,7 @@ go 1.24.4
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.27.0
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.28.0
 	github.com/open-edge-platform/infra-managers/maintenance v1.22.1
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.37.1
 	github.com/prometheus/client_golang v1.22.0
