@@ -25,6 +25,12 @@ type server struct {
 	authEnabled bool
 }
 
+type updateDetails struct {
+	UpdateSource          *pb.UpdateSource
+	InstalledPackages     string
+	OsProfileUpdateSource *pb.OSProfileUpdateSource
+}
+
 //nolint:cyclop,funlen // cyclomatic complexity is 11 due to validation logic
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
@@ -92,57 +98,30 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
+	osType := instRes.GetCurrentOs().GetOsType() // TODO: should use GetOS()
+
+	response := &pb.PlatformUpdateStatusResponse{
+		UpdateSchedule: scheresp,
+		OsType:         pb.PlatformUpdateStatusResponse_OSType(osType),
+	}
+
 	osUpdatePolicyRes, err := invclient.GetOSUpdatePolicyByInstanceID(ctx, invMgrCli.InvClient, tenantID, instRes.GetResourceId())
 	// Not found is not an error, it means that the instance does not have an OS update policy.
 	if err != nil && !inv_errors.IsNotFound(err) {
 		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
 		return nil, err
 	}
+	zlog.Debug().Msgf("OS Update Policy resource from Instance backlink: tenantID=%s, instanceID=%s, OSUpdatePolicyResource=%v",
+		tenantID, instRes.GetResourceId(), osUpdatePolicyRes)
 
-	var osRes *osv1.OperatingSystemResource
-	osType := instRes.GetOs().GetOsType()
-
-	upSources := &pb.UpdateSource{}
-	var installedPackages string
-	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
-	// TODO: Extract this logic to a separate function.
-	if osUpdatePolicyRes != nil {
-		zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
-		switch osType {
-		case osv1.OsType_OS_TYPE_MUTABLE:
-			// For mutable OS, retrieve info from the Policy and provide them to the EN.
-			upSources = &pb.UpdateSource{
-				KernelCommand: osUpdatePolicyRes.GetKernelCommand(),
-				CustomRepos:   osUpdatePolicyRes.GetUpdateSources(),
-			}
-			installedPackages = osUpdatePolicyRes.GetInstallPackages()
-		case osv1.OsType_OS_TYPE_IMMUTABLE:
-			// For immutable OS, retrieve the target OS from the OSUpdatePolicy
-			osRes, err = getUpdateOS(ctx, invMgrCli.InvClient, tenantID, instRes.GetOs().GetProfileName(), osUpdatePolicyRes)
-			if err != nil {
-				zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-				return nil, err
-			}
-			osProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
-			if err != nil {
-				zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-				return nil, err
-			}
-		default:
-			// We should never reach this point.
-			err = inv_errors.Errorfc(codes.Internal, "Unsupported OS type: %s", osType)
-			zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-			return nil, err
-		}
+	policyUpInfo, err := getUpdatePolicyInfo(ctx, osType, osUpdatePolicyRes, tenantID, instRes.GetDesiredOs().GetProfileName(), guid)
+	if err != nil {
+		return nil, err
 	}
+	response.UpdateSource = policyUpInfo.UpdateSource
+	response.InstalledPackages = policyUpInfo.InstalledPackages
+	response.OsProfileUpdateSource = policyUpInfo.OsProfileUpdateSource
 
-	response := &pb.PlatformUpdateStatusResponse{
-		UpdateSchedule:        scheresp,
-		UpdateSource:          upSources,
-		InstalledPackages:     installedPackages,
-		OsType:                pb.PlatformUpdateStatusResponse_OSType(osType),
-		OsProfileUpdateSource: osProfileUpdateSource,
-	}
 	zlog.Debug().Msgf("PlatformUpdateStatus: tenantID%s, response=%v", tenantID, response)
 
 	if err = response.ValidateAll(); err != nil {
@@ -167,4 +146,63 @@ func getHostAndInstanceFromUUID(ctx context.Context, tenantID, uuid string) (
 		return nil, nil, inv_errors.Errorfc(codes.NotFound, "Instance without host: tenantID=%s, UUID=%s", tenantID, uuid)
 	}
 	return hostRes, instRes, nil
+}
+
+func getUpdatePolicyInfo(ctx context.Context, osType osv1.OsType, osUpdatePolicyRes *computev1.OSUpdatePolicyResource, tenantID string, profileName string, guid string) (
+	*updateDetails, error,
+) {
+	var upDetails *updateDetails = &updateDetails{
+		UpdateSource:          &pb.UpdateSource{},
+		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
+	}
+
+	if osUpdatePolicyRes == nil {
+		return upDetails, nil
+	}
+	switch osType {
+	case osv1.OsType_OS_TYPE_MUTABLE:
+		// For mutable OS, retrieve info from the Policy and provide them to the EN.
+		populateMutableUpdateDetails(upDetails, osUpdatePolicyRes)
+	case osv1.OsType_OS_TYPE_IMMUTABLE:
+		// For immutable OS, retrieve the target OS from the OSUpdatePolicy
+		err := populateImmutableUpdateDetails(ctx, upDetails, osUpdatePolicyRes, tenantID, profileName, guid)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		// We should never reach this point.
+		err := inv_errors.Errorfc(codes.Internal, "Unsupported OS type: %s", osType)
+		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+		return nil, err
+	}
+
+	return upDetails, nil
+}
+
+func populateMutableUpdateDetails(upDetails *updateDetails, policy *computev1.OSUpdatePolicyResource) {
+	upDetails.UpdateSource = &pb.UpdateSource{
+		KernelCommand: policy.GetKernelCommand(),
+		CustomRepos:   policy.GetUpdateSources(),
+	}
+	upDetails.InstalledPackages = policy.GetInstallPackages()
+}
+
+func populateImmutableUpdateDetails(
+	ctx context.Context,
+	upDetails *updateDetails,
+	policy *computev1.OSUpdatePolicyResource,
+	tenantID, profileName, guid string,
+) error {
+	osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+		return err
+	}
+	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+	upDetails.OsProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+		return err
+	}
+	return nil
 }
