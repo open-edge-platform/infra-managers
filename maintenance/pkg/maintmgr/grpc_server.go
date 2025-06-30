@@ -114,7 +114,8 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 	zlog.Debug().Msgf("OS Update Policy resource from Instance backlink: tenantID=%s, instanceID=%s, OSUpdatePolicyResource=%v",
 		tenantID, instRes.GetResourceId(), osUpdatePolicyRes)
 
-	policyUpInfo, err := getUpdatePolicyInfo(ctx, osType, osUpdatePolicyRes, tenantID, instRes.GetDesiredOs().GetProfileName(), guid)
+	policyUpInfo, err := getUpdatePolicyInfo(ctx, osType, osUpdatePolicyRes, tenantID,
+		instRes.GetDesiredOs().GetProfileName(), guid)
 	if err != nil {
 		return nil, err
 	}
@@ -148,10 +149,11 @@ func getHostAndInstanceFromUUID(ctx context.Context, tenantID, uuid string) (
 	return hostRes, instRes, nil
 }
 
-func getUpdatePolicyInfo(ctx context.Context, osType osv1.OsType, osUpdatePolicyRes *computev1.OSUpdatePolicyResource, tenantID string, profileName string, guid string) (
+func getUpdatePolicyInfo(ctx context.Context, osType osv1.OsType, osUpdatePolicyRes *computev1.OSUpdatePolicyResource,
+	tenantID string, profileName string, guid string) (
 	*updateDetails, error,
 ) {
-	var upDetails *updateDetails = &updateDetails{
+	upDetails := &updateDetails{
 		UpdateSource:          &pb.UpdateSource{},
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
