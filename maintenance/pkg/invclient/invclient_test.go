@@ -268,7 +268,7 @@ func TestInvClient_GetInstanceResourceByHostGUID(t *testing.T) {
 		inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
 		inst.DesiredOs = osRes
 		inst.CurrentOs = osRes
-		// inst.Os = osRes  TODO: uncomment when 'os' field available in instance
+		inst.Os = osRes
 		inst.Host = host
 
 		getInst, err := invclient.GetInstanceResourceByHostGUID(ctx, client, mm_testing.Tenant1, host.Uuid)

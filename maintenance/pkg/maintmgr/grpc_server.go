@@ -98,7 +98,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
-	osType := instRes.GetCurrentOs().GetOsType() // TODO: should use GetOS()
+	osType := instRes.GetOs().GetOsType()
 
 	response := &pb.PlatformUpdateStatusResponse{
 		UpdateSchedule: scheresp,
@@ -115,7 +115,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		tenantID, instRes.GetResourceId(), osUpdatePolicyRes)
 
 	policyUpInfo, err := getUpdatePolicyInfo(ctx, osType, osUpdatePolicyRes, tenantID,
-		instRes.GetDesiredOs().GetProfileName(), guid)
+		instRes.GetOs().GetProfileName(), guid)
 	if err != nil {
 		return nil, err
 	}
