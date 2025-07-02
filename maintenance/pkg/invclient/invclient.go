@@ -181,11 +181,8 @@ func GetOSUpdatePolicyByInstanceID(
 		return nil, err
 	}
 	if instance.GetOsUpdatePolicy() == nil {
-		return nil, errors.Errorfc(
-			codes.NotFound,
-			"OSUpdatePolicy not found for Instance: tenantID=%s, instanceID=%s",
-			tenantID, instanceID,
-		)
+		zlog.InfraSec().Warn().Msgf("OSUpdatePolicy not present in the Instance Resource: %s", instanceResp.GetResource())
+		return &computev1.OSUpdatePolicyResource{}, nil
 	}
 
 	// Now retrieve the OSUpdatePolicy resource, so we get all eager loaded fields.

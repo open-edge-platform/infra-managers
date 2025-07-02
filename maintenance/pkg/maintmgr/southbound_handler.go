@@ -67,7 +67,7 @@ func getUpdateOS(
 	case computev1.UpdatePolicy_UPDATE_POLICY_TARGET:
 		os = policy.GetTargetOs()
 		if os == nil {
-			err = errors.Errorfc(codes.Internal, "missing targetOS in OSUpdatePolicy: ResourceID %s, UpdatePolicy: %s",
+			err = errors.Errorfc(codes.NotFound, "missing targetOS in OSUpdatePolicy: ResourceID %s, UpdatePolicy: %s",
 				policy.GetResourceId(), policy.GetUpdatePolicy())
 			zlog.InfraSec().InfraErr(err).Msg("")
 		}
@@ -77,7 +77,6 @@ func getUpdateOS(
 			return nil, err
 		}
 	default:
-		zlog.InfraSec().Warn().Err(err).Msgf("Unsupported scenario")
 		err = errors.Errorfc(codes.Internal,
 			"unsupported update scenario: ResourceID %s, UpdatePolicy: %s",
 			policy.GetResourceId(), policy.GetUpdatePolicy())
