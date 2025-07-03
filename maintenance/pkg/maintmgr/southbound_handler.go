@@ -55,6 +55,38 @@ func updateInstanceInInv(
 	}
 }
 
+func getUpdateOS(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID, profileName string,
+	policy *computev1.OSUpdatePolicyResource,
+) (*os_v1.OperatingSystemResource, error) {
+	var os *os_v1.OperatingSystemResource
+	var err error
+	switch policy.GetUpdatePolicy() {
+	case computev1.UpdatePolicy_UPDATE_POLICY_TARGET:
+		os = policy.GetTargetOs()
+		if os == nil {
+			err = errors.Errorfc(codes.NotFound, "missing targetOS in OSUpdatePolicy: ResourceID %s, UpdatePolicy: %s",
+				policy.GetResourceId(), policy.GetUpdatePolicy())
+			zlog.InfraSec().InfraErr(err).Msg("")
+		}
+	case computev1.UpdatePolicy_UPDATE_POLICY_LATEST:
+		os, err = invclient.GetLatestImmutableOSByProfile(ctx, c, tenantID, profileName)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		err = errors.Errorfc(codes.Internal,
+			"unsupported update scenario: ResourceID %s, UpdatePolicy: %s",
+			policy.GetResourceId(), policy.GetUpdatePolicy())
+		zlog.InfraSec().InfraErr(err).Msg("")
+		return nil, err
+	}
+
+	return os, nil
+}
+
 func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
