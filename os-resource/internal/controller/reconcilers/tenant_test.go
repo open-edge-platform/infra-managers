@@ -96,7 +96,7 @@ func TestHostReconcileAtBootstrap(t *testing.T) {
 	})
 	tenantID := tenant.GetResourceId()
 
-	osResource := inv_testing.CreateOsWithArgs(t, "", osrm_testing.ExampleOsConfig.DefaultProfile,
+	osResource := inv_testing.CreateOsWithArgs(t, "", "random", osrm_testing.ExampleOsConfig.DefaultProfile,
 		osv1.SecurityFeature_SECURITY_FEATURE_UNSPECIFIED, osv1.OsType_OS_TYPE_MUTABLE)
 	instance := inv_testing.CreateInstance(t, nil, osResource)
 	instanceID := instance.GetResourceId()
