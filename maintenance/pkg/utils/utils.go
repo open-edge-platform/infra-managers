@@ -31,6 +31,7 @@ var zlog = logging.GetLogger("MaintenanceManagerUtils")
 const (
 	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
+	ISO8601Format                    = "2006-01-02T15:04:05.999Z"
 )
 
 func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
@@ -301,4 +302,23 @@ func SafeInt64ToUint64(i int64) (uint64, error) {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "int64 value is negative and cannot be converted to uint64")
 	}
 	return uint64(i), nil
+}
+
+func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.ResourceStatus {
+	switch newUpdateStatus.StatusType {
+	case pb.UpdateStatus_STATUS_TYPE_STARTED:
+		return &mm_status.UpdateStatusInProgress
+	case pb.UpdateStatus_STATUS_TYPE_UPDATED:
+		return &mm_status.UpdateStatusDone
+	case pb.UpdateStatus_STATUS_TYPE_FAILED:
+		return &mm_status.UpdateStatusFailed
+	case pb.UpdateStatus_STATUS_TYPE_UP_TO_DATE:
+		return &mm_status.UpdateStatusUpToDate
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADING:
+		return &mm_status.UpdateStatusDownloading
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADED:
+		return &mm_status.UpdateStatusDownloaded
+	default:
+		return &mm_status.UpdateStatusUnknown
+	}
 }

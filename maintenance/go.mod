@@ -3,12 +3,12 @@
 
 module github.com/open-edge-platform/infra-managers/maintenance
 
-go 1.24.1
+go 1.24.4
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/google/uuid v1.6.0
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.26.1
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.28.1-0.20250701093435-ed535e769b04
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.36.3
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
