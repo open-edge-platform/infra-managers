@@ -8,7 +8,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -26,6 +25,7 @@ import (
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/validator"
+	"github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
@@ -369,19 +369,41 @@ func GetLatestImmutableOSByProfile(
 func CreateOSUpdateRun(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
 ) error {
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	zlog.Info().Msgf("Create a new OSUpdateRun resource: %v", osUpRun)
 	res := &inv_v1.Resource{
 		Resource: &inv_v1.Resource_OsUpdateRun{
 			OsUpdateRun: osUpRun,
 		},
 	}
-
-	res, err := c.Create(ctx, tenantID, res)
+	runRes, err := c.Create(childCtx, tenantID, res)
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Failed to create OSUpdateRun resourse: instance=%s", res.GetInstance().GetResourceId())
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to create OSUpdateRun resource. OSUpdateRun: %v", res.GetOsUpdateRun())
 		return err
 	}
 
-	zlog.Debug().Msgf("New OSUpdateRun resourse created: OSUpdateRun=%v", res)
+	zlog.Info().Msgf("New OSUpdateRun resource created. OSUpdateRun: %v", runRes)
+
+	return err
+}
+
+func DeleteOSUpdateRun(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
+) error {
+	zlog.Info().Msgf("Delete OSUpdateRun resource: %v", osUpRun)
+
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	_, err := c.Delete(childCtx, tenantID, osUpRun.GetResourceId())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to delete OSUpdateRun resource, resourceID: %s",
+			osUpRun.GetResourceId())
+		return err
+	}
+	zlog.Debug().Msgf("Deleted OSUpdateRun resource, resourseID: %s", osUpRun.GetResourceId())
 
 	return err
 }
@@ -395,21 +417,15 @@ func UpdateOSUpdateRun(
 	updateStatusDetail string,
 	runResID string,
 ) error {
-	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, OSUpdateRunID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
+	zlog.Debug().Msgf(
+		"UpdateInstanceStatus: tenantID=%s, InstanceID=%s, OSUpdateRunID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, runResID, &updateStatus, updateStatusDetail)
 
-	timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msg("Conversion Overflow Error")
-		return err
-	}
-	timeStr := strconv.FormatUint(timeNow, 10)
+	now := time.Now().UTC().Format(inv_utils.ISO8601Format)
 	run := &computev1.OSUpdateRunResource{
 		Status:          updateStatus.Status,
 		StatusIndicator: updateStatus.StatusIndicator,
-		StatusTimestamp: timeStr,
-		UpdatedAt:       timeStr,
-		EndTime:         timeStr,
+		StatusTimestamp: now,
 	}
 
 	fields := []string{
@@ -421,6 +437,12 @@ func UpdateOSUpdateRun(
 	if updateStatusDetail != "" {
 		run.StatusDetails = updateStatusDetail
 		fields = append(fields, computev1.OSUpdateRunResourceFieldStatusDetails)
+	}
+
+	if updateStatus.Status == status.StatusCompleted ||
+		updateStatus.Status == status.StatusFailed {
+		run.EndTime = now
+		fields = append(fields, computev1.OSUpdateRunResourceFieldEndTime)
 	}
 
 	fieldMask, err := fieldmaskpb.New(run, fields...)
@@ -452,11 +474,11 @@ func GetLatestOSUpdateRunByInstanceID(
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	filter := fmt.Sprintf("%s=%q AND %s.%s=%q AND %s=%q",
+	filter := fmt.Sprintf("%s=%q AND %s.%s=%q",
 		computev1.OSUpdateRunResourceFieldTenantId, tenantID,
 		computev1.OSUpdateRunResourceEdgeInstance,
 		computev1.InstanceResourceFieldResourceId, instID,
-		computev1.OSUpdateRunResourceFieldEndTime, "",
+		// TODO: unset computev1.OSUpdateRunResourceFieldEndTime,
 	)
 
 	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
@@ -465,7 +487,6 @@ func GetLatestOSUpdateRunByInstanceID(
 		OrderBy:  "start_time desc",
 		Limit:    1,
 	})
-
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceID: tenanatID=%s, instance=%s", tenantID, instID)
 		return nil, err
@@ -485,4 +506,3 @@ func GetLatestOSUpdateRunByInstanceID(
 
 	return run, nil
 }
-

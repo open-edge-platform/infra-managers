@@ -4,9 +4,11 @@
 package util
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/big"
 	"strings"
 	"time"
 
@@ -285,4 +287,17 @@ func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.Resour
 	default:
 		return &mm_status.UpdateStatusUnknown
 	}
+}
+
+func GenerateRandomOsUpdateRunName() string {
+	return fmt.Sprintf("Test OS Update Policy name #%d", generateRandomInteger(1023)) //nolint:mnd // Testing only
+}
+
+func generateRandomInteger(intMax int64) int64 {
+	nBig, err := rand.Int(rand.Reader, big.NewInt(intMax))
+	if err != nil {
+		panic(err)
+	}
+	n := nBig.Int64()
+	return n
 }

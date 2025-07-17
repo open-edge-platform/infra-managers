@@ -5,6 +5,7 @@ package maintmgr
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -29,6 +30,8 @@ type server struct {
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
 	// TODO: refactor to reduce length and cyclomatic complexity
 	zlog.Info().Msgf("PlatformUpdateStatus: GUID=%s", in.GetHostGuid())
 	zlog.Debug().Msgf("PlatformUpdateStatus: request=%v", in)
@@ -60,6 +63,8 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
+	zlog.Debug().Msgf(" Instance's os update policy: policy=%v", instRes.GetOsUpdatePolicy())
+
 	if maintgmr_util.IsHostUntrusted(hostRes) {
 		zlog.InfraSec().InfraError("Host [tID=%s, UUID=%s] is not trusted, the message will not be handled", tenantID, guid).
 			Msg("PlatformUpdateStatus")
@@ -74,9 +79,9 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, inv_errors.Errorfc(codes.FailedPrecondition, "")
 	}
 
-	//updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
+	updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
-	handleOSUpdateRunResourse(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
+	handleOSUpdateRun(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
 	ssRes, err := invclient.ListSingleSchedules(ctx, invMgrCli, tenantID, hostRes)
 	if err != nil {
