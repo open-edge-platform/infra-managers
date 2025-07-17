@@ -46,6 +46,8 @@ type OSProfileManifest struct {
 		OsImageSha256        string                 `yaml:"osImageSha256"`
 		OsImageVersion       string                 `yaml:"osImageVersion"`
 		OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+		OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+		OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 		SecurityFeature      string                 `yaml:"securityFeature"`
 		PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 		Description          string                 `yaml:"description"`
@@ -57,6 +59,18 @@ type OSPackage struct {
 		Name    *string `json:"name"`
 		Version *string `json:"version"`
 	} `json:"repo"`
+}
+
+type ExistingCVEs []struct {
+	CveID            *string   `json:"cve_id"`
+	Priority         *string   `json:"priority"`
+	AffectedPackages []*string `json:"affected_packages"`
+}
+
+type FixedCVEs []struct {
+	CveID            *string   `json:"cve_id"`
+	Priority         *string   `json:"priority"`
+	AffectedPackages []*string `json:"affected_packages"`
 }
 
 func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string]*OSProfileManifest, error) {
@@ -138,4 +152,110 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 	packageManifest = strings.ReplaceAll(packageManifest, "\n", "")
 	packageManifest = strings.ReplaceAll(packageManifest, " ", "")
 	return packageManifest, nil
+}
+
+func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error) {
+	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
+	if rsProxyAddress == "" {
+		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
+		zlog.Err(invErr).Msg("")
+		return "", invErr
+	}
+
+	url := "http://" + rsProxyAddress + existingCVEsURL
+	zlog.InfraSec().Info().Msgf("Downloading existing CVEs list from URL: %s", url)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
+		return "", err
+	}
+
+	// Perform the HTTP GET request
+	resp, err := client.Do(req)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download existing CVEs list: %v", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the existing CVEs list content: %v", err)
+		return "", err
+	}
+
+	// verify that the returned response from RS is valid JSON
+	var existingCVEs ExistingCVEs
+	if err := json.Unmarshal(respBody, &existingCVEs); err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Invalid existing CVEs list content returned from Release Service: %v", err)
+		return "", err
+	}
+
+	// validate OS existing CVEs list content
+	if len(existingCVEs) == 0 || existingCVEs[0].CveID == nil || existingCVEs[0].Priority == nil || existingCVEs[0].AffectedPackages[0] == nil {
+		invErr := inv_errors.Errorf("missing mandatory fields in existing CVEs list content returned from Release Service")
+		zlog.InfraSec().Error().Err(invErr).Msgf("OS existing CVEs list sanity failed")
+		return "", invErr
+	}
+
+	// strip all white spaces from JSON content
+	existingCVEsList := string(respBody)
+	existingCVEsList = strings.ReplaceAll(existingCVEsList, "\n", "")
+	existingCVEsList = strings.ReplaceAll(existingCVEsList, " ", "")
+	return existingCVEsList, nil
+}
+
+func GetFixedCVEs(ctx context.Context, fixedCVEsURL string) (string, error) {
+	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
+	if rsProxyAddress == "" {
+		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
+		zlog.Err(invErr).Msg("")
+		return "", invErr
+	}
+
+	url := "http://" + rsProxyAddress + fixedCVEsURL
+	zlog.InfraSec().Info().Msgf("Downloading fixed CVEs list from URL: %s", url)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
+		return "", err
+	}
+
+	// Perform the HTTP GET request
+	resp, err := client.Do(req)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download fixed CVEs list: %v", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the fixed CVEs list content: %v", err)
+		return "", err
+	}
+
+	// verify that the returned response from RS is valid JSON
+	var fixedCVEs FixedCVEs
+	if err := json.Unmarshal(respBody, &fixedCVEs); err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Invalid fixed CVEs list content returned from Release Service: %v", err)
+		return "", err
+	}
+
+	// validate OS fixed CVEs list content
+	if len(fixedCVEs) == 0 || fixedCVEs[0].CveID == nil || fixedCVEs[0].Priority == nil || fixedCVEs[0].AffectedPackages[0] == nil {
+		invErr := inv_errors.Errorf("missing mandatory fields in fixed CVEs list content returned from Release Service")
+		zlog.InfraSec().Error().Err(invErr).Msgf("OS fixed CVEs list sanity failed")
+		return "", invErr
+	}
+
+	// strip all white spaces from JSON content
+	fixedCVEsList := string(respBody)
+	fixedCVEsList = strings.ReplaceAll(fixedCVEsList, "\n", "")
+	fixedCVEsList = strings.ReplaceAll(fixedCVEsList, " ", "")
+	return fixedCVEsList, nil
 }

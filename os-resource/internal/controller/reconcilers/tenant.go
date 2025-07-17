@@ -76,16 +76,49 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 	osRes.TenantId = tenantID
 
 	// FIXME: ITEP-22977 remove this check when enforcing JSON-encoded string for `installedPackages`
-	// retrieve package manifest JSON contnet only for IMMUTABLE OS
+	// retrieve package manifest and existing CVEs JSON contnet only for IMMUTABLE OS
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
 		var err error
 		osRes.InstalledPackages, err = fsclient.GetPackageManifest(ctx, osProfile.Spec.OsPackageManifestURL)
 		if err != nil {
 			return "", err
 		}
+		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+		if err != nil {
+			return "", err
+		}
+		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+		osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.OsFixedCvesURL)
+		if err != nil {
+			return "", err
+		}
+		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 	}
 
 	return tr.invClient.CreateOSResource(ctx, tenantID, osRes)
+}
+
+func (tr *TenantReconciler) updateOSResourceFromOSProfile(
+	ctx context.Context, tenantID string, resourceID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
+) (string, error) {
+
+	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
+		var err error
+		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+		if err != nil {
+			return "", err
+		}
+		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+
+		err = tr.invClient.UpdateOSResource(ctx, tenantID, osRes)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		// For mutable OS, we do not update the existing OS resource.
+		zlogTenant.Debug().Msgf("Skipping update for mutable OS profile %s", osProfile.Spec.ProfileName)
+	}
+	return "", nil
 }
 
 //nolint:cyclop // cyclomatic complexity is 11
@@ -206,6 +239,43 @@ func (tr *TenantReconciler) reconcileTenant(
 		err = tr.updateInstancesIfNeeded(ctx, tenant.GetTenantId(), osProfiles)
 		if err != nil {
 			return err
+		}
+	}
+
+	if tenant.GetCurrentState() == tenant_v1.TenantState_TENANT_STATE_CREATED {
+		osProfiles, err := fsclient.GetLatestOsProfiles(ctx, tr.osConfig.EnabledProfiles, tr.osConfig.OsProfileRevision)
+		if err != nil {
+			return err
+		}
+
+		osResources, err := tr.invClient.ListOSResourcesForTenant(ctx, tenant.GetTenantId())
+		if err != nil {
+			return err
+		}
+
+		// create a map from "profile ID" to OS resource to avoid expensive inner loop to check if OS resource already exists.
+		// Profile ID is a unique identifier of OS profile and OS resource.
+		// It is composed of the profile name and OS image version.
+		mapProfileIDToOSResource := make(map[string]*osv1.OperatingSystemResource)
+		for _, osRes := range osResources {
+			osResProfileID := osRes.GetProfileName() + osRes.GetImageId()
+			mapProfileIDToOSResource[osResProfileID] = osRes
+		}
+
+		for _, osProfile := range osProfiles {
+			profileID := osProfile.Spec.ProfileName + osProfile.Spec.OsImageVersion
+
+			_, exists := mapProfileIDToOSResource[profileID]
+			if exists {
+				zlogTenant.Debug().Msgf("OS resource %s %s already exists",
+					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+
+				// OS resource for given OS profile exists, update it
+				_, err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID].GetResourceId(), mapProfileIDToOSResource[profileID], osProfile)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 

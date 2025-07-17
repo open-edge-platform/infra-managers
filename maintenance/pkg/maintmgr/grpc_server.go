@@ -104,6 +104,14 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		InstalledPackages:     "",
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
+
+	// Update Existing CVEs in Instance Resource for Immutable OS
+	// This is needed to ensure that the Instance Resource has the correct/updated CVE information for immutable OS
+	// For immutable OS, the CVEs stored in the OS resource will always be the same (even during the runtime of immutable OS deployed on EN).
+	if instRes.GetOs().GetOsType() == osv1.OsType_OS_TYPE_IMMUTABLE {
+		instRes.ExistingCves = instRes.GetOs().GetExistingCves()
+	}
+
 	// Return empty OSUpdatePolicy Resource if not found
 	osUpdatePolicyRes, err := invclient.GetOSUpdatePolicyByInstanceID(ctx, invMgrCli.InvClient, tenantID, instRes.GetResourceId())
 	// Not found is not an error, it means that the instance does not have an OS update policy.
