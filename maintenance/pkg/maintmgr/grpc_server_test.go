@@ -459,12 +459,14 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.OsUpdatePolicy = osUpdatePolicy
+		inst.RuntimePackages = "packages"
+		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
 	})
 	// Host and instance start with RUNNING status
 
 	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 	require.NoError(t, err)
+	require.NotNil(t, inst.GetOsUpdatePolicy())
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 	defer cancel()
@@ -482,6 +484,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			},
 		},
 	})
+
 	require.NoError(t, err)
 
 	// TODO validate with list of repeated schedule from inventory
@@ -573,11 +576,157 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			StatusType: pb.UpdateStatus_STATUS_TYPE_UPDATED,
 		},
 	})
+
 	require.Error(t, err)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
+
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+}
+
+func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	// This test case emulates the behavior of PUA while doing an update on a Node
+	// to test creating and updating OsUpdateRun resource on statuses
+	// received from PUA: STARTED, DONE, FAILED
+
+	h := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h.TenantId = mm_testing.Tenant1
+	h.Uuid = uuid.NewString()
+	host := mm_testing.CreateHost(t, mm_testing.Tenant1, &h)
+
+	os := dao.CreateOs(t, mm_testing.Tenant1)
+	osUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
+	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = "packages"
+		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
+	})
+
+	require.NotNil(t, inst)
+	require.NotNil(t, inst.GetOsUpdatePolicy())
+
+	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
+		UpdateSchedule: &pb.UpdateSchedule{},
+		UpdateSource: &pb.UpdateSource{
+			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
+		},
+		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
+		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
+		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
+	}
+
+	// Status STARTED created new OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_STARTED,
+		mm_status.UpdateStatusInProgress,
+		expUpdateResponse,
+	)
+
+	// Status UPDATED updates the latest OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_UPDATED,
+		mm_status.UpdateStatusDone,
+		expUpdateResponse,
+	)
+
+	// Delete the OsUpdateRun created in previous step
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+
+	// Status STARTED created new OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_STARTED,
+		mm_status.UpdateStatusInProgress,
+		expUpdateResponse,
+	)
+
+	// Status UPDATED updates the latest OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_FAILED,
+		mm_status.UpdateStatusFailed,
+		expUpdateResponse,
+	)
+	// Delete the OsUpdateRun created in previous step
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+}
+
+func OSUpdateRunDelete(
+	t *testing.T,
+	tenantID string,
+	inst *computev1.InstanceResource,
+) {
+	t.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, mm_testing.Tenant1, inst.GetResourceId())
+	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+
+	if runGet != nil {
+		err = invclient.DeleteOSUpdateRun(ctx, client, mm_testing.Tenant1, runGet)
+		require.NoError(t, err)
+	}
 }
 
 func RunPUAUpdateAndAssert(
+	t *testing.T,
+	tenantID string,
+	host *computev1.HostResource,
+	inst *computev1.InstanceResource,
+	upStatus pb.UpdateStatus_StatusType,
+	expUpdateStatus inv_status.ResourceStatus,
+	expResponse *pb.PlatformUpdateStatusResponse,
+) {
+	t.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
+		HostGuid: host.Uuid,
+		UpdateStatus: &pb.UpdateStatus{
+			StatusType:  upStatus,
+			ProfileName: "immutable OS profile name",
+			OsImageId:   "2.0.0",
+		},
+	})
+	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+	if eq, diff := inv_testing.ProtoEqualOrDiff(expResponse, resp); !eq {
+		t.Errorf("Wrong response: %v", diff)
+	}
+
+	gResp, err := client.Get(ctx, tenantID, inst.ResourceId)
+	require.NoError(t, err)
+	instGet := gResp.GetResource().GetInstance()
+	require.NotNil(t, instGet)
+	assert.Equal(t, expUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
+	assert.Equal(t, expUpdateStatus.Status, instGet.UpdateStatus)
+}
+
+func RunPUAUpdateAndTestOsUpRun(
 	t *testing.T,
 	tenantID string,
 	host *computev1.HostResource,
@@ -610,8 +759,14 @@ func RunPUAUpdateAndAssert(
 	require.NoError(t, err)
 	instGet := gResp.GetResource().GetInstance()
 	require.NotNil(t, instGet)
-	assert.Equal(t, expUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
-	assert.Equal(t, expUpdateStatus.Status, instGet.UpdateStatus)
+
+	tID := instGet.GetTenantId()
+	instID := instGet.GetResourceId()
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID)
+	require.NoError(t, err)
+	require.NotNil(t, instGet)
+	assert.Equal(t, expUpdateStatus.StatusIndicator, runGet.StatusIndicator)
+	assert.Equal(t, expUpdateStatus.Status, runGet.Status)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {
