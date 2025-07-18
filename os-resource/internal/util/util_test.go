@@ -43,6 +43,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -94,6 +96,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -146,6 +150,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -196,6 +202,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -233,6 +241,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -270,6 +280,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -307,6 +319,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -344,6 +358,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
@@ -381,6 +397,8 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						OsImageSha256        string                 `yaml:"osImageSha256"`
 						OsImageVersion       string                 `yaml:"osImageVersion"`
 						OsPackageManifestURL string                 `yaml:"osPackageManifestURL"`
+						OsExistingCvesURL    string                 `yaml:"osExistingCvesURL"`
+						OsFixedCvesURL       string                 `yaml:"osFixedCvesURL"`
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`

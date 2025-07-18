@@ -104,6 +104,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		InstalledPackages:     "",
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
+
 	// Return empty OSUpdatePolicy Resource if not found
 	osUpdatePolicyRes, err := invclient.GetOSUpdatePolicyByInstanceID(ctx, invMgrCli.InvClient, tenantID, instRes.GetResourceId())
 	// Not found is not an error, it means that the instance does not have an OS update policy.

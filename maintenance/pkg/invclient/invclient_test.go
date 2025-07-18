@@ -292,7 +292,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678",
-			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId())
+			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "")
 		require.Error(t, err)
 		sts, _ := status.FromError(err)
 		assert.Equal(t, codes.NotFound, sts.Code())
@@ -303,7 +303,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateInstStatusNotCurrentOS", func(t *testing.T) {
 		timeBeforeUpdate := time.Now().Unix()
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusInProgress, "", "")
+			mm_status.UpdateStatusInProgress, "", "", "")
 
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
@@ -323,7 +323,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -338,11 +338,11 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateUpdateStatusToRunning", func(t *testing.T) {
 		// initial setup of instance status to running and update status to unknown
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		// setup only the update status as instance status is already set to running
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -542,4 +542,126 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInvClient_GetOSResourceByID(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	// Create test OS resources
+	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 1"
+		os.ProfileName = "test-profile-1"
+		os.ImageId = "test-image-1.0.0"
+		os.ProfileVersion = "1.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	osRes2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 2"
+		os.ProfileName = "test-profile-2"
+		os.ImageId = "test-image-2.0.0"
+		os.ProfileVersion = "2.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_MUTABLE
+	})
+
+	tests := []struct {
+		name         string
+		osResourceID string
+		expectError  bool
+		expectedCode codes.Code
+		validateFunc func(*testing.T, *os_v1.OperatingSystemResource)
+	}{
+		{
+			name:         "SuccessGetImmutableOS",
+			osResourceID: osRes1.GetResourceId(),
+			expectError:  false,
+			validateFunc: func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
+				assert.Equal(t, osRes1.GetResourceId(), osRes.GetResourceId())
+				assert.Equal(t, osRes1.GetName(), osRes.GetName())
+				assert.Equal(t, osRes1.GetProfileName(), osRes.GetProfileName())
+				assert.Equal(t, osRes1.GetImageId(), osRes.GetImageId())
+				assert.Equal(t, osRes1.GetProfileVersion(), osRes.GetProfileVersion())
+				assert.Equal(t, osRes1.GetSha256(), osRes.GetSha256())
+				assert.Equal(t, osRes1.GetSecurityFeature(), osRes.GetSecurityFeature())
+				assert.Equal(t, osRes1.GetOsType(), osRes.GetOsType())
+			},
+		},
+		{
+			name:         "SuccessGetMutableOS",
+			osResourceID: osRes2.GetResourceId(),
+			expectError:  false,
+			validateFunc: func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
+				assert.Equal(t, osRes2.GetResourceId(), osRes.GetResourceId())
+				assert.Equal(t, osRes2.GetName(), osRes.GetName())
+				assert.Equal(t, osRes2.GetProfileName(), osRes.GetProfileName())
+				assert.Equal(t, osRes2.GetImageId(), osRes.GetImageId())
+				assert.Equal(t, osRes2.GetProfileVersion(), osRes.GetProfileVersion())
+				assert.Equal(t, osRes2.GetSha256(), osRes.GetSha256())
+				assert.Equal(t, osRes2.GetSecurityFeature(), osRes.GetSecurityFeature())
+				assert.Equal(t, osRes2.GetOsType(), osRes.GetOsType())
+			},
+		},
+		{
+			name:         "ErrorNonExistentOSResource",
+			osResourceID: "os-nonexistent-12345678",
+			expectError:  true,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "ErrorEmptyOSResourceID",
+			osResourceID: "",
+			expectError:  true,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "ErrorInvalidOSResourceID",
+			osResourceID: "invalid-resource-id",
+			expectError:  true,
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			osRes, err := invclient.GetOSResourceByID(ctx, client, mm_testing.Tenant1, tt.osResourceID)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				assert.Nil(t, osRes)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, osRes)
+				if tt.validateFunc != nil {
+					tt.validateFunc(t, osRes)
+				}
+			}
+		})
+	}
+
+	// Test with different tenant
+	t.Run("ErrorWrongTenant", func(t *testing.T) {
+		_, err := invclient.GetOSResourceByID(ctx, client, "wrong-tenant-id", osRes1.GetResourceId())
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.NotFound, sts.Code())
+	})
+
+	// Test context timeout
+	t.Run("ContextTimeout", func(t *testing.T) {
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+		time.Sleep(1 * time.Millisecond) // Ensure context is expired
+
+		_, err := invclient.GetOSResourceByID(timeoutCtx, client, mm_testing.Tenant1, osRes1.GetResourceId())
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.DeadlineExceeded, sts.Code())
+	})
 }
