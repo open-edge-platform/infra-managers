@@ -70,8 +70,8 @@ func TestInventoryClient_FindOSResourceID_NoDuplicates(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestInventoryClient_UpdateOSResource tests the UpdateOSResource function
-func TestInventoryClient_UpdateOSResource(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCvesAndURL tests the UpdateOSResourceExistingCvesAndURL function
+func TestInventoryClient_UpdateOSResourceExistingCvesAndURL(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestInventoryClient_UpdateOSResource(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			osRes := tt.setupOSRes()
 
-			err := invClient.UpdateOSResource(ctx, client.FakeTenantID, osRes)
+			err := invClient.UpdateOSResourceExistingCvesAndURL(ctx, client.FakeTenantID, osRes)
 
 			if tt.expectedErr {
 				assert.Error(t, err)
@@ -202,8 +202,8 @@ func TestInventoryClient_UpdateOSResource(t *testing.T) {
 	}
 }
 
-// TestInventoryClient_UpdateOSResource_ContextTimeout tests UpdateOSResource with context timeout
-func TestInventoryClient_UpdateOSResource_ContextTimeout(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_ContextTimeout tests UpdateOSResourceExistingCvesAndURL with context timeout
+func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_ContextTimeout(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -228,13 +228,13 @@ func TestInventoryClient_UpdateOSResource_ContextTimeout(t *testing.T) {
 		ExistingCves: `[{"cve_id":"CVE-2024-1234","priority":"HIGH","affected_packages":["openssl"]}]`,
 	}
 
-	err = invClient.UpdateOSResource(ctx, client.FakeTenantID, osRes)
+	err = invClient.UpdateOSResourceExistingCvesAndURL(ctx, client.FakeTenantID, osRes)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context deadline exceeded")
 }
 
-// TestInventoryClient_UpdateOSResource_EmptyTenantID tests UpdateOSResource with empty tenant ID
-func TestInventoryClient_UpdateOSResource_EmptyTenantID(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_EmptyTenantID tests UpdateOSResourceExistingCvesAndURL with empty tenant ID
+func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_EmptyTenantID(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -255,6 +255,6 @@ func TestInventoryClient_UpdateOSResource_EmptyTenantID(t *testing.T) {
 		ExistingCves: `[{"cve_id":"CVE-2024-1234","priority":"HIGH","affected_packages":["openssl"]}]`,
 	}
 
-	err = invClient.UpdateOSResource(ctx, "", osRes)
+	err = invClient.UpdateOSResourceExistingCvesAndURL(ctx, "", osRes)
 	assert.Error(t, err)
 }

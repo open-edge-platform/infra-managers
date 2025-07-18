@@ -99,7 +99,7 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 }
 
 func (tr *TenantReconciler) updateOSResourceFromOSProfile(
-	ctx context.Context, tenantID string, resourceID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
+	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
 ) (string, error) {
 
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
@@ -110,7 +110,7 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 		}
 		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
-		err = tr.invClient.UpdateOSResource(ctx, tenantID, osRes)
+		err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
 		if err != nil {
 			return "", err
 		}
@@ -216,6 +216,13 @@ func (tr *TenantReconciler) reconcileTenant(
 			if exists {
 				zlogTenant.Debug().Msgf("OS resource %s %s already exists",
 					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+
+				// OS resource for given OS profile exists, update it
+				_, err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID], osProfile)
+				if err != nil {
+					return err
+				}
+
 				continue
 			}
 
@@ -239,43 +246,6 @@ func (tr *TenantReconciler) reconcileTenant(
 		err = tr.updateInstancesIfNeeded(ctx, tenant.GetTenantId(), osProfiles)
 		if err != nil {
 			return err
-		}
-	}
-
-	if tenant.GetCurrentState() == tenant_v1.TenantState_TENANT_STATE_CREATED {
-		osProfiles, err := fsclient.GetLatestOsProfiles(ctx, tr.osConfig.EnabledProfiles, tr.osConfig.OsProfileRevision)
-		if err != nil {
-			return err
-		}
-
-		osResources, err := tr.invClient.ListOSResourcesForTenant(ctx, tenant.GetTenantId())
-		if err != nil {
-			return err
-		}
-
-		// create a map from "profile ID" to OS resource to avoid expensive inner loop to check if OS resource already exists.
-		// Profile ID is a unique identifier of OS profile and OS resource.
-		// It is composed of the profile name and OS image version.
-		mapProfileIDToOSResource := make(map[string]*osv1.OperatingSystemResource)
-		for _, osRes := range osResources {
-			osResProfileID := osRes.GetProfileName() + osRes.GetImageId()
-			mapProfileIDToOSResource[osResProfileID] = osRes
-		}
-
-		for _, osProfile := range osProfiles {
-			profileID := osProfile.Spec.ProfileName + osProfile.Spec.OsImageVersion
-
-			_, exists := mapProfileIDToOSResource[profileID]
-			if exists {
-				zlogTenant.Debug().Msgf("OS resource %s %s already exists",
-					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
-
-				// OS resource for given OS profile exists, update it
-				_, err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID].GetResourceId(), mapProfileIDToOSResource[profileID], osProfile)
-				if err != nil {
-					return err
-				}
-			}
 		}
 	}
 
