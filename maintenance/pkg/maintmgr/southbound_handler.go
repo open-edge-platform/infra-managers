@@ -42,8 +42,17 @@ func updateInstanceInInv(
 			return
 		}
 
+		// Fetch the new existing CVEs after fetching the OS Resource
+		newOSResource, err := invclient.GetOSResourceByID(ctx, client, tenantID, newOSResID)
+		if err != nil {
+			// Return and continue in case of errors
+			zlog.InfraSec().Warn().Err(err).Msgf("Failed to fetch OS Resource from new OS Resource ID")
+			return
+		}
+		newExistingCVEs := newOSResource.GetExistingCves()
+
 		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID)
+			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs)
 		if err != nil {
 			// Return and continue in case of errors
 			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
@@ -53,6 +62,7 @@ func updateInstanceInInv(
 		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
 			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
 	}
+
 }
 
 func getUpdateOS(
