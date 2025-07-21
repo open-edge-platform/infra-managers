@@ -705,6 +705,7 @@ func RunPUAUpdateAndAssert(
 	defer cancel()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
+	// TODO validate with list of repeated schedule from inventory
 	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
 		HostGuid: host.Uuid,
 		UpdateStatus: &pb.UpdateStatus{
@@ -741,7 +742,6 @@ func RunPUAUpdateAndTestOsUpRun(
 	defer cancel()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
-	// TODO validate with list of repeated schedule from inventory
 	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
 		HostGuid: host.Uuid,
 		UpdateStatus: &pb.UpdateStatus{
