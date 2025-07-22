@@ -25,6 +25,7 @@ import (
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/validator"
+	"github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
@@ -377,10 +378,10 @@ func GetOSResourceByID(
 	tenantID, osResourceID string,
 ) (*os_v1.OperatingSystemResource, error) {
 	zlog.Debug().Msgf("GetOSResourceByID: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
-
+  
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
-
+  
 	resp, err := c.Get(childCtx, tenantID, osResourceID)
 	if err != nil {
 		zlog.InfraErr(err).Msgf("Failed to get OS resource: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
@@ -402,4 +403,145 @@ func GetOSResourceByID(
 		osResource.GetResourceId(), osResource.GetProfileName(), osResource.GetImageId())
 
 	return osResource, nil
+}
+
+func CreateOSUpdateRun(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
+) error {
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	zlog.Info().Msgf("Create a new OSUpdateRun resource: %v", osUpRun)
+	res := &inv_v1.Resource{
+		Resource: &inv_v1.Resource_OsUpdateRun{
+			OsUpdateRun: osUpRun,
+		},
+	}
+	runRes, err := c.Create(childCtx, tenantID, res)
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to create OSUpdateRun resource. OSUpdateRun: %v", res.GetOsUpdateRun())
+		return err
+	}
+
+	zlog.Info().Msgf("New OSUpdateRun resource created. OSUpdateRun: %v", runRes)
+
+	return err
+}
+
+func DeleteOSUpdateRun(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
+) error {
+	zlog.Info().Msgf("Delete OSUpdateRun resource: %v", osUpRun)
+
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	_, err := c.Delete(childCtx, tenantID, osUpRun.GetResourceId())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to delete OSUpdateRun resource, resourceID: %s",
+			osUpRun.GetResourceId())
+		return err
+	}
+	zlog.Debug().Msgf("Deleted OSUpdateRun resource, resourseID: %s", osUpRun.GetResourceId())
+
+	return err
+}
+
+func UpdateOSUpdateRun(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	instanceID string,
+	updateStatus *inv_status.ResourceStatus,
+	updateStatusDetail string,
+	runResID string,
+) error {
+	zlog.Debug().Msgf(
+		"UpdateInstanceStatus: tenantID=%s, InstanceID=%s, OSUpdateRunID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
+		tenantID, instanceID, runResID, &updateStatus, updateStatusDetail)
+
+	now := time.Now().UTC().Format(inv_utils.ISO8601Format)
+	run := &computev1.OSUpdateRunResource{
+		Status:          updateStatus.Status,
+		StatusIndicator: updateStatus.StatusIndicator,
+		StatusTimestamp: now,
+	}
+
+	fields := []string{
+		computev1.OSUpdateRunResourceFieldStatus,
+		computev1.OSUpdateRunResourceFieldStatusIndicator,
+		computev1.OSUpdateRunResourceFieldStatusTimestamp,
+	}
+
+	if updateStatusDetail != "" {
+		run.StatusDetails = updateStatusDetail
+		fields = append(fields, computev1.OSUpdateRunResourceFieldStatusDetails)
+	}
+
+	if updateStatus.Status == status.StatusCompleted ||
+		updateStatus.Status == status.StatusFailed {
+		run.EndTime = now
+		fields = append(fields, computev1.OSUpdateRunResourceFieldEndTime)
+	}
+
+	fieldMask, err := fieldmaskpb.New(run, fields...)
+	if err != nil {
+		// This should never happen
+		zlog.InfraSec().InfraErr(err).Msg("should never happen")
+		return err
+	}
+  
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+  
+	_, err = c.Update(childCtx, tenantID, runResID, fieldMask, &inv_v1.Resource{
+		Resource: &inv_v1.Resource_OsUpdateRun{
+			OsUpdateRun: run,
+		},
+	})
+	return err
+}
+
+func GetLatestOSUpdateRunByInstanceID(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID, instID string,
+) (*computev1.OSUpdateRunResource, error) {
+	// TODO: Add caching layer
+	zlog.Debug().Msgf("GetLatestOSUpdateRunByInstanceID: tenantID=%s, instance=%s", tenantID, instID)
+
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	filter := fmt.Sprintf("%s=%q AND %s.%s=%q",
+		computev1.OSUpdateRunResourceFieldTenantId, tenantID,
+		computev1.OSUpdateRunResourceEdgeInstance,
+		computev1.InstanceResourceFieldResourceId, instID,
+		// TODO: unset computev1.OSUpdateRunResourceFieldEndTime,
+	)
+
+	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
+		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_OsUpdateRun{}},
+		Filter:   filter,
+		OrderBy:  "start_time desc",
+		Limit:    1,
+	})
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceID: tenanatID=%s, instance=%s", tenantID, instID)
+		return nil, err
+	}
+
+	if len(resp.GetResources()) == 0 {
+		return nil, errors.Errorfc(
+			codes.NotFound, "OSUpdateRun resource not found: tenantID=%s, instance=%s", tenantID, instID)
+	}
+
+	run := resp.GetResources()[0].GetResource().GetOsUpdateRun()
+	if err := validator.ValidateMessage(run); err != nil {
+		return nil, errors.Wrap(err)
+	}
+
+	zlog.Debug().Msgf("Found OSUpdateRun resource with resourceID: %s", run.GetResourceId())
+
+	return run, nil
 }
