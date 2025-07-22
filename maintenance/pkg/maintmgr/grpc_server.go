@@ -76,6 +76,8 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 
 	updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
+	handleOSUpdateRun(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
+
 	ssRes, err := invclient.ListSingleSchedules(ctx, invMgrCli, tenantID, hostRes)
 	if err != nil {
 		return nil, err
