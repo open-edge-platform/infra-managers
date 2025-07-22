@@ -48,7 +48,7 @@ func updateInstanceInInv(
 		if newOSResID == "" {
 			// If newOSResID is os zero length, it means there is no new OS Resource update and
 			// existing OS resource shall be used to fetch the existing CVEs
-			newExistingCVEs = instRes.GetCurrentOs().GetExistingCves()
+			newExistingCVEs = instRes.GetOs().GetExistingCves()
 		} else {
 			// Fetch the new existing CVEs after fetching the new OS Resource based on the newOSResID
 			newOSResource, err := invclient.GetOSResourceByID(ctx, client, tenantID, newOSResID)
