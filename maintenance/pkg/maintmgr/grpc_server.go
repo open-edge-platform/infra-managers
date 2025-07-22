@@ -5,7 +5,6 @@ package maintmgr
 
 import (
 	"context"
-	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -30,8 +29,6 @@ type server struct {
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
 	// TODO: refactor to reduce length and cyclomatic complexity
 	zlog.Info().Msgf("PlatformUpdateStatus: GUID=%s", in.GetHostGuid())
 	zlog.Debug().Msgf("PlatformUpdateStatus: request=%v", in)
