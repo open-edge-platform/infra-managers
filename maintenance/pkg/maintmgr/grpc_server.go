@@ -63,8 +63,6 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
-	zlog.Debug().Msgf(" Instance's os update policy: policy=%v", instRes.GetOsUpdatePolicy())
-
 	if maintgmr_util.IsHostUntrusted(hostRes) {
 		zlog.InfraSec().InfraError("Host [tID=%s, UUID=%s] is not trusted, the message will not be handled", tenantID, guid).
 			Msg("PlatformUpdateStatus")
