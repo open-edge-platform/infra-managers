@@ -353,7 +353,6 @@ func (c *InventoryClient) FindOSResourceID(ctx context.Context,
 func (c *InventoryClient) UpdateOSResourceExistingCvesAndURL(ctx context.Context,
 	tenantID string, osRes *osv1.OperatingSystemResource,
 ) error {
-
 	fm := &fieldmaskpb.FieldMask{
 		Paths: []string{
 			osv1.OperatingSystemResourceFieldExistingCves,

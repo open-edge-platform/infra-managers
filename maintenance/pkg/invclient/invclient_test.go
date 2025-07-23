@@ -26,6 +26,10 @@ import (
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
+const (
+	semverVersion100 = "1.0.0"
+)
+
 func TestMain(m *testing.M) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -427,13 +431,12 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := t.Context()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
-	semver100 := "1.0.0"
 
 	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 1"
 		os.ProfileName = "profile name 1"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -442,7 +445,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 2"
 		os.ProfileName = "profile name 2"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -460,7 +463,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 3"
 		os.ProfileName = "profile name 3"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -544,6 +547,21 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 	}
 }
 
+// createOSResourceValidator creates a validation function for OS resource comparison.
+func createOSResourceValidator(expected *os_v1.OperatingSystemResource) func(*testing.T, *os_v1.OperatingSystemResource) {
+	return func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
+		t.Helper()
+		assert.Equal(t, expected.GetResourceId(), osRes.GetResourceId())
+		assert.Equal(t, expected.GetName(), osRes.GetName())
+		assert.Equal(t, expected.GetProfileName(), osRes.GetProfileName())
+		assert.Equal(t, expected.GetImageId(), osRes.GetImageId())
+		assert.Equal(t, expected.GetProfileVersion(), osRes.GetProfileVersion())
+		assert.Equal(t, expected.GetSha256(), osRes.GetSha256())
+		assert.Equal(t, expected.GetSecurityFeature(), osRes.GetSecurityFeature())
+		assert.Equal(t, expected.GetOsType(), osRes.GetOsType())
+	}
+}
+
 func TestInvClient_GetOSResourceByID(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := context.TODO()
@@ -581,31 +599,13 @@ func TestInvClient_GetOSResourceByID(t *testing.T) {
 			name:         "SuccessGetImmutableOS",
 			osResourceID: osRes1.GetResourceId(),
 			expectError:  false,
-			validateFunc: func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
-				assert.Equal(t, osRes1.GetResourceId(), osRes.GetResourceId())
-				assert.Equal(t, osRes1.GetName(), osRes.GetName())
-				assert.Equal(t, osRes1.GetProfileName(), osRes.GetProfileName())
-				assert.Equal(t, osRes1.GetImageId(), osRes.GetImageId())
-				assert.Equal(t, osRes1.GetProfileVersion(), osRes.GetProfileVersion())
-				assert.Equal(t, osRes1.GetSha256(), osRes.GetSha256())
-				assert.Equal(t, osRes1.GetSecurityFeature(), osRes.GetSecurityFeature())
-				assert.Equal(t, osRes1.GetOsType(), osRes.GetOsType())
-			},
+			validateFunc: createOSResourceValidator(osRes1),
 		},
 		{
 			name:         "SuccessGetMutableOS",
 			osResourceID: osRes2.GetResourceId(),
 			expectError:  false,
-			validateFunc: func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
-				assert.Equal(t, osRes2.GetResourceId(), osRes.GetResourceId())
-				assert.Equal(t, osRes2.GetName(), osRes.GetName())
-				assert.Equal(t, osRes2.GetProfileName(), osRes.GetProfileName())
-				assert.Equal(t, osRes2.GetImageId(), osRes.GetImageId())
-				assert.Equal(t, osRes2.GetProfileVersion(), osRes.GetProfileVersion())
-				assert.Equal(t, osRes2.GetSha256(), osRes.GetSha256())
-				assert.Equal(t, osRes2.GetSecurityFeature(), osRes.GetSecurityFeature())
-				assert.Equal(t, osRes2.GetOsType(), osRes.GetOsType())
-			},
+			validateFunc: createOSResourceValidator(osRes2),
 		},
 		{
 			name:         "ErrorNonExistentOSResource",
@@ -644,6 +644,23 @@ func TestInvClient_GetOSResourceByID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInvClient_GetOSResourceByID_ErrorCases(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	// Create a test OS resource for some tests
+	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 1"
+		os.ProfileName = "test-profile-1"
+		os.ImageId = "test-image-1.0.0"
+		os.ProfileVersion = "1.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
 
 	// Test with different tenant
 	t.Run("ErrorWrongTenant", func(t *testing.T) {

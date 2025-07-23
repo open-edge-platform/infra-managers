@@ -12,6 +12,7 @@ import (
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
+	statusv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/status/v1"
 	inv_client "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	pb "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1"
@@ -48,14 +49,18 @@ func updateInstanceInInv(
 		var newExistingCVEs string
 		if newOSResID == "" {
 			// If newOSResID is os zero length, it means there is no new OS Resource update and
-			// existing OS resource shall be used to fetch the existing CVEs
-			newExistingCVEs = instRes.GetOs().GetExistingCves()
+			// also if Instance Status is getting updated from UnSpecified to Idle then only
+			// copy existing CVEs from existing OS resource
+			if instRes.GetUpdateStatusIndicator() == statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED &&
+				newInstUpStatus.StatusIndicator == statusv1.StatusIndication_STATUS_INDICATION_IDLE {
+				newExistingCVEs = instRes.GetOs().GetExistingCves()
+			}
 		} else {
 			// Fetch the new existing CVEs after fetching the new OS Resource based on the newOSResID
-			newOSResource, err := invclient.GetOSResourceByID(ctx, client, tenantID, newOSResID)
-			if err != nil {
+			newOSResource, osErr := invclient.GetOSResourceByID(ctx, client, tenantID, newOSResID)
+			if osErr != nil {
 				// Return and continue in case of errors
-				zlog.InfraSec().Warn().Err(err).Msgf("Failed to fetch OS Resource from new OS Resource ID")
+				zlog.InfraSec().Warn().Err(osErr).Msgf("Failed to fetch OS Resource from new OS Resource ID")
 				return
 			}
 			newExistingCVEs = newOSResource.GetExistingCves()
@@ -72,7 +77,6 @@ func updateInstanceInInv(
 		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
 			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
 	}
-
 }
 
 func getUpdateOS(

@@ -226,8 +226,76 @@ func getResource(t *testing.T, resourceID string) *inventoryv1.Resource {
 	return gresp.GetResource()
 }
 
+// createMockServer creates a test HTTP server for CVE and manifest data.
+func createMockServer(t *testing.T, mockCVEData []map[string]interface{},
+	mockManifestData map[string]interface{},
+) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.Contains(r.URL.Path, "/cves/"):
+			if err := json.NewEncoder(w).Encode(mockCVEData); err != nil {
+				http.Error(w, "Failed to encode CVE data", http.StatusInternalServerError)
+			}
+		case strings.Contains(r.URL.Path, "manifest.json"):
+			if err := json.NewEncoder(w).Encode(mockManifestData); err != nil {
+				http.Error(w, "Failed to encode manifest data", http.StatusInternalServerError)
+			}
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+}
+
+// setupTestEnvironment configures the test environment with mock server and environment variables.
+func setupTestEnvironment(t *testing.T, mockServer *httptest.Server) {
+	t.Helper()
+	t.Setenv(fsclient.EnvNameRsEnProfileRepo, osrm_testing.EnProfileRepo)
+	mockServerURL := strings.Replace(mockServer.URL, "http://", "", 1)
+	t.Setenv(fsclient.EnvNameRsFilesProxyAddress, mockServerURL)
+}
+
+// createMockArtifactService creates and configures a mock artifact service.
+func createMockArtifactService(t *testing.T, profile fsclient.OSProfileManifest) *osrm_testing.MockArtifactService {
+	t.Helper()
+	m := &osrm_testing.MockArtifactService{}
+	as.DefaultArtService = m
+
+	profileYaml, err := yaml.Marshal(profile)
+	require.NoError(t, err)
+
+	mockArtifact := as.Artifact{Data: profileYaml}
+	m.On("DownloadArtifacts", osrm_testing.EnProfileRepo+profile.Spec.ProfileName,
+		"main").Return(&[]as.Artifact{mockArtifact}, nil)
+
+	return m
+}
+
+// createTenantAndRunReconciliation creates a tenant and runs the reconciliation process.
+func createTenantAndRunReconciliation(t *testing.T, tenantReconciler *reconcilers.TenantReconciler) *tenantv1.Tenant {
+	t.Helper()
+	tenantController := rec_v2.NewController[reconcilers.ReconcilerID](tenantReconciler.Reconcile, rec_v2.WithParallelism(1))
+
+	tenant := inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
+		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
+	})
+
+	runReconcilationFunc(t, tenantController)
+	return tenant
+}
+
 func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
-	// Create mock HTTP server for CVE data and manifest
+	mockImmutableProfile := setupCVEHandlingTest(t)
+	tenantReconciler, tenant := runCVEHandlingReconciliation(t, mockImmutableProfile)
+	verifyCVEHandlingResults(t, tenantReconciler, tenant, mockImmutableProfile)
+}
+
+// setupCVEHandlingTest creates the mock data and server for CVE handling tests.
+func setupCVEHandlingTest(t *testing.T) fsclient.OSProfileManifest {
+	t.Helper()
+
+	// Create mock CVE and manifest data
 	mockCVEData := []map[string]interface{}{
 		{
 			"cve_id":            "CVE-2024-1234",
@@ -249,20 +317,13 @@ func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
 		},
 	}
 
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if strings.Contains(r.URL.Path, "/cves/") {
-			json.NewEncoder(w).Encode(mockCVEData)
-		} else if strings.Contains(r.URL.Path, "manifest.json") {
-			json.NewEncoder(w).Encode(mockManifestData)
-		} else {
-			http.NotFound(w, r)
-		}
-	}))
-	defer mockServer.Close()
+	mockServer := createMockServer(t, mockCVEData, mockManifestData)
+	t.Cleanup(mockServer.Close)
 
-	// Test to verify CVE processing doesn't break tenant reconciliation
+	setupTestEnvironment(t, mockServer)
+
 	// Create a minimal immutable OS profile
+	//nolint:tagliatelle // YAML tags match existing API structure
 	mockImmutableProfile := fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -296,25 +357,15 @@ func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
 		},
 	}
 
-	// Set up environment and mock services
-	t.Setenv(fsclient.EnvNameRsEnProfileRepo, osrm_testing.EnProfileRepo)
-	// Set the proxy address to our mock server
-	mockServerURL := strings.Replace(mockServer.URL, "http://", "", 1)
-	t.Setenv(fsclient.EnvNameRsFilesProxyAddress, mockServerURL)
+	createMockArtifactService(t, mockImmutableProfile)
+	return mockImmutableProfile
+}
 
-	// Create mock artifact service
-	m := &osrm_testing.MockArtifactService{}
-	as.DefaultArtService = m
-
-	// Mock the artifact download for the immutable profile
-	profileYaml, err := yaml.Marshal(mockImmutableProfile)
-	require.NoError(t, err)
-
-	mockArtifact := as.Artifact{
-		Data: profileYaml,
-	}
-	m.On("DownloadArtifacts", osrm_testing.EnProfileRepo+mockImmutableProfile.Spec.ProfileName,
-		"main").Return(&[]as.Artifact{mockArtifact}, nil)
+// runCVEHandlingReconciliation sets up the reconciler and runs tenant reconciliation.
+func runCVEHandlingReconciliation(t *testing.T, mockImmutableProfile fsclient.OSProfileManifest) (
+	*reconcilers.TenantReconciler, *tenantv1.Tenant,
+) {
+	t.Helper()
 
 	// Create OS config with immutable profile
 	testOsConfig := common.OsConfig{
@@ -328,20 +379,23 @@ func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
 	tenantReconciler := reconcilers.NewTenantReconciler(osrm_testing.InvClient, testOsConfig)
 	require.NotNil(t, tenantReconciler)
 
-	tenantController := rec_v2.NewController[reconcilers.ReconcilerID](tenantReconciler.Reconcile, rec_v2.WithParallelism(1))
+	tenant := createTenantAndRunReconciliation(t, tenantReconciler)
+	return tenantReconciler, tenant
+}
 
-	// Create tenant
-	tenant := inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
-		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
-	})
-	tenantID := tenant.GetResourceId()
+// verifyCVEHandlingResults verifies the tenant and OS resource creation with CVE data.
+func verifyCVEHandlingResults(
+	t *testing.T,
+	_ *reconcilers.TenantReconciler,
+	tenant *tenantv1.Tenant,
+	mockImmutableProfile fsclient.OSProfileManifest,
+) {
+	t.Helper()
 
-	// Run reconciliation
-	runReconcilationFunc(t, tenantController)
 	defer cleanupProvider(t, tenant.GetTenantId())
 
 	// Verify tenant was acknowledged
-	tenantInv := getResource(t, tenantID).GetTenant()
+	tenantInv := getResource(t, tenant.GetResourceId()).GetTenant()
 	assert.Equal(t, true, tenantInv.GetWatcherOsmanager())
 
 	// Verify OS resource was created with CVE data
@@ -350,12 +404,30 @@ func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
 
 	osResources, err := osrm_testing.InvClient.ListOSResourcesForTenant(ctx, tenant.GetTenantId())
 	require.NoError(t, err)
-	//require.Len(t, osResources, 1)
+	require.NotEmpty(t, osResources)
 
-	osResource := osResources[1]
-	assert.Equal(t, mockImmutableProfile.Spec.ProfileName, osResource.GetProfileName())
-	assert.Equal(t, mockImmutableProfile.Spec.OsImageVersion, osResource.GetImageId())
-	assert.Equal(t, osv1.OsType_OS_TYPE_IMMUTABLE, osResource.GetOsType())
+	// Find the immutable OS resource
+	var immutableOSResource interface{}
+	for _, osRes := range osResources {
+		if osRes.GetProfileName() == mockImmutableProfile.Spec.ProfileName &&
+			osRes.GetImageId() == mockImmutableProfile.Spec.OsImageVersion {
+			immutableOSResource = osRes
+			break
+		}
+	}
+	require.NotNil(t, immutableOSResource, "Immutable OS resource should be created")
+
+	// Convert to the same type as used in the loop
+	osRes, ok := immutableOSResource.(interface {
+		GetProfileName() string
+		GetImageId() string
+		GetOsType() osv1.OsType
+	})
+	require.True(t, ok, "Type assertion failed")
+
+	assert.Equal(t, mockImmutableProfile.Spec.ProfileName, osRes.GetProfileName())
+	assert.Equal(t, mockImmutableProfile.Spec.OsImageVersion, osRes.GetImageId())
+	assert.Equal(t, osv1.OsType_OS_TYPE_IMMUTABLE, osRes.GetOsType())
 
 	// Note: CVE data would be populated by the fsclient functions in a real scenario
 	// In this test, we verify the structure is set up correctly for CVE handling
@@ -365,6 +437,15 @@ func TestTenantReconciler_CVEHandlingForImmutableOS(t *testing.T) {
 }
 
 func TestTenantReconciler_CVEUpdateForExistingImmutableOS(t *testing.T) {
+	mockProfile, tenant := setupCVEUpdateTest(t)
+	tenantReconciler := runCVEUpdateReconciliation(t, mockProfile, tenant)
+	verifyExistingCVEUpdateResults(t, tenantReconciler, tenant, mockProfile)
+}
+
+// setupCVEUpdateTest creates the mock data and tenant for CVE update tests.
+func setupCVEUpdateTest(t *testing.T) (fsclient.OSProfileManifest, *tenantv1.Tenant) {
+	t.Helper()
+
 	// Create mock HTTP server for CVE data and manifest
 	mockCVEData := []map[string]interface{}{
 		{
@@ -389,17 +470,23 @@ func TestTenantReconciler_CVEUpdateForExistingImmutableOS(t *testing.T) {
 
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.Contains(r.URL.Path, "/cves/") {
-			json.NewEncoder(w).Encode(mockCVEData)
-		} else if strings.Contains(r.URL.Path, "manifest.json") {
-			json.NewEncoder(w).Encode(mockManifestData)
-		} else {
+		switch {
+		case strings.Contains(r.URL.Path, "/cves/"):
+			if err := json.NewEncoder(w).Encode(mockCVEData); err != nil {
+				http.Error(w, "Failed to encode CVE data", http.StatusInternalServerError)
+			}
+		case strings.Contains(r.URL.Path, "manifest.json"):
+			if err := json.NewEncoder(w).Encode(mockManifestData); err != nil {
+				http.Error(w, "Failed to encode manifest data", http.StatusInternalServerError)
+			}
+		default:
 			http.NotFound(w, r)
 		}
 	}))
-	defer mockServer.Close()
+	t.Cleanup(mockServer.Close)
 
 	// Create a mock immutable OS profile
+	//nolint:tagliatelle // YAML tags match existing API structure
 	mockProfile := fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -443,9 +530,16 @@ func TestTenantReconciler_CVEUpdateForExistingImmutableOS(t *testing.T) {
 		tenant.WatcherOsmanager = true
 	})
 
-	// Update the existing OS to match our test profile
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	return mockProfile, tenant
+}
+
+// runCVEUpdateReconciliation sets up the reconciler and runs the update process.
+func runCVEUpdateReconciliation(
+	t *testing.T,
+	mockProfile fsclient.OSProfileManifest,
+	_ *tenantv1.Tenant,
+) *reconcilers.TenantReconciler {
+	t.Helper()
 
 	// Create mock artifact service
 	m := &osrm_testing.MockArtifactService{}
@@ -477,6 +571,22 @@ func TestTenantReconciler_CVEUpdateForExistingImmutableOS(t *testing.T) {
 	// Run reconciliation again - this should trigger CVE updates of the created OS resource
 	runReconcilationFunc(t, tenantController)
 
+	return tenantReconciler
+}
+
+// verifyExistingCVEUpdateResults verifies the CVE update results for existing OS resources.
+func verifyExistingCVEUpdateResults(
+	t *testing.T,
+	_ *reconcilers.TenantReconciler,
+	tenant *tenantv1.Tenant,
+	mockProfile fsclient.OSProfileManifest,
+) {
+	t.Helper()
+
+	// Update the existing OS to match our test profile
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	// Verify the OS resource still exists and would have been processed for CVE updates
 	osResources, err := osrm_testing.InvClient.ListOSResourcesForTenant(ctx, tenant.GetTenantId())
 	require.NoError(t, err)
@@ -496,6 +606,15 @@ func TestTenantReconciler_CVEUpdateForExistingImmutableOS(t *testing.T) {
 }
 
 func TestTenantReconciler_SkipCVEUpdateForMutableOS(t *testing.T) {
+	mockMutableProfile, tenant := setupMutableOSSkipTest(t)
+	tenantReconciler := runMutableOSReconciliation(t, mockMutableProfile, tenant)
+	verifyMutableOSSkipResults(t, tenantReconciler, tenant, mockMutableProfile)
+}
+
+// setupMutableOSSkipTest creates the mock data and tenant for mutable OS skip tests.
+func setupMutableOSSkipTest(t *testing.T) (fsclient.OSProfileManifest, *tenantv1.Tenant) {
+	t.Helper()
+
 	// Create mock HTTP server for CVE data and manifest (even though mutable OS won't use it)
 	mockCVEData := []map[string]interface{}{
 		{
@@ -516,17 +635,23 @@ func TestTenantReconciler_SkipCVEUpdateForMutableOS(t *testing.T) {
 
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.Contains(r.URL.Path, "/cves/") {
-			json.NewEncoder(w).Encode(mockCVEData)
-		} else if strings.Contains(r.URL.Path, "manifest.json") {
-			json.NewEncoder(w).Encode(mockManifestData)
-		} else {
+		switch {
+		case strings.Contains(r.URL.Path, "/cves/"):
+			if err := json.NewEncoder(w).Encode(mockCVEData); err != nil {
+				http.Error(w, "Failed to encode CVE data", http.StatusInternalServerError)
+			}
+		case strings.Contains(r.URL.Path, "manifest.json"):
+			if err := json.NewEncoder(w).Encode(mockManifestData); err != nil {
+				http.Error(w, "Failed to encode manifest data", http.StatusInternalServerError)
+			}
+		default:
 			http.NotFound(w, r)
 		}
 	}))
-	defer mockServer.Close()
+	t.Cleanup(mockServer.Close)
 
 	// Create a mock mutable OS profile
+	//nolint:tagliatelle // YAML tags match existing API structure
 	mockMutableProfile := fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -562,6 +687,22 @@ func TestTenantReconciler_SkipCVEUpdateForMutableOS(t *testing.T) {
 	mockServerURL := strings.Replace(mockServer.URL, "http://", "", 1)
 	t.Setenv(fsclient.EnvNameRsFilesProxyAddress, mockServerURL)
 
+	// Create tenant
+	tenant := inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
+		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
+	})
+
+	return mockMutableProfile, tenant
+}
+
+// runMutableOSReconciliation sets up the reconciler and runs mutable OS reconciliation.
+func runMutableOSReconciliation(
+	t *testing.T,
+	mockMutableProfile fsclient.OSProfileManifest,
+	_ *tenantv1.Tenant,
+) *reconcilers.TenantReconciler {
+	t.Helper()
+
 	// Create mock artifact service
 	m := &osrm_testing.MockArtifactService{}
 	as.DefaultArtService = m
@@ -586,15 +727,24 @@ func TestTenantReconciler_SkipCVEUpdateForMutableOS(t *testing.T) {
 
 	tenantController := rec_v2.NewController[reconcilers.ReconcilerID](tenantReconciler.Reconcile, rec_v2.WithParallelism(1))
 
-	// Create tenant
-	tenant := inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
-		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
-	})
-	tenantID := tenant.GetResourceId()
-
 	// Run reconciliation
 	runReconcilationFunc(t, tenantController)
+
+	return tenantReconciler
+}
+
+// verifyMutableOSSkipResults verifies that CVE processing is skipped for mutable OS.
+func verifyMutableOSSkipResults(
+	t *testing.T,
+	_ *reconcilers.TenantReconciler,
+	tenant *tenantv1.Tenant,
+	mockMutableProfile fsclient.OSProfileManifest,
+) {
+	t.Helper()
+
 	defer cleanupProvider(t, tenant.GetTenantId())
+
+	tenantID := tenant.GetResourceId()
 
 	// Verify tenant was acknowledged
 	tenantInv := getResource(t, tenantID).GetTenant()
@@ -622,6 +772,28 @@ func TestTenantReconciler_SkipCVEUpdateForMutableOS(t *testing.T) {
 }
 
 func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
+	mutableProfile, immutableProfile, tenant := setupMixedOSTypesTest(t)
+	tenantReconciler := runMixedOSTypesReconciliation(t, mutableProfile, immutableProfile, tenant)
+	verifyMixedOSTypesResults(t, tenantReconciler, tenant, mutableProfile, immutableProfile)
+}
+
+// setupMixedOSTypesTest creates mixed OS type profiles and tenant for testing.
+func setupMixedOSTypesTest(t *testing.T) (fsclient.OSProfileManifest, fsclient.OSProfileManifest, *tenantv1.Tenant) {
+	t.Helper()
+
+	mockServer := createMixedOSMockServer(t)
+	t.Cleanup(mockServer.Close)
+
+	mutableProfile, immutableProfile := createMixedOSProfiles()
+	tenant := setupMixedOSEnvironment(t, mockServer)
+
+	return mutableProfile, immutableProfile, tenant
+}
+
+// createMixedOSMockServer creates a mock HTTP server for mixed OS type testing.
+func createMixedOSMockServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
 	// Create mock HTTP server for CVE data and manifest
 	mockCVEData := []map[string]interface{}{
 		{
@@ -644,19 +816,27 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 		},
 	}
 
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		if strings.Contains(r.URL.Path, "/cves/") {
-			json.NewEncoder(w).Encode(mockCVEData)
-		} else if strings.Contains(r.URL.Path, "manifest.json") {
-			json.NewEncoder(w).Encode(mockManifestData)
-		} else {
+		switch {
+		case strings.Contains(r.URL.Path, "/cves/"):
+			if err := json.NewEncoder(w).Encode(mockCVEData); err != nil {
+				http.Error(w, "Failed to encode CVE data", http.StatusInternalServerError)
+			}
+		case strings.Contains(r.URL.Path, "manifest.json"):
+			if err := json.NewEncoder(w).Encode(mockManifestData); err != nil {
+				http.Error(w, "Failed to encode manifest data", http.StatusInternalServerError)
+			}
+		default:
 			http.NotFound(w, r)
 		}
 	}))
-	defer mockServer.Close()
+}
 
+// createMixedOSProfiles creates both mutable and immutable OS profiles for testing.
+func createMixedOSProfiles() (fsclient.OSProfileManifest, fsclient.OSProfileManifest) {
 	// Create both mutable and immutable OS profiles
+	//nolint:tagliatelle // YAML tags match existing API structure
 	mutableProfile := fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -684,6 +864,7 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 		},
 	}
 
+	//nolint:tagliatelle // YAML tags match existing API structure
 	immutableProfile := fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -713,11 +894,32 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 		},
 	}
 
+	return mutableProfile, immutableProfile
+}
+
+// setupMixedOSEnvironment sets up the test environment and creates a tenant.
+func setupMixedOSEnvironment(t *testing.T, mockServer *httptest.Server) *tenantv1.Tenant {
+	t.Helper()
+
 	// Set up environment
 	t.Setenv(fsclient.EnvNameRsEnProfileRepo, osrm_testing.EnProfileRepo)
 	// Set the proxy address to our mock server
 	mockServerURL := strings.Replace(mockServer.URL, "http://", "", 1)
 	t.Setenv(fsclient.EnvNameRsFilesProxyAddress, mockServerURL)
+
+	// Create tenant
+	return inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
+		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
+	})
+}
+
+// runMixedOSTypesReconciliation sets up the reconciler for mixed OS types.
+func runMixedOSTypesReconciliation(
+	t *testing.T,
+	mutableProfile, immutableProfile fsclient.OSProfileManifest,
+	_ *tenantv1.Tenant,
+) *reconcilers.TenantReconciler {
+	t.Helper()
 
 	// Create mock artifact service
 	m := &osrm_testing.MockArtifactService{}
@@ -747,13 +949,21 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 
 	tenantController := rec_v2.NewController[reconcilers.ReconcilerID](tenantReconciler.Reconcile, rec_v2.WithParallelism(1))
 
-	// Create tenant
-	tenant := inv_testing.CreateTenant(t, func(tenant *tenantv1.Tenant) {
-		tenant.DesiredState = tenantv1.TenantState_TENANT_STATE_CREATED
-	})
-
 	// Run reconciliation
 	runReconcilationFunc(t, tenantController)
+
+	return tenantReconciler
+}
+
+// verifyMixedOSTypesResults verifies that mixed OS types are handled correctly.
+func verifyMixedOSTypesResults(
+	t *testing.T,
+	_ *reconcilers.TenantReconciler,
+	tenant *tenantv1.Tenant,
+	mutableProfile, immutableProfile fsclient.OSProfileManifest,
+) {
+	t.Helper()
+
 	defer cleanupProvider(t, tenant.GetTenantId())
 
 	// Verify both OS resources were created
@@ -778,6 +988,9 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 			immutableFound = true
 			assert.Equal(t, immutableProfile.Spec.ProfileName, osRes.GetProfileName())
 			// Immutable OS should be set up for CVE processing
+		case osv1.OsType_OS_TYPE_UNSPECIFIED:
+			// Handle unspecified case
+			t.Logf("Encountered unspecified OS type for resource %s", osRes.GetProfileName())
 		}
 	}
 
@@ -788,9 +1001,10 @@ func TestTenantReconciler_MixedOSTypesHandling(t *testing.T) {
 	cleanupOSResources(t, tenant.GetTenantId())
 }
 
-// TestTenantReconciler_CVEFunctionality_Unit tests CVE-related logic without database dependencies
+// TestTenantReconciler_CVEFunctionality_Unit tests CVE-related logic without database dependencies.
 func TestTenantReconciler_CVEFunctionality_Unit(t *testing.T) {
 	// Test CVE URL validation for immutable OS profiles
+	//nolint:tagliatelle // YAML tags match existing API structure
 	immutableProfile := &fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`
@@ -816,6 +1030,7 @@ func TestTenantReconciler_CVEFunctionality_Unit(t *testing.T) {
 		},
 	}
 
+	//nolint:tagliatelle // YAML tags match existing API structure
 	mutableProfile := &fsclient.OSProfileManifest{
 		Spec: struct {
 			Name                 string                 `yaml:"name"`

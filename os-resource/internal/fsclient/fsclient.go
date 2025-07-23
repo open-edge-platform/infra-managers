@@ -154,7 +154,8 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 	return packageManifest, nil
 }
 
-func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error) {
+// getCVEsFromURL is a helper function to download and validate CVE data.
+func getCVEsFromURL(ctx context.Context, cveURL, cveType string) (string, error) {
 	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
 	if rsProxyAddress == "" {
 		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
@@ -162,100 +163,79 @@ func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error
 		return "", invErr
 	}
 
-	url := "http://" + rsProxyAddress + existingCVEsURL
-	zlog.InfraSec().Info().Msgf("Downloading existing CVEs list from URL: %s", url)
+	respBody, err := downloadCVEData(ctx, rsProxyAddress, cveURL, cveType)
+	if err != nil {
+		return "", err
+	}
+
+	if err := validateCVEData(respBody, cveType); err != nil {
+		return "", err
+	}
+
+	// strip all white spaces from JSON content
+	cvesList := string(respBody)
+	cvesList = strings.ReplaceAll(cvesList, "\n", "")
+	cvesList = strings.ReplaceAll(cvesList, " ", "")
+	return cvesList, nil
+}
+
+// downloadCVEData downloads CVE data from the given URL.
+func downloadCVEData(ctx context.Context, rsProxyAddress, cveURL, cveType string) ([]byte, error) {
+	url := "http://" + rsProxyAddress + cveURL
+	zlog.InfraSec().Info().Msgf("Downloading %s CVEs list from URL: %s", cveType, url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
-		return "", err
+		return nil, err
 	}
 
 	// Perform the HTTP GET request
 	resp, err := client.Do(req)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download existing CVEs list: %v", err)
-		return "", err
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the existing CVEs list content: %v", err)
-		return "", err
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the %s CVEs list content: %v", cveType, err)
+		return nil, err
 	}
 
+	return respBody, nil
+}
+
+// validateCVEData validates the structure and content of CVE data.
+func validateCVEData(respBody []byte, cveType string) error {
 	// verify that the returned response from RS is valid JSON
-	var existingCVEs ExistingCVEs
-	if err := json.Unmarshal(respBody, &existingCVEs); err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Invalid existing CVEs list content returned from Release Service: %v", err)
-		return "", err
+	var cves []struct {
+		CveID            *string   `json:"cve_id"`
+		Priority         *string   `json:"priority"`
+		AffectedPackages []*string `json:"affected_packages"`
+	}
+	if err := json.Unmarshal(respBody, &cves); err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Invalid %s CVEs list content returned from Release Service: %v", cveType, err)
+		return err
 	}
 
-	// validate OS existing CVEs list content
-	if len(existingCVEs) == 0 || existingCVEs[0].CveID == nil || existingCVEs[0].Priority == nil || existingCVEs[0].AffectedPackages[0] == nil {
-		invErr := inv_errors.Errorf("missing mandatory fields in existing CVEs list content returned from Release Service")
-		zlog.InfraSec().Error().Err(invErr).Msgf("OS existing CVEs list sanity failed")
-		return "", invErr
+	// validate OS CVEs list content
+	if len(cves) == 0 || cves[0].CveID == nil || cves[0].Priority == nil ||
+		len(cves[0].AffectedPackages) == 0 || cves[0].AffectedPackages[0] == nil {
+		invErr := inv_errors.Errorf("missing mandatory fields in %s CVEs list content returned from Release Service", cveType)
+		zlog.InfraSec().Error().Err(invErr).Msgf("OS %s CVEs list sanity failed", cveType)
+		return invErr
 	}
 
-	// strip all white spaces from JSON content
-	existingCVEsList := string(respBody)
-	existingCVEsList = strings.ReplaceAll(existingCVEsList, "\n", "")
-	existingCVEsList = strings.ReplaceAll(existingCVEsList, " ", "")
-	return existingCVEsList, nil
+	return nil
+}
+
+func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error) {
+	return getCVEsFromURL(ctx, existingCVEsURL, "existing")
 }
 
 func GetFixedCVEs(ctx context.Context, fixedCVEsURL string) (string, error) {
-	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
-	if rsProxyAddress == "" {
-		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
-		zlog.Err(invErr).Msg("")
-		return "", invErr
-	}
-
-	url := "http://" + rsProxyAddress + fixedCVEsURL
-	zlog.InfraSec().Info().Msgf("Downloading fixed CVEs list from URL: %s", url)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
-		return "", err
-	}
-
-	// Perform the HTTP GET request
-	resp, err := client.Do(req)
-	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download fixed CVEs list: %v", err)
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the fixed CVEs list content: %v", err)
-		return "", err
-	}
-
-	// verify that the returned response from RS is valid JSON
-	var fixedCVEs FixedCVEs
-	if err := json.Unmarshal(respBody, &fixedCVEs); err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Invalid fixed CVEs list content returned from Release Service: %v", err)
-		return "", err
-	}
-
-	// validate OS fixed CVEs list content
-	if len(fixedCVEs) == 0 || fixedCVEs[0].CveID == nil || fixedCVEs[0].Priority == nil || fixedCVEs[0].AffectedPackages[0] == nil {
-		invErr := inv_errors.Errorf("missing mandatory fields in fixed CVEs list content returned from Release Service")
-		zlog.InfraSec().Error().Err(invErr).Msgf("OS fixed CVEs list sanity failed")
-		return "", invErr
-	}
-
-	// strip all white spaces from JSON content
-	fixedCVEsList := string(respBody)
-	fixedCVEsList = strings.ReplaceAll(fixedCVEsList, "\n", "")
-	fixedCVEsList = strings.ReplaceAll(fixedCVEsList, " ", "")
-	return fixedCVEsList, nil
+	return getCVEsFromURL(ctx, fixedCVEsURL, "fixed")
 }

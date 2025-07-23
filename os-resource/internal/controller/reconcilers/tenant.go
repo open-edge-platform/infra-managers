@@ -100,25 +100,24 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 
 func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
-) (string, error) {
-
+) error {
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
 		var err error
 		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
 		if err != nil {
-			return "", err
+			return err
 		}
 		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
 		err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
 		if err != nil {
-			return "", err
+			return err
 		}
 	} else {
 		// For mutable OS, we do not update the existing OS resource.
 		zlogTenant.Debug().Msgf("Skipping update for mutable OS profile %s", osProfile.Spec.ProfileName)
 	}
-	return "", nil
+	return nil
 }
 
 //nolint:cyclop // cyclomatic complexity is 11
@@ -218,7 +217,7 @@ func (tr *TenantReconciler) reconcileTenant(
 					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
 
 				// OS resource for given OS profile exists, update it
-				_, err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID], osProfile)
+				err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID], osProfile)
 				if err != nil {
 					return err
 				}

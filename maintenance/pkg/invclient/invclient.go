@@ -378,10 +378,10 @@ func GetOSResourceByID(
 	tenantID, osResourceID string,
 ) (*os_v1.OperatingSystemResource, error) {
 	zlog.Debug().Msgf("GetOSResourceByID: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
-  
+
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
-  
+
 	resp, err := c.Get(childCtx, tenantID, osResourceID)
 	if err != nil {
 		zlog.InfraErr(err).Msgf("Failed to get OS resource: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
@@ -490,10 +490,10 @@ func UpdateOSUpdateRun(
 		zlog.InfraSec().InfraErr(err).Msg("should never happen")
 		return err
 	}
-  
+
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
-  
+
 	_, err = c.Update(childCtx, tenantID, runResID, fieldMask, &inv_v1.Resource{
 		Resource: &inv_v1.Resource_OsUpdateRun{
 			OsUpdateRun: run,

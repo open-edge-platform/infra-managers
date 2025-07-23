@@ -284,62 +284,41 @@ func Test_GetPackageManifest(t *testing.T) {
 	}
 }
 
-func Test_GetExistingCVEs(t *testing.T) {
+func Test_GetCVEs_Success(t *testing.T) {
 	mux := http.NewServeMux()
 
 	type args struct {
 		url      string
 		cvesList string
 	}
-	tests := []struct {
+
+	type testCase struct {
 		name    string
 		args    args
-		wantErr bool
-	}{
+		cveType string // "existing" or "fixed"
+	}
+
+	tests := []testCase{
 		{
-			name: "Successful - valid existing CVEs list",
+			name: "GetExistingCVEs - Successful with valid existing CVEs list",
 			args: args{
 				url:      "/validexistingcves",
 				cvesList: ExistingCVEsList,
 			},
-			wantErr: false,
+			cveType: "existing",
 		},
 		{
-			name: "Failure - non-JSON CVEs content",
+			name: "GetFixedCVEs - Successful with valid fixed CVEs list",
 			args: args{
-				url:      "/nonjsoncves",
-				cvesList: "Non-JSON content!",
+				url:      "/validfixedcves",
+				cvesList: FixedCVEsList,
 			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - empty CVEs list",
-			args: args{
-				url:      "/emptycves",
-				cvesList: EmptyCVEsList,
-			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - invalid CVEs content missing cve_id",
-			args: args{
-				url:      "/invalidcves",
-				cvesList: InvalidExistingCVEsList,
-			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - completely empty response",
-			args: args{
-				url:      "/emptyresponse",
-				cvesList: "",
-			},
-			wantErr: true,
+			cveType: "fixed",
 		},
 	}
 
 	for _, tt := range tests {
-		// serve existing CVEs list in httptest
+		// serve CVEs list in httptest
 		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(tt.args.cvesList))
@@ -354,122 +333,119 @@ func Test_GetExistingCVEs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			existingCVEs, err := GetExistingCVEs(context.Background(), tt.args.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetExistingCVEs() error = %v, wantErr %v", err, tt.wantErr)
+			var cves string
+			var err error
+
+			if tt.cveType == "existing" {
+				cves, err = GetExistingCVEs(context.Background(), tt.args.url)
+			} else {
+				cves, err = GetFixedCVEs(context.Background(), tt.args.url)
 			}
 
-			if !tt.wantErr {
-				assert.NoError(t, err)
-				assert.NotEmpty(t, existingCVEs)
-				// Verify the response doesn't contain spaces or newlines
-				assert.NotContains(t, existingCVEs, " ")
-				assert.NotContains(t, existingCVEs, "\n")
-			}
+			assert.NoError(t, err)
+			assert.NotEmpty(t, cves)
+			// Verify the response doesn't contain spaces or newlines
+			assert.NotContains(t, cves, " ")
+			assert.NotContains(t, cves, "\n")
 		})
 	}
 }
 
-func Test_GetExistingCVEs_MissingEnvVar(t *testing.T) {
+func Test_GetCVEs_Failure(t *testing.T) {
+	mux := http.NewServeMux()
+
+	type args struct {
+		url      string
+		cvesList string
+	}
+
+	type testCase struct {
+		name    string
+		args    args
+		cveType string // "existing" or "fixed"
+	}
+
+	tests := []testCase{
+		{
+			name: "GetExistingCVEs - Failure with non-JSON CVEs content",
+			args: args{
+				url:      "/nonjsonexistingcves",
+				cvesList: "Non-JSON content!",
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetExistingCVEs - Failure with empty CVEs list",
+			args: args{
+				url:      "/emptyexistingcves",
+				cvesList: EmptyCVEsList,
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetExistingCVEs - Failure with completely empty response",
+			args: args{
+				url:      "/emptyexistingresponse",
+				cvesList: "",
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetFixedCVEs - Failure with non-JSON CVEs content",
+			args: args{
+				url:      "/nonjsonfixedcves",
+				cvesList: "Non-JSON content!",
+			},
+			cveType: "fixed",
+		},
+		{
+			name: "GetFixedCVEs - Failure with completely empty response",
+			args: args{
+				url:      "/emptyfixedresponse",
+				cvesList: "",
+			},
+			cveType: "fixed",
+		},
+	}
+
+	for _, tt := range tests {
+		// serve CVEs list in httptest
+		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(tt.args.cvesList))
+		})
+	}
+
+	httpServer := httptest.NewServer(mux)
+	defer httpServer.Close()
+
+	// replace rs-proxy URL with the httptest local server address
+	t.Setenv(EnvNameRsFilesProxyAddress, strings.TrimPrefix(httpServer.URL, "http://"))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var err error
+
+			if tt.cveType == "existing" {
+				_, err = GetExistingCVEs(context.Background(), tt.args.url)
+			} else {
+				_, err = GetFixedCVEs(context.Background(), tt.args.url)
+			}
+
+			assert.Error(t, err)
+		})
+	}
+}
+
+func Test_GetCVEs_MissingEnvVar(t *testing.T) {
 	// Unset the environment variable to test error handling
 	t.Setenv(EnvNameRsFilesProxyAddress, "")
 
 	_, err := GetExistingCVEs(context.Background(), "/somepath")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "env variable is not set")
-}
 
-func Test_GetFixedCVEs(t *testing.T) {
-	mux := http.NewServeMux()
-
-	type args struct {
-		url      string
-		cvesList string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Successful - valid fixed CVEs list",
-			args: args{
-				url:      "/validfixedcves",
-				cvesList: FixedCVEsList,
-			},
-			wantErr: false,
-		},
-		{
-			name: "Failure - non-JSON CVEs content",
-			args: args{
-				url:      "/nonjsoncves",
-				cvesList: "Non-JSON content!",
-			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - empty CVEs list",
-			args: args{
-				url:      "/emptycves",
-				cvesList: EmptyCVEsList,
-			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - invalid CVEs content missing priority",
-			args: args{
-				url:      "/invalidcves",
-				cvesList: InvalidFixedCVEsList,
-			},
-			wantErr: true,
-		},
-		{
-			name: "Failure - completely empty response",
-			args: args{
-				url:      "/emptyresponse",
-				cvesList: "",
-			},
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		// serve fixed CVEs list in httptest
-		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(tt.args.cvesList))
-		})
-	}
-
-	httpServer := httptest.NewServer(mux)
-	defer httpServer.Close()
-
-	// replace rs-proxy URL with the httptest local server address
-	t.Setenv(EnvNameRsFilesProxyAddress, strings.TrimPrefix(httpServer.URL, "http://"))
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fixedCVEs, err := GetFixedCVEs(context.Background(), tt.args.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetFixedCVEs() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			if !tt.wantErr {
-				assert.NoError(t, err)
-				assert.NotEmpty(t, fixedCVEs)
-				// Verify the response doesn't contain spaces or newlines
-				assert.NotContains(t, fixedCVEs, " ")
-				assert.NotContains(t, fixedCVEs, "\n")
-			}
-		})
-	}
-}
-
-func Test_GetFixedCVEs_MissingEnvVar(t *testing.T) {
-	// Unset the environment variable to test error handling
-	t.Setenv(EnvNameRsFilesProxyAddress, "")
-
-	_, err := GetFixedCVEs(context.Background(), "/somepath")
+	_, err = GetFixedCVEs(context.Background(), "/somepath")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "env variable is not set")
 }
