@@ -5,6 +5,7 @@ package reconcilers
 
 import (
 	"context"
+	"strings"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	tenant_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/tenant/v1"
@@ -105,15 +106,27 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 ) error {
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
 		var err error
-		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+		var existingCVEs string
+
+		existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
 		if err != nil {
 			return err
 		}
-		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
-		err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
-		if err != nil {
-			return err
+		// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
+		if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
+			zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
+				tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
+			osRes.ExistingCves = existingCVEs
+			osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+
+			err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
+			if err != nil {
+				return err
+			}
+		} else {
+			zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
+				tenantID, osProfile.Spec.ProfileName)
 		}
 	} else {
 		// For mutable OS, we do not update the existing OS resource.
