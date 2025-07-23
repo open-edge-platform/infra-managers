@@ -202,6 +202,10 @@ func GetOSUpdatePolicyByInstanceID(
 		zlog.InfraSec().InfraErr(err).Msgf("Failed to unwrap resource: %s", instanceResp.GetResource())
 		return nil, err
 	}
+
+	zlog.Debug().Msgf("GetOSUpdatePolicyByInstanceID: tenantID=%s, InstanceID=%s, OSUpdatePolicyID=%s",
+		tenantID, instanceID, osUpdatePolicy.GetResourceId())
+
 	return osUpdatePolicy, nil
 }
 
