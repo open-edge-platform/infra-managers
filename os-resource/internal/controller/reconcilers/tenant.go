@@ -90,7 +90,9 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 		osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.OsFixedCvesURL)
 		if err != nil {
-			return "", err
+			// Fixed CVEs list is not getting published as of now, but it will be supported in future.
+			// SO for now, when there is error in fetching fixed CVEs, do not return error, instead log it.
+			zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
 		}
 		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 	}
