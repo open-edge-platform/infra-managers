@@ -12,8 +12,10 @@ import (
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
+	statusv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/status/v1"
 	inv_client "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
+	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	pb "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/invclient"
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
@@ -43,8 +45,17 @@ func updateInstanceInInv(
 			return
 		}
 
+		zlog.Debug().Msgf("New OS Resource ID: %s", newOSResID)
+
+		newExistingCVEs, err := GetNewExistingCVEs(ctx, client, tenantID, newOSResID, instRes, newInstUpStatus)
+		if err != nil {
+			// Return and continue in case of errors
+			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new existing CVEs")
+			return
+		}
+
 		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID)
+			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs)
 		if err != nil {
 			// Return and continue in case of errors
 			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
@@ -233,4 +244,36 @@ func updateOSUpdateRun(
 		zlog.Debug().Msgf("No UpdateStatus change needed: old=%v, new=%v",
 			newUpdateStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
 	}
+}
+
+// GetNewExistingCVEs retrieves the new existing CVEs based on the new OS Resource ID.
+// or from the current OS resource if no new OS Resource ID is provided.
+func GetNewExistingCVEs(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	newOSResID string,
+	instRes *computev1.InstanceResource,
+	newInstUpStatus *inv_status.ResourceStatus,
+) (string, error) {
+	var newExistingCVEs string
+
+	if newOSResID == "" {
+		// If newOSResID is os zero length, it means there is no new OS Resource update and
+		// also if Instance Status is getting updated from UnSpecified to Idle then only
+		// copy existing CVEs from existing OS resource
+		if instRes.GetUpdateStatusIndicator() == statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED &&
+			newInstUpStatus.StatusIndicator == statusv1.StatusIndication_STATUS_INDICATION_IDLE {
+			newExistingCVEs = instRes.GetOs().GetExistingCves()
+		}
+	} else {
+		// Fetch the new existing CVEs after fetching the new OS Resource based on the newOSResID
+		newOSResource, osErr := invclient.GetOSResourceByID(ctx, client, tenantID, newOSResID)
+		if osErr != nil {
+			return "", osErr
+		}
+		newExistingCVEs = newOSResource.GetExistingCves()
+	}
+
+	return newExistingCVEs, nil
 }

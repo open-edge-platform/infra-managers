@@ -26,6 +26,10 @@ import (
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
+const (
+	semverVersion100 = "1.0.0"
+)
+
 func TestMain(m *testing.M) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -292,7 +296,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678",
-			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId())
+			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "")
 		require.Error(t, err)
 		sts, _ := status.FromError(err)
 		assert.Equal(t, codes.NotFound, sts.Code())
@@ -303,7 +307,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateInstStatusNotCurrentOS", func(t *testing.T) {
 		timeBeforeUpdate := time.Now().Unix()
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusInProgress, "", "")
+			mm_status.UpdateStatusInProgress, "", "", "")
 
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
@@ -323,7 +327,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		require.NoError(t, err)
 		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -338,11 +342,11 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateUpdateStatusToRunning", func(t *testing.T) {
 		// initial setup of instance status to running and update status to unknown
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		// setup only the update status as instance status is already set to running
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId())
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -427,13 +431,12 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := t.Context()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
-	semver100 := "1.0.0"
 
 	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 1"
 		os.ProfileName = "profile name 1"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -442,7 +445,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 2"
 		os.ProfileName = "profile name 2"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -460,7 +463,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 3"
 		os.ProfileName = "profile name 3"
-		os.ProfileVersion = semver100
+		os.ProfileVersion = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -542,4 +545,140 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 			}
 		})
 	}
+}
+
+// createOSResourceValidator creates a validation function for OS resource comparison.
+func createOSResourceValidator(expected *os_v1.OperatingSystemResource) func(*testing.T, *os_v1.OperatingSystemResource) {
+	return func(t *testing.T, osRes *os_v1.OperatingSystemResource) {
+		t.Helper()
+		assert.Equal(t, expected.GetResourceId(), osRes.GetResourceId())
+		assert.Equal(t, expected.GetName(), osRes.GetName())
+		assert.Equal(t, expected.GetProfileName(), osRes.GetProfileName())
+		assert.Equal(t, expected.GetImageId(), osRes.GetImageId())
+		assert.Equal(t, expected.GetProfileVersion(), osRes.GetProfileVersion())
+		assert.Equal(t, expected.GetSha256(), osRes.GetSha256())
+		assert.Equal(t, expected.GetSecurityFeature(), osRes.GetSecurityFeature())
+		assert.Equal(t, expected.GetOsType(), osRes.GetOsType())
+	}
+}
+
+func TestInvClient_GetOSResourceByID(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	// Create test OS resources
+	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 1"
+		os.ProfileName = "test-profile-1"
+		os.ImageId = "test-image-1.0.0"
+		os.ProfileVersion = "1.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	osRes2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 2"
+		os.ProfileName = "test-profile-2"
+		os.ImageId = "test-image-2.0.0"
+		os.ProfileVersion = "2.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_MUTABLE
+	})
+
+	tests := []struct {
+		name         string
+		osResourceID string
+		expectError  bool
+		expectedCode codes.Code
+		validateFunc func(*testing.T, *os_v1.OperatingSystemResource)
+	}{
+		{
+			name:         "SuccessGetImmutableOS",
+			osResourceID: osRes1.GetResourceId(),
+			expectError:  false,
+			validateFunc: createOSResourceValidator(osRes1),
+		},
+		{
+			name:         "SuccessGetMutableOS",
+			osResourceID: osRes2.GetResourceId(),
+			expectError:  false,
+			validateFunc: createOSResourceValidator(osRes2),
+		},
+		{
+			name:         "ErrorNonExistentOSResource",
+			osResourceID: "os-nonexistent-12345678",
+			expectError:  true,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "ErrorEmptyOSResourceID",
+			osResourceID: "",
+			expectError:  true,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "ErrorInvalidOSResourceID",
+			osResourceID: "invalid-resource-id",
+			expectError:  true,
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			osRes, err := invclient.GetOSResourceByID(ctx, client, mm_testing.Tenant1, tt.osResourceID)
+
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Equal(t, tt.expectedCode, status.Code(err))
+				assert.Nil(t, osRes)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, osRes)
+				if tt.validateFunc != nil {
+					tt.validateFunc(t, osRes)
+				}
+			}
+		})
+	}
+}
+
+func TestInvClient_GetOSResourceByID_ErrorCases(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	// Create a test OS resource for some tests
+	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "Test OS Resource 1"
+		os.ProfileName = "test-profile-1"
+		os.ImageId = "test-image-1.0.0"
+		os.ProfileVersion = "1.0.0"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	// Test with different tenant
+	t.Run("ErrorWrongTenant", func(t *testing.T) {
+		_, err := invclient.GetOSResourceByID(ctx, client, "wrong-tenant-id", osRes1.GetResourceId())
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.NotFound, sts.Code())
+	})
+
+	// Test context timeout
+	t.Run("ContextTimeout", func(t *testing.T) {
+		timeoutCtx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+		defer cancel()
+		time.Sleep(1 * time.Millisecond) // Ensure context is expired
+
+		_, err := invclient.GetOSResourceByID(timeoutCtx, client, mm_testing.Tenant1, osRes1.GetResourceId())
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.DeadlineExceeded, sts.Code())
+	})
 }
