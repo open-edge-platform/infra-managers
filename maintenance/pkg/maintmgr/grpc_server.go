@@ -113,10 +113,10 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
 		return nil, err
 	}
-	zlog.Debug().Msgf("OS Update Policy resource from Instance backlink: tenantID=%s, instanceID=%s, OSUpdatePolicyResource=%v",
+	zlog.Debug().Msgf("OS Update Policy resource from Instance backlink: tenantID=%s, instanceID=%s, updatePolicy=%v",
 		tenantID, instRes.GetResourceId(), osUpdatePolicyRes)
 
-	if osUpdatePolicyRes != (&computev1.OSUpdatePolicyResource{}) {
+	if osUpdatePolicyRes != nil && osUpdatePolicyRes.GetResourceId() != "" {
 		err = getOSUpdatePolicyInfo(ctx, response, osType, osUpdatePolicyRes, tenantID,
 			instRes.GetOs().GetProfileName(), guid)
 		if err != nil {
@@ -125,7 +125,6 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 	}
 
 	zlog.Debug().Msgf("PlatformUpdateStatus: tenantID%s, response=%v", tenantID, response)
-
 	if err = response.ValidateAll(); err != nil {
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return nil, mmgr_error.Wrap(err)
