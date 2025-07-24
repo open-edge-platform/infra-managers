@@ -213,6 +213,7 @@ func UpdateInstance(
 	updateStatus inv_status.ResourceStatus,
 	updateStatusDetail string,
 	newOSResID string,
+	newExistingCves string,
 ) error {
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, updateStatus, updateStatusDetail)
@@ -243,6 +244,11 @@ func UpdateInstance(
 	if newOSResID != "" {
 		instRes.CurrentOs = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
 		fields = append(fields, computev1.InstanceResourceEdgeCurrentOs)
+	}
+
+	if newExistingCves != "" {
+		instRes.ExistingCves = newExistingCves
+		fields = append(fields, computev1.InstanceResourceFieldExistingCves)
 	}
 
 	fieldMask, err := fieldmaskpb.New(instRes, fields...)
@@ -364,6 +370,39 @@ func GetLatestImmutableOSByProfile(
 		latestOS.GetResourceId(), latestVersion.String())
 
 	return latestOS, nil
+}
+
+func GetOSResourceByID(
+	ctx context.Context,
+	c inv_client.TenantAwareInventoryClient,
+	tenantID, osResourceID string,
+) (*os_v1.OperatingSystemResource, error) {
+	zlog.Debug().Msgf("GetOSResourceByID: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
+
+	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
+	defer cancel()
+
+	resp, err := c.Get(childCtx, tenantID, osResourceID)
+	if err != nil {
+		zlog.InfraErr(err).Msgf("Failed to get OS resource: tenantID=%s, osResourceID=%s", tenantID, osResourceID)
+		return nil, err
+	}
+
+	if err = validator.ValidateMessage(resp); err != nil {
+		zlog.InfraSec().InfraErr(err).Msg("")
+		return nil, errors.Wrap(err)
+	}
+
+	osResource, err := util.UnwrapResource[*os_v1.OperatingSystemResource](resp.GetResource())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed to unwrap OS resource: %s", resp.GetResource())
+		return nil, err
+	}
+
+	zlog.Debug().Msgf("Successfully retrieved OS resource: %s (Profile: %s, Version: %s)",
+		osResource.GetResourceId(), osResource.GetProfileName(), osResource.GetImageId())
+
+	return osResource, nil
 }
 
 func CreateOSUpdateRun(

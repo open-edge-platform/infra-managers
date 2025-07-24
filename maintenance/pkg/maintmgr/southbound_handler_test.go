@@ -12,7 +12,9 @@ import (
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
+	statusv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/status/v1"
 	schedule_cache "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client/cache/schedule"
+	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testing"
 	maintmgrv1 "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1"
@@ -184,4 +186,134 @@ func TestInvClient_GetNewOSResourceIDIfNeeded(t *testing.T) {
 		assert.NotNil(t, cli)
 		maintmgr.CloseInvGrpcCli()
 	})
+}
+
+//nolint:funlen // table test for testing GetNewExistingCVEs logic
+func TestGetNewExistingCVEs(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	tenantClient := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	cli := invclient.NewInvGrpcClient(tenantClient, nil)
+
+	existingCVEs := `[{"cve_id":"CVE-2024-0001","severity":"HIGH"}]`
+	newExistingCVEs := `[{"cve_id":"CVE-2024-0002","severity":"MEDIUM"}]`
+	osImageSha256Current := inv_testing.GenerateRandomSha256()
+	osImageSha256New := inv_testing.GenerateRandomSha256()
+
+	// Create OS resources for testing
+	currentOSRes := dao.CreateOsWithOpts(t, mm_testing.Tenant2, false, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "current-os-for-cve-testing"
+		os.ProfileName = "test-profile"
+		os.ImageId = "current-image-123"
+		os.Sha256 = osImageSha256Current
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		os.ExistingCves = existingCVEs
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+	})
+
+	newOSRes := dao.CreateOsWithOpts(t, mm_testing.Tenant2, false, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "new-os-for-cve-testing"
+		os.ProfileName = "test-profile"
+		os.ImageId = "new-image-456"
+		os.Sha256 = osImageSha256New
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		os.ExistingCves = newExistingCVEs
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+	})
+
+	// Create test instance
+	instanceRes := &computev1.InstanceResource{
+		ResourceId: "test-instance-123",
+		Os:         currentOSRes,
+		CurrentOs:  currentOSRes,
+	}
+
+	// Manual cleanup
+	t.Cleanup(func() {
+		dao.DeleteResource(t, mm_testing.Tenant2, currentOSRes.ResourceId)
+		dao.DeleteResource(t, mm_testing.Tenant2, newOSRes.ResourceId)
+	})
+
+	tests := []struct {
+		name                    string
+		newOSResID              string
+		instanceUpdateIndicator statusv1.StatusIndication
+		newStatusIndicator      statusv1.StatusIndication
+		expectedExistingCVEs    string
+		shouldReturnError       bool
+	}{
+		{
+			name:                    "No new OS Resource ID - Update from UNSPECIFIED to IDLE - should copy existing CVEs",
+			newOSResID:              "",
+			instanceUpdateIndicator: statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED,
+			newStatusIndicator:      statusv1.StatusIndication_STATUS_INDICATION_IDLE,
+			expectedExistingCVEs:    existingCVEs,
+			shouldReturnError:       false,
+		},
+		{
+			name:                    "No new OS Resource ID - Update from IDLE to IDLE - should return empty CVEs",
+			newOSResID:              "",
+			instanceUpdateIndicator: statusv1.StatusIndication_STATUS_INDICATION_IDLE,
+			newStatusIndicator:      statusv1.StatusIndication_STATUS_INDICATION_IDLE,
+			expectedExistingCVEs:    "",
+			shouldReturnError:       false,
+		},
+		{
+			name:                    "No new OS Resource ID - Update from UNSPECIFIED to IN_PROGRESS - should return empty CVEs",
+			newOSResID:              "",
+			instanceUpdateIndicator: statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED,
+			newStatusIndicator:      statusv1.StatusIndication_STATUS_INDICATION_IN_PROGRESS,
+			expectedExistingCVEs:    "",
+			shouldReturnError:       false,
+		},
+		/*{
+			name:                    "With new OS Resource ID - should fetch CVEs from new OS resource",
+			newOSResID:              newOSRes.ResourceId,
+			instanceUpdateIndicator: statusv1.StatusIndication_STATUS_INDICATION_IDLE,
+			newStatusIndicator:      statusv1.StatusIndication_STATUS_INDICATION_IN_PROGRESS,
+			expectedExistingCVEs:    newExistingCVEs,
+			shouldReturnError:       false,
+		},*/
+		{
+			name:                    "With invalid OS Resource ID - should return error",
+			newOSResID:              "invalid-os-resource-id",
+			instanceUpdateIndicator: statusv1.StatusIndication_STATUS_INDICATION_IDLE,
+			newStatusIndicator:      statusv1.StatusIndication_STATUS_INDICATION_IN_PROGRESS,
+			expectedExistingCVEs:    "",
+			shouldReturnError:       true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup instance for this test case
+			testInstance := &computev1.InstanceResource{
+				ResourceId:            instanceRes.ResourceId,
+				Os:                    currentOSRes,
+				CurrentOs:             currentOSRes,
+				UpdateStatusIndicator: tt.instanceUpdateIndicator,
+			}
+
+			// Create the new status object
+			newInstUpStatus := &inv_status.ResourceStatus{
+				StatusIndicator: tt.newStatusIndicator,
+			}
+
+			// Add a small delay for inventory client registration to settle
+			// time.Sleep(50 * time.Millisecond)
+
+			// Call the function under test
+			result, err := maintmgr.GetNewExistingCVEs(ctx, cli.InvClient, mm_testing.Tenant2,
+				tt.newOSResID, testInstance, newInstUpStatus)
+
+			// Verify results
+			if tt.shouldReturnError {
+				require.Error(t, err)
+				require.Empty(t, result)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedExistingCVEs, result)
+			}
+		})
+	}
 }

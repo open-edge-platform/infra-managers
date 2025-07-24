@@ -71,6 +71,53 @@ const (
 ]
 }
 `
+
+	ExistingCVEsList = `[
+  {
+    "cve_id": "CVE-2024-1234",
+    "priority": "HIGH",
+    "affected_packages": ["openssl", "libssl1.1"]
+  },
+  {
+    "cve_id": "CVE-2024-5678",
+    "priority": "MEDIUM",
+    "affected_packages": ["zlib1g", "zlib1g-dev"]
+  },
+  {
+    "cve_id": "CVE-2024-9999",
+    "priority": "LOW",
+    "affected_packages": ["curl", "libcurl4"]
+  }
+]`
+
+	FixedCVEsList = `[
+  {
+    "cve_id": "CVE-2023-1111",
+    "priority": "CRITICAL",
+    "affected_packages": ["kernel", "linux-headers"]
+  },
+  {
+    "cve_id": "CVE-2023-2222",
+    "priority": "HIGH",
+    "affected_packages": ["nginx", "nginx-common"]
+  }
+]`
+
+	InvalidExistingCVEsList = `[
+  {
+    "priority": "HIGH",
+    "affected_packages": ["openssl", "libssl1.1"]
+  }
+]`
+
+	InvalidFixedCVEsList = `[
+  {
+    "cve_id": "CVE-2023-1111",
+    "affected_packages": ["kernel", "linux-headers"]
+  }
+]`
+
+	EmptyCVEsList = `[]`
 )
 
 func Test_GetLatestOsProfiles(t *testing.T) {
@@ -235,4 +282,170 @@ func Test_GetPackageManifest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_GetCVEs_Success(t *testing.T) {
+	mux := http.NewServeMux()
+
+	type args struct {
+		url      string
+		cvesList string
+	}
+
+	type testCase struct {
+		name    string
+		args    args
+		cveType string // "existing" or "fixed"
+	}
+
+	tests := []testCase{
+		{
+			name: "GetExistingCVEs - Successful with valid existing CVEs list",
+			args: args{
+				url:      "/validexistingcves",
+				cvesList: ExistingCVEsList,
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetFixedCVEs - Successful with valid fixed CVEs list",
+			args: args{
+				url:      "/validfixedcves",
+				cvesList: FixedCVEsList,
+			},
+			cveType: "fixed",
+		},
+	}
+
+	for _, tt := range tests {
+		// serve CVEs list in httptest
+		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(tt.args.cvesList))
+		})
+	}
+
+	httpServer := httptest.NewServer(mux)
+	defer httpServer.Close()
+
+	// replace rs-proxy URL with the httptest local server address
+	t.Setenv(EnvNameRsFilesProxyAddress, strings.TrimPrefix(httpServer.URL, "http://"))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var cves string
+			var err error
+
+			if tt.cveType == "existing" {
+				cves, err = GetExistingCVEs(context.Background(), tt.args.url)
+			} else {
+				cves, err = GetFixedCVEs(context.Background(), tt.args.url)
+			}
+
+			assert.NoError(t, err)
+			assert.NotEmpty(t, cves)
+			// Verify the response doesn't contain spaces or newlines
+			assert.NotContains(t, cves, " ")
+			assert.NotContains(t, cves, "\n")
+		})
+	}
+}
+
+func Test_GetCVEs_Failure(t *testing.T) {
+	mux := http.NewServeMux()
+
+	type args struct {
+		url      string
+		cvesList string
+	}
+
+	type testCase struct {
+		name    string
+		args    args
+		cveType string // "existing" or "fixed"
+	}
+
+	tests := []testCase{
+		{
+			name: "GetExistingCVEs - Failure with non-JSON CVEs content",
+			args: args{
+				url:      "/nonjsonexistingcves",
+				cvesList: "Non-JSON content!",
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetExistingCVEs - Failure with empty CVEs list",
+			args: args{
+				url:      "/emptyexistingcves",
+				cvesList: EmptyCVEsList,
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetExistingCVEs - Failure with completely empty response",
+			args: args{
+				url:      "/emptyexistingresponse",
+				cvesList: "",
+			},
+			cveType: "existing",
+		},
+		{
+			name: "GetFixedCVEs - Failure with non-JSON CVEs content",
+			args: args{
+				url:      "/nonjsonfixedcves",
+				cvesList: "Non-JSON content!",
+			},
+			cveType: "fixed",
+		},
+		{
+			name: "GetFixedCVEs - Failure with completely empty response",
+			args: args{
+				url:      "/emptyfixedresponse",
+				cvesList: "",
+			},
+			cveType: "fixed",
+		},
+	}
+
+	for _, tt := range tests {
+		// serve CVEs list in httptest
+		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(tt.args.cvesList))
+		})
+	}
+
+	httpServer := httptest.NewServer(mux)
+	defer httpServer.Close()
+
+	// replace rs-proxy URL with the httptest local server address
+	t.Setenv(EnvNameRsFilesProxyAddress, strings.TrimPrefix(httpServer.URL, "http://"))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var err error
+
+			if tt.cveType == "existing" {
+				_, err = GetExistingCVEs(context.Background(), tt.args.url)
+			} else {
+				_, err = GetFixedCVEs(context.Background(), tt.args.url)
+			}
+
+			assert.Error(t, err)
+		})
+	}
+}
+
+func Test_GetCVEs_MissingEnvVar(t *testing.T) {
+	// Unset the environment variable to test error handling
+	t.Setenv(EnvNameRsFilesProxyAddress, "")
+
+	_, err := GetExistingCVEs(context.Background(), "/somepath")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "env variable is not set")
+
+	_, err = GetFixedCVEs(context.Background(), "/somepath")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "env variable is not set")
 }
