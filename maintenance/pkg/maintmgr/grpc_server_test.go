@@ -41,23 +41,50 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	defer cancel()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
+	mutableOSUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
 	immutableOsProfileName := "immutable OS profile name"
 	osImageSha256 := inv_testing.GenerateRandomSha256()
+	osImageSha2562 := inv_testing.GenerateRandomSha256()
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = immutableOsProfileName
+		os.ProfileVersion = "1.0.1"
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
+	immutableOs2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "Immutable OS 2"
+		os.Sha256 = osImageSha2562
+		os.ProfileName = immutableOsProfileName
+		os.ProfileVersion = "1.0.1"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+	immmutableOSUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Immutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyTargetOS(immutableOs2),
+	)
 
 	// Host1 has both single and repeated schedule associated to it
 	h1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1.Uuid = uuid.NewString()
 	host1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, os, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, os, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		},
+		inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+	)
 	sSched1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1, host1, nil)
 	rSched1 := mm_testing.RepeatedSchedule1 //nolint:govet // ok to copy locks in test
@@ -67,10 +94,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, os, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, os, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+		inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+	)
 
 	// Host3 has no instance associated
 	h3 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
@@ -81,10 +111,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	h4 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h4.Uuid = uuid.NewString()
 	host4 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h4)
-	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host4, immutableOs, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-	})
+	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host4, immutableOs, true,
+		func(inst *computev1.InstanceResource) {
+			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
+		inv_testing.InstanceOsUpdatePolicy(immmutableOSUpdatePolicy),
+	)
 
 	testCases := map[string]struct {
 		in          *pb.PlatformUpdateStatusRequest
@@ -147,11 +180,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: os.GetKernelCommand(),
-					CustomRepos:   os.GetUpdateSources(),
+					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -166,11 +199,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: os.GetKernelCommand(),
-					CustomRepos:   os.GetUpdateSources(),
+					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -188,13 +221,13 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 				UpdateSource:      &pb.UpdateSource{},
 				UpdateSchedule:    &pb.UpdateSchedule{},
 				InstalledPackages: "",
-				OsType:            pb.PlatformUpdateStatusResponse_OSType(immutableOs.GetOsType()),
+				OsType:            pb.PlatformUpdateStatusResponse_OSType(immutableOs2.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{
-					ProfileName:    immutableOs.GetProfileName(),
-					ProfileVersion: immutableOs.GetProfileVersion(),
-					OsImageUrl:     immutableOs.GetImageUrl(),
-					OsImageId:      immutableOs.GetImageId(),
-					OsImageSha:     immutableOs.GetSha256(),
+					ProfileName:    immutableOs2.GetProfileName(),
+					ProfileVersion: immutableOs2.GetProfileVersion(),
+					OsImageUrl:     immutableOs2.GetImageUrl(),
+					OsImageId:      immutableOs2.GetImageId(),
+					OsImageSha:     immutableOs2.GetSha256(),
 				},
 			},
 		},
@@ -217,6 +250,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	}
 }
 
+//nolint:funlen // long function due to matrix-based test
 func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctxT1, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
@@ -230,17 +264,35 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 
 	osT1 := dao.CreateOs(t, mm_testing.Tenant1)
 
+	osUpdatePolicyT1 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy T1"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T1"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T1"),
+	)
+
 	h1T1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T1.Uuid = uuid.NewString()
 	host1T1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1T1)
 	dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1T1, osT1, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT1
 	})
 	sSched1T1 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched1T1, host1T1, nil)
 
 	osT2 := dao.CreateOs(t, mm_testing.Tenant2)
+	osUpdatePolicyT2 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant2,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+	)
 	h1T2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T2.TenantId = mm_testing.Tenant2
 	h1T2.Uuid = uuid.NewString()
@@ -248,12 +300,21 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao.CreateInstanceWithOpts(t, mm_testing.Tenant2, host1T2, osT2, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT2
 	})
 	sSched1T2 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSched1T2.TenantId = mm_testing.Tenant2
 	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant2, &sSched1T2, host1T2, nil)
 
 	osT0 := dao.CreateOs(t, mm_testing.DefaultTenantID)
+	osUpdatePolicyT0 := dao.CreateOSUpdatePolicy(
+		t, mm_testing.DefaultTenantID,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+	)
 	hT0 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	hT0.TenantId = mm_testing.DefaultTenantID
 	hT0.Uuid = uuid.NewString()
@@ -261,6 +322,7 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 	dao.CreateInstanceWithOpts(t, mm_testing.DefaultTenantID, hostT0, osT0, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.OsUpdatePolicy = osUpdatePolicyT0
 	})
 	sSchedT0 := mm_testing.SingleSchedule1 //nolint:govet // ok to copy locks in test
 	sSchedT0.TenantId = mm_testing.DefaultTenantID
@@ -386,14 +448,25 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	scheduleCache.LoadAllSchedulesFromInv()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
+	osUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = "packages"
+		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
 	})
 	// Host and instance start with RUNNING status
 
 	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 	require.NoError(t, err)
+	require.NotNil(t, inst.GetOsUpdatePolicy())
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 	defer cancel()
@@ -411,6 +484,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			},
 		},
 	})
+
 	require.NoError(t, err)
 
 	// TODO validate with list of repeated schedule from inventory
@@ -424,10 +498,10 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			RepeatedSchedules: mm_testing.MmRepeatedSchedule1,
 		},
 		UpdateSource: &pb.UpdateSource{
-			KernelCommand: os.GetKernelCommand(),
-			CustomRepos:   os.GetUpdateSources(),
+			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
 		},
-		InstalledPackages:     "intel-opencl-icd\nintel-level-zero-gpu\nlevel-zero",
+		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
 		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
@@ -502,8 +576,118 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			StatusType: pb.UpdateStatus_STATUS_TYPE_UPDATED,
 		},
 	})
+
 	require.Error(t, err)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
+
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+}
+
+func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	// This test case emulates the behavior of PUA while doing an update on a Node
+	// to test creating and updating OsUpdateRun resource on statuses
+	// received from PUA: STARTED, DONE, FAILED
+
+	h := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h.TenantId = mm_testing.Tenant1
+	h.Uuid = uuid.NewString()
+	host := mm_testing.CreateHost(t, mm_testing.Tenant1, &h)
+
+	os := dao.CreateOs(t, mm_testing.Tenant1)
+	osUpdatePolicy := dao.CreateOSUpdatePolicy(
+		t, mm_testing.Tenant1,
+		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
+		inv_testing.OSUpdatePolicyTarget(),
+		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
+		inv_testing.OSUpdatePolicyKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+	)
+	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = "packages"
+		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
+	})
+
+	require.NotNil(t, inst)
+	require.NotNil(t, inst.GetOsUpdatePolicy())
+
+	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
+		UpdateSchedule: &pb.UpdateSchedule{},
+		UpdateSource: &pb.UpdateSource{
+			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
+		},
+		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
+		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
+		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
+	}
+
+	// Status STARTED created new OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_STARTED,
+		mm_status.UpdateStatusInProgress,
+		expUpdateResponse,
+	)
+
+	// Status UPDATED updates the latest OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_UPDATED,
+		mm_status.UpdateStatusDone,
+		expUpdateResponse,
+	)
+
+	// Delete the OsUpdateRun created in previous step
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+
+	// Status STARTED created new OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_STARTED,
+		mm_status.UpdateStatusInProgress,
+		expUpdateResponse,
+	)
+
+	// Status UPDATED updates the latest OsUpdateRun
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_FAILED,
+		mm_status.UpdateStatusFailed,
+		expUpdateResponse,
+	)
+	// Delete the OsUpdateRun created in previous step
+	OSUpdateRunDelete(t, mm_testing.Tenant1, inst)
+}
+
+func OSUpdateRunDelete(
+	t *testing.T,
+	tenantID string,
+	inst *computev1.InstanceResource,
+) {
+	t.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, mm_testing.Tenant1, inst.GetResourceId())
+	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+
+	if runGet != nil {
+		err = invclient.DeleteOSUpdateRun(ctx, client, mm_testing.Tenant1, runGet)
+		require.NoError(t, err)
+	}
 }
 
 func RunPUAUpdateAndAssert(
@@ -541,6 +725,48 @@ func RunPUAUpdateAndAssert(
 	require.NotNil(t, instGet)
 	assert.Equal(t, expUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
 	assert.Equal(t, expUpdateStatus.Status, instGet.UpdateStatus)
+}
+
+func RunPUAUpdateAndTestOsUpRun(
+	t *testing.T,
+	tenantID string,
+	host *computev1.HostResource,
+	inst *computev1.InstanceResource,
+	upStatus pb.UpdateStatus_StatusType,
+	expUpdateStatus inv_status.ResourceStatus,
+	expResponse *pb.PlatformUpdateStatusResponse,
+) {
+	t.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
+		HostGuid: host.Uuid,
+		UpdateStatus: &pb.UpdateStatus{
+			StatusType:  upStatus,
+			ProfileName: "immutable OS profile name",
+			OsImageId:   "2.0.0",
+		},
+	})
+	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+	if eq, diff := inv_testing.ProtoEqualOrDiff(expResponse, resp); !eq {
+		t.Errorf("Wrong response: %v", diff)
+	}
+
+	gResp, err := client.Get(ctx, tenantID, inst.ResourceId)
+	require.NoError(t, err)
+	instGet := gResp.GetResource().GetInstance()
+	require.NotNil(t, instGet)
+
+	tID := instGet.GetTenantId()
+	instID := instGet.GetResourceId()
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID)
+	require.NoError(t, err)
+	require.NotNil(t, instGet)
+	assert.Equal(t, expUpdateStatus.StatusIndicator, runGet.StatusIndicator)
+	assert.Equal(t, expUpdateStatus.Status, runGet.Status)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {

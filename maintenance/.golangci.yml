@@ -148,6 +148,7 @@ linters-settings:
           - github.com/stretchr/testify/require
           - github.com/grpc-ecosystem/go-grpc-middleware
           - github.com/prometheus/client_golang/prometheus
+          - github.com/Masterminds/semver/v3
       Test:
         files:
           - $test

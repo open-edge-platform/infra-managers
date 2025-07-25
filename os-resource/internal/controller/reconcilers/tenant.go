@@ -5,6 +5,7 @@ package reconcilers
 
 import (
 	"context"
+	"strings"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	tenant_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/tenant/v1"
@@ -76,16 +77,62 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 	osRes.TenantId = tenantID
 
 	// FIXME: ITEP-22977 remove this check when enforcing JSON-encoded string for `installedPackages`
-	// retrieve package manifest JSON contnet only for IMMUTABLE OS
+	// retrieve package manifest and existing CVEs JSON contnet only for IMMUTABLE OS
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
 		var err error
 		osRes.InstalledPackages, err = fsclient.GetPackageManifest(ctx, osProfile.Spec.OsPackageManifestURL)
 		if err != nil {
 			return "", err
 		}
+		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+		if err != nil {
+			return "", err
+		}
+		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+		osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.OsFixedCvesURL)
+		if err != nil {
+			// Fixed CVEs list is not getting published as of now, but it will be supported in future.
+			// SO for now, when there is error in fetching fixed CVEs, do not return error, instead log it.
+			zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
+		}
+		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 	}
 
 	return tr.invClient.CreateOSResource(ctx, tenantID, osRes)
+}
+
+func (tr *TenantReconciler) updateOSResourceFromOSProfile(
+	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
+) error {
+	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
+		var err error
+		var existingCVEs string
+
+		existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+		if err != nil {
+			return err
+		}
+
+		// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
+		if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
+			zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
+				tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
+			osRes.ExistingCves = existingCVEs
+			osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+
+			err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
+			if err != nil {
+				return err
+			}
+		} else {
+			zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
+				tenantID, osProfile.Spec.ProfileName)
+		}
+	} else {
+		// For mutable OS, we do not update the existing OS resource.
+		zlogTenant.Debug().Msgf("Skipping update for mutable OS profile %s", osProfile.Spec.ProfileName)
+	}
+	return nil
 }
 
 //nolint:cyclop // cyclomatic complexity is 11
@@ -183,6 +230,13 @@ func (tr *TenantReconciler) reconcileTenant(
 			if exists {
 				zlogTenant.Debug().Msgf("OS resource %s %s already exists",
 					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+
+				// OS resource for given OS profile exists, update it
+				err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID], osProfile)
+				if err != nil {
+					return err
+				}
+
 				continue
 			}
 
