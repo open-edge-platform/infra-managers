@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
-	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
@@ -25,11 +24,11 @@ type server struct {
 	authEnabled bool
 }
 
-//nolint:cyclop,funlen // cyclomatic complexity is 11 due to validation logic
+//nolint:cyclop // cyclomatic complexity is 11 due to validation logic
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
-	// TODO: refactor to reduce length and cyclomatic complexity
+	// TODO: refactor to reduce cyclomatic complexity
 	zlog.Info().Msgf("PlatformUpdateStatus: GUID=%s", in.GetHostGuid())
 	zlog.Debug().Msgf("PlatformUpdateStatus: request=%v", in)
 	if s.authEnabled {
@@ -76,8 +75,6 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 
 	updateInstanceInInv(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
-	handleOSUpdateRun(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
-
 	ssRes, err := invclient.ListSingleSchedules(ctx, invMgrCli, tenantID, hostRes)
 	if err != nil {
 		return nil, err
@@ -94,41 +91,23 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, err
 	}
 
-	osType := instRes.GetOs().GetOsType()
+	osRes := instRes.GetDesiredOs()
+	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+	osType := osRes.GetOsType()
+	upSources := maintgmr_util.PopulateUpdateSource(osRes)
+	installedPackages := maintgmr_util.PopulateInstalledPackages(osRes)
+	osProfileUpdateSource := maintgmr_util.PopulateOsProfileUpdateSource(osRes)
 
 	response := &pb.PlatformUpdateStatusResponse{
-		UpdateSchedule: scheresp,
-		OsType:         pb.PlatformUpdateStatusResponse_OSType(osType),
-		UpdateSource: &pb.UpdateSource{
-			KernelCommand: "",
-			CustomRepos:   []string{},
-		},
-		InstalledPackages:     "",
-		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
-	}
-	// Return empty OSUpdatePolicy Resource if not found
-	osUpdatePolicyRes, err := invclient.GetOSUpdatePolicyByInstanceID(ctx, invMgrCli.InvClient, tenantID, instRes.GetResourceId())
-	// Not found is not an error, it means that the instance does not have an OS update policy.
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return nil, err
-	}
-	zlog.Debug().Msgf("OS Update Policy resource from Instance backlink: tenantID=%s, instanceID=%s, updatePolicy=%v",
-		tenantID, instRes.GetResourceId(), osUpdatePolicyRes)
-
-	if osUpdatePolicyRes != nil && osUpdatePolicyRes.GetResourceId() != "" {
-		err = getOSUpdatePolicyInfo(ctx, response, osType, osUpdatePolicyRes, tenantID,
-			instRes.GetOs().GetProfileName(), guid)
-		if err != nil {
-			return nil, err
-		}
+		UpdateSource:          upSources,
+		UpdateSchedule:        scheresp,
+		InstalledPackages:     installedPackages,
+		OsType:                pb.PlatformUpdateStatusResponse_OSType(osType),
+		OsProfileUpdateSource: osProfileUpdateSource,
 	}
 
 	zlog.Debug().Msgf("PlatformUpdateStatus: tenantID%s, response=%v", tenantID, response)
-	if err = response.ValidateAll(); err != nil {
-		zlog.InfraSec().InfraErr(err).Msg("")
-		return nil, mmgr_error.Wrap(err)
-	}
+	// No need to validate, already validated by PopulateUpdateSource and PopulateUpdateSchedule
 	return response, nil
 }
 
@@ -147,54 +126,4 @@ func getHostAndInstanceFromUUID(ctx context.Context, tenantID, uuid string) (
 		return nil, nil, inv_errors.Errorfc(codes.NotFound, "Instance without host: tenantID=%s, UUID=%s", tenantID, uuid)
 	}
 	return hostRes, instRes, nil
-}
-
-func getOSUpdatePolicyInfo(ctx context.Context, resp *pb.PlatformUpdateStatusResponse, osType osv1.OsType,
-	osUpdatePolicyRes *computev1.OSUpdatePolicyResource, tenantID string, profileName string, guid string,
-) error {
-	switch osType {
-	case osv1.OsType_OS_TYPE_MUTABLE:
-		// For mutable OS, retrieve info from the Policy and provide them to the EN.
-		populateMutableUpdateDetails(resp, osUpdatePolicyRes)
-	case osv1.OsType_OS_TYPE_IMMUTABLE:
-		// For immutable OS, retrieve the target OS from the OSUpdatePolicy
-		err := populateImmutableUpdateDetails(ctx, resp, osUpdatePolicyRes, tenantID, profileName, guid)
-		if err != nil {
-			return err
-		}
-	default:
-		// We should never reach this point.
-		err := inv_errors.Errorfc(codes.InvalidArgument, "Unsupported OS type: %s", osType)
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return err
-	}
-
-	return nil
-}
-
-func populateMutableUpdateDetails(resp *pb.PlatformUpdateStatusResponse, policy *computev1.OSUpdatePolicyResource) {
-	resp.UpdateSource.KernelCommand = policy.GetKernelCommand()
-	resp.UpdateSource.CustomRepos = policy.GetUpdateSources()
-	resp.InstalledPackages = policy.GetInstallPackages()
-}
-
-func populateImmutableUpdateDetails(
-	ctx context.Context,
-	resp *pb.PlatformUpdateStatusResponse,
-	policy *computev1.OSUpdatePolicyResource,
-	tenantID, profileName, guid string,
-) error {
-	osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return err
-	}
-	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
-
-	resp.OsProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return err
-	}
-	return nil
 }
