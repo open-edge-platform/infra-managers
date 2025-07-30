@@ -165,13 +165,17 @@ func handleOSUpdateRun(
 	zlog.Debug().Msgf("handleOSUpdateRunResourse: status=%s", mmUpStatus.StatusType.String())
 
 	switch mmUpStatus.StatusType {
-	case pb.UpdateStatus_STATUS_TYPE_STARTED:
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADING:
 		createOSUpdateRun(ctx, client, tenantID, mmUpStatus, instRes)
-	case pb.UpdateStatus_STATUS_TYPE_UPDATED, pb.UpdateStatus_STATUS_TYPE_FAILED:
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADED,
+		pb.UpdateStatus_STATUS_TYPE_STARTED,
+		pb.UpdateStatus_STATUS_TYPE_UPDATED,
+		pb.UpdateStatus_STATUS_TYPE_FAILED:
 		updateOSUpdateRun(ctx, client, tenantID, instRes, mmUpStatus)
 	default:
 		// Ignore other statuses.
-		zlog.Debug().Msgf("No OsUpdateRun status change needed: status=%s", mmUpStatus.StatusType.String())
+		zlog.Debug().Msgf("No OsUpdateRun status change needed: instanceId=%s, status=%s",
+			instRes.GetResourceId(), mmUpStatus.StatusType.String())
 		return
 	}
 }
@@ -193,8 +197,9 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 
 	timeNow := time.Now().UTC().Format(maintgmr_util.ISO8601Format)
 	runRes := &computev1.OSUpdateRunResource{
-		Name:            maintgmr_util.GenerateRandomOsUpdateRunName(),
-		Instance:        &computev1.InstanceResource{ResourceId: instRes.ResourceId},
+		Name:            "OS Update Run for " + instanceID, // TODO Generate unique name
+		Description:     "OS Update Run for " + instanceID,
+		Instance:        &computev1.InstanceResource{ResourceId: instanceID},
 		Status:          newUpdateStatus.Status,
 		StatusIndicator: newUpdateStatus.StatusIndicator,
 		StatusTimestamp: timeNow,
