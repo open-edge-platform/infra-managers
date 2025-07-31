@@ -98,6 +98,45 @@ func TestGetHostSchedule(t *testing.T) {
 	}
 }
 
+func TestGetUpdateSource(t *testing.T) {
+	tests := []struct {
+		name       string
+		os         *os_v1.OperatingSystemResource
+		wantUpdate *pb.UpdateSource
+	}{
+		{
+			name:       "No_OS",
+			wantUpdate: &pb.UpdateSource{},
+		},
+		{
+			name: "Valid_OS",
+			os: &os_v1.OperatingSystemResource{
+				Name:          "Test Name",
+				Architecture:  "x86_64",
+				UpdateSources: []string{"test source"},
+				ImageUrl:      "Repo test entry",
+				Sha256:        inv_testing.GenerateRandomSha256(),
+				ProfileName:   "Test OS profile name",
+				KernelCommand: "test kernel command",
+				OsType:        os_v1.OsType_OS_TYPE_MUTABLE,
+			},
+			wantUpdate: &pb.UpdateSource{
+				KernelCommand: "test kernel command",
+				CustomRepos:   []string{"test source"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			source := util.PopulateUpdateSource(tt.os)
+			require.NotNil(t, source)
+			if eq, diff := inv_testing.ProtoEqualOrDiff(tt.wantUpdate, source); !eq {
+				t.Errorf("Wrong update schedule: %v", diff)
+			}
+		})
+	}
+}
+
 func TestGetClosestSingleSchedule(t *testing.T) {
 	tests := []struct {
 		name string
@@ -729,97 +768,6 @@ func TestGetUpdatedUpdateStatusIfNeeded(t *testing.T) {
 				tt.args.status, tt.args.instanceStatusIndication, tt.args.instanceStatusMessage)
 			assert.Equal(t, tt.want1, newStatus)
 			assert.Equal(t, tt.want2, ifNeeded)
-		})
-	}
-}
-
-func TestPopulateOsProfileUpdateSource(t *testing.T) {
-	immutableOS := &os_v1.OperatingSystemResource{
-		OsType:         os_v1.OsType_OS_TYPE_IMMUTABLE,
-		ProfileName:    "test-profile",
-		ProfileVersion: "1.2.3",
-		ImageUrl:       "http://example.com/image",
-		ImageId:        "img-123",
-		Sha256:         "sha256sum",
-	}
-	mutableOS := &os_v1.OperatingSystemResource{
-		OsType: os_v1.OsType_OS_TYPE_MUTABLE,
-	}
-	t.Run("nil input", func(t *testing.T) {
-		res, err := util.PopulateOsProfileUpdateSource(nil)
-		assert.Nil(t, res)
-		assert.Error(t, err)
-	})
-	t.Run("immutable os", func(t *testing.T) {
-		res, err := util.PopulateOsProfileUpdateSource(immutableOS)
-		require.NoError(t, err)
-		require.NotNil(t, res)
-		assert.Equal(t, immutableOS.ProfileName, res.ProfileName)
-		assert.Equal(t, immutableOS.ProfileVersion, res.ProfileVersion)
-		assert.Equal(t, immutableOS.ImageUrl, res.OsImageUrl)
-		assert.Equal(t, immutableOS.ImageId, res.OsImageId)
-		assert.Equal(t, immutableOS.Sha256, res.OsImageSha)
-	})
-	t.Run("mutable os", func(t *testing.T) {
-		res, err := util.PopulateOsProfileUpdateSource(mutableOS)
-		assert.Nil(t, res)
-		assert.Error(t, err)
-	})
-}
-
-func TestPopulateOsProfileUpdateSource_Matrix(t *testing.T) {
-	immutableOS := &os_v1.OperatingSystemResource{
-		OsType:         os_v1.OsType_OS_TYPE_IMMUTABLE,
-		ProfileName:    "test-profile",
-		ProfileVersion: "1.2.3",
-		ImageUrl:       "http://example.com/image",
-		ImageId:        "img-123",
-		Sha256:         "sha256sum",
-	}
-	mutableOS := &os_v1.OperatingSystemResource{
-		OsType: os_v1.OsType_OS_TYPE_MUTABLE,
-	}
-	tests := []struct {
-		name    string
-		input   *os_v1.OperatingSystemResource
-		want    *pb.OSProfileUpdateSource
-		wantErr bool
-	}{
-		{
-			name:    "nil input",
-			input:   nil,
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name:  "immutable os",
-			input: immutableOS,
-			want: &pb.OSProfileUpdateSource{
-				ProfileName:    "test-profile",
-				ProfileVersion: "1.2.3",
-				OsImageUrl:     "http://example.com/image",
-				OsImageId:      "img-123",
-				OsImageSha:     "sha256sum",
-			},
-			wantErr: false,
-		},
-		{
-			name:    "mutable os",
-			input:   mutableOS,
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := util.PopulateOsProfileUpdateSource(tt.input)
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, got)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
-			}
 		})
 	}
 }

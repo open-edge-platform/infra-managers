@@ -118,9 +118,8 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 			zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
 				tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
 			osRes.ExistingCves = existingCVEs
-			osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
-			err = tr.invClient.UpdateOSResourceExistingCvesAndURL(ctx, tenantID, osRes)
+			err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
 			if err != nil {
 				return err
 			}

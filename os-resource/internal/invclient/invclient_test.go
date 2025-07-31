@@ -70,9 +70,9 @@ func TestInventoryClient_FindOSResourceID_NoDuplicates(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Success tests successful scenarios
-// for the UpdateOSResourceExistingCvesAndURL function.
-func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Success(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCves_Success tests successful scenarios
+// for the UpdateOSResourceExistingCves function.
+func TestInventoryClient_UpdateOSResourceExistingCves_Success(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -150,16 +150,16 @@ func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Success(t *testing.T
 		t.Run(tt.name, func(t *testing.T) {
 			osRes := tt.setupOSRes()
 
-			err := invClient.UpdateOSResourceExistingCvesAndURL(ctx, client.FakeTenantID, osRes)
+			err := invClient.UpdateOSResourceExistingCves(ctx, client.FakeTenantID, osRes)
 			assert.NoError(t, err)
 			tt.validateResult(t, osRes.GetResourceId())
 		})
 	}
 }
 
-// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Failure tests failure scenarios
-// for the UpdateOSResourceExistingCvesAndURL function.
-func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Failure(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCves_Failure tests failure scenarios
+// for the UpdateOSResourceExistingCves function.
+func TestInventoryClient_UpdateOSResourceExistingCves_Failure(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -197,15 +197,15 @@ func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_Failure(t *testing.T
 		t.Run(tt.name, func(t *testing.T) {
 			osRes := tt.setupOSRes()
 
-			err := invClient.UpdateOSResourceExistingCvesAndURL(ctx, client.FakeTenantID, osRes)
+			err := invClient.UpdateOSResourceExistingCves(ctx, client.FakeTenantID, osRes)
 			assert.Error(t, err)
 		})
 	}
 }
 
-// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_ContextTimeout tests
-// UpdateOSResourceExistingCvesAndURL with context timeout.
-func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_ContextTimeout(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCves_ContextTimeout tests
+// UpdateOSResourceExistingCves with context timeout.
+func TestInventoryClient_UpdateOSResourceExistingCves_ContextTimeout(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -230,14 +230,14 @@ func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_ContextTimeout(t *te
 		ExistingCves: `[{"cve_id":"CVE-2024-1234","priority":"HIGH","affected_packages":["openssl"]}]`,
 	}
 
-	err = invClient.UpdateOSResourceExistingCvesAndURL(ctx, client.FakeTenantID, osRes)
+	err = invClient.UpdateOSResourceExistingCves(ctx, client.FakeTenantID, osRes)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "context deadline exceeded")
 }
 
-// TestInventoryClient_UpdateOSResourceExistingCvesAndURL_EmptyTenantID tests
-// UpdateOSResourceExistingCvesAndURL with empty tenant ID.
-func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_EmptyTenantID(t *testing.T) {
+// TestInventoryClient_UpdateOSResourceExistingCves_EmptyTenantID tests
+// UpdateOSResourceExistingCves with empty tenant ID.
+func TestInventoryClient_UpdateOSResourceExistingCves_EmptyTenantID(t *testing.T) {
 	invDAO := inv_testing.NewInvResourceDAOOrFail(t)
 	invClient, err := invclient.NewOSRMInventoryClient(invDAO.GetAPIClient(), invDAO.GetAPIClientWatcher(), make(chan bool))
 	require.NoError(t, err)
@@ -258,6 +258,6 @@ func TestInventoryClient_UpdateOSResourceExistingCvesAndURL_EmptyTenantID(t *tes
 		ExistingCves: `[{"cve_id":"CVE-2024-1234","priority":"HIGH","affected_packages":["openssl"]}]`,
 	}
 
-	err = invClient.UpdateOSResourceExistingCvesAndURL(ctx, "", osRes)
+	err = invClient.UpdateOSResourceExistingCves(ctx, "", osRes)
 	assert.Error(t, err)
 }
