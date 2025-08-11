@@ -487,16 +487,12 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
 	})
 	// Host and instance start with RUNNING status
-
 	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 	require.NoError(t, err)
 	require.NotNil(t, inst.GetOsUpdatePolicy())
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 	defer cancel()
-
-	//ctx, cancel := context.WithTimeout(cctx, 300000000*time.Second)
-	//defer cancel()
 
 	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, inst.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
 		computev1.InstanceResourceFieldUpdateStatus,
@@ -790,8 +786,7 @@ func RunPUAUpdateAndAssert(
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
 	defer cancel()
-	//ctx, cancel := context.WithTimeout(cctx, 300000000*time.Second)
-	//defer cancel()
+
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
 	// TODO validate with list of repeated schedule from inventory

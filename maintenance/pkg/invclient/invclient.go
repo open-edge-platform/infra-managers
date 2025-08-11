@@ -30,9 +30,9 @@ import (
 )
 
 const (
-	DefaultInventoryTimeout        = 300000000 * time.Second
+	DefaultInventoryTimeout        = 300000000 * time.Second // TODO: revert, increased for testing
 	batchSize                      = 1000
-	SentinelEndTimeUnset    uint64 = 9999999999
+	SentinelEndTimeUnset    uint64 = 9999999999 // Sentinel value for end time indicating the run is still ongoing
 )
 
 var (
@@ -531,34 +531,25 @@ func GetLatestOSUpdateRunByInstanceID(
 	tenantID, instID string,
 	completionFilter OSUpdateRunCompletionFilter,
 ) (*computev1.OSUpdateRunResource, error) {
+	// TODO: Add caching layer
 	zlog.Debug().Msgf("GetLatestOSUpdateRunByInstanceIDWithCompletionFilter: tenantID=%s, instance=%s, filter=%d",
 		tenantID, instID, completionFilter)
 
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	var filter string
+	filter := fmt.Sprintf("%s=%q AND %s.%s=%q",
+		computev1.OSUpdateRunResourceFieldTenantId, tenantID,
+		computev1.OSUpdateRunResourceEdgeInstance,
+		computev1.InstanceResourceFieldResourceId, instID,
+	)
 	switch completionFilter {
 	case OSUpdateRunCompleted:
-		filter = fmt.Sprintf("%s=%q AND %s.%s=%q AND %s!=%d",
-			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
-			computev1.OSUpdateRunResourceEdgeInstance,
-			computev1.InstanceResourceFieldResourceId, instID,
-			computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset,
-		)
+		filter += fmt.Sprintf(" AND %s!=%d", computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset)
 	case OSUpdateRunUncompleted:
-		filter = fmt.Sprintf("%s=%q AND %s.%s=%q AND %s=%d",
-			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
-			computev1.OSUpdateRunResourceEdgeInstance,
-			computev1.InstanceResourceFieldResourceId, instID,
-			computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset,
-		)
+		filter += fmt.Sprintf(" AND %s=%d", computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset)
 	case OSUpdateRunAll:
-		filter = fmt.Sprintf("%s=%q AND %s.%s=%q",
-			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
-			computev1.OSUpdateRunResourceEdgeInstance,
-			computev1.InstanceResourceFieldResourceId, instID,
-		)
+		// no extra filter
 	default:
 		return nil, errors.Errorfc(codes.InvalidArgument, "Unknown completion filter: %d", completionFilter)
 	}
@@ -570,7 +561,7 @@ func GetLatestOSUpdateRunByInstanceID(
 		Limit:    1,
 	})
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceIDWithCompletionFilter: tenantID=%s, instance=%s", tenantID, instID)
+		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceID: tenantID=%s, instance=%s", tenantID, instID)
 		return nil, err
 	}
 
