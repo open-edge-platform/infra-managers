@@ -379,7 +379,6 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, codes.NotFound, status.Code(err))
 		assert.Nil(t, resp)
-
 	})
 
 	t.Run("DefaultTenant", func(t *testing.T) {
@@ -436,7 +435,6 @@ func Test_DenyRBAC(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
 	assert.Nil(t, resp)
-
 }
 
 //nolint:funlen // it's a test
@@ -486,6 +484,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		inst.RuntimePackages = "packages"
 		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
 	})
+
 	// Host and instance start with RUNNING status
 	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 	require.NoError(t, err)
@@ -623,7 +622,6 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-
 }
 
 func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
@@ -749,7 +747,6 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	// Delete the OsUpdateRun resources created in previous step
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-
 }
 
 func OSUpdateRunDeleteLatest(
@@ -786,7 +783,6 @@ func RunPUAUpdateAndAssert(
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
 	defer cancel()
-
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
 	// TODO validate with list of repeated schedule from inventory
@@ -824,7 +820,6 @@ func RunPUAUpdateAndTestOsUpRun(
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
 	defer cancel()
-
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
 	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{

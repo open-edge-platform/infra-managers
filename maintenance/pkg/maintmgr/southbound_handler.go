@@ -251,7 +251,7 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 		StatusIndicator: newUpdateStatus.StatusIndicator,
 		StatusTimestamp: timeNow,
 		StartTime:       timeNow,
-		EndTime:         endTime, // Not completed yet
+		EndTime:         endTime,
 		TenantId:        tenantID,
 		AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
 	}

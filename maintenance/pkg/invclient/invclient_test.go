@@ -427,7 +427,7 @@ func TestInvClient_GetOSResourceIDByProfileInfo(t *testing.T) {
 }
 
 //nolint:funlen // long test function due to table driven tests
-/* Tests ProfileVersion which is currently not used in the OS Resource
+/* Tests versioning with ImageID. ProfileVersion is currently not used in the OS Resource
  * but is expected to be used in the future.
  * The test checks that the latest OS Resource with a given profile name is returned.
  */

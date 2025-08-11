@@ -29,9 +29,6 @@ type server struct {
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
-
-	//ctx, cancel := context.WithTimeout(ctx, 300000000*time.Second)
-	//defer cancel()
 	// TODO: refactor to reduce length and cyclomatic complexity
 	zlog.Info().Msgf("PlatformUpdateStatus: GUID=%s", in.GetHostGuid())
 	zlog.Debug().Msgf("PlatformUpdateStatus: request=%v", in)
