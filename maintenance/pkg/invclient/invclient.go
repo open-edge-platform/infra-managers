@@ -26,12 +26,13 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/validator"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
-	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
+	utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
 const (
-	DefaultInventoryTimeout = 5 * time.Second
-	batchSize               = 1000
+	DefaultInventoryTimeout        = 300000000 * time.Second
+	batchSize                      = 1000
+	SentinelEndTimeUnset    uint64 = 9999999999
 )
 
 var (
@@ -222,7 +223,7 @@ func UpdateInstance(
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, updateStatus, updateStatusDetail)
 
-	timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msg("Conversion Overflow Error")
 		return err
@@ -351,10 +352,15 @@ func GetLatestImmutableOSByProfile(
 			continue // Skip invalid OS resources
 		}
 
-		currentVersionStr := os.GetProfileVersion()
-		currentVersion, err := semver.NewVersion(currentVersionStr)
+		imageVersion := os.GetImageId() // TODO change to GetProfileVersion() when available
+		imageVerToSemVer, err := utils.ConvertToComparableSemVer(imageVersion)
 		if err != nil {
-			zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", currentVersionStr)
+			zlog.Warn().Err(err).Msgf("Failed to convert image version to semantic version: %s", imageVersion)
+			continue // Skip this OS if the version is invalid
+		}
+		currentVersion, err := semver.NewVersion(imageVerToSemVer)
+		if err != nil {
+			zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", imageVerToSemVer)
 			continue // Skip this OS if the version is invalid
 		}
 
@@ -411,7 +417,7 @@ func GetOSResourceByID(
 
 func CreateOSUpdateRun(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
-) error {
+) (*computev1.OSUpdateRunResource, error) {
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
@@ -424,12 +430,12 @@ func CreateOSUpdateRun(
 	runRes, err := c.Create(childCtx, tenantID, res)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed to create OSUpdateRun resource. OSUpdateRun: %v", res.GetOsUpdateRun())
-		return err
+		return nil, err
 	}
 
 	zlog.Info().Msgf("New OSUpdateRun resource created. OSUpdateRun: %v", runRes)
 
-	return err
+	return runRes.GetOsUpdateRun(), nil
 }
 
 func DeleteOSUpdateRun(
@@ -464,11 +470,16 @@ func UpdateOSUpdateRun(
 		"UpdateInstanceStatus: tenantID=%s, InstanceID=%s, OSUpdateRunID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, runResID, &updateStatus, updateStatusDetail)
 
-	now := time.Now().UTC().Format(inv_utils.ISO8601Format)
+	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msg("Conversion Overflow Error")
+		return err
+	}
+
 	run := &computev1.OSUpdateRunResource{
 		Status:          updateStatus.Status,
 		StatusIndicator: updateStatus.StatusIndicator,
-		StatusTimestamp: now,
+		StatusTimestamp: timeNow,
 	}
 
 	fields := []string{
@@ -484,7 +495,7 @@ func UpdateOSUpdateRun(
 
 	if updateStatus.Status == status.StatusCompleted ||
 		updateStatus.Status == status.StatusFailed {
-		run.EndTime = now
+		run.EndTime = timeNow
 		fields = append(fields, computev1.OSUpdateRunResourceFieldEndTime)
 	}
 
@@ -506,23 +517,51 @@ func UpdateOSUpdateRun(
 	return err
 }
 
+type OSUpdateRunCompletionFilter int
+
+const (
+	OSUpdateRunAll OSUpdateRunCompletionFilter = iota
+	OSUpdateRunCompleted
+	OSUpdateRunUncompleted
+)
+
 func GetLatestOSUpdateRunByInstanceID(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
 	tenantID, instID string,
+	completionFilter OSUpdateRunCompletionFilter,
 ) (*computev1.OSUpdateRunResource, error) {
-	// TODO: Add caching layer
-	zlog.Debug().Msgf("GetLatestOSUpdateRunByInstanceID: tenantID=%s, instance=%s", tenantID, instID)
+	zlog.Debug().Msgf("GetLatestOSUpdateRunByInstanceIDWithCompletionFilter: tenantID=%s, instance=%s, filter=%d",
+		tenantID, instID, completionFilter)
 
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	filter := fmt.Sprintf("%s=%q AND %s.%s=%q",
-		computev1.OSUpdateRunResourceFieldTenantId, tenantID,
-		computev1.OSUpdateRunResourceEdgeInstance,
-		computev1.InstanceResourceFieldResourceId, instID,
-		// TODO: unset computev1.OSUpdateRunResourceFieldEndTime,
-	)
+	var filter string
+	switch completionFilter {
+	case OSUpdateRunCompleted:
+		filter = fmt.Sprintf("%s=%q AND %s.%s=%q AND %s!=%d",
+			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
+			computev1.OSUpdateRunResourceEdgeInstance,
+			computev1.InstanceResourceFieldResourceId, instID,
+			computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset,
+		)
+	case OSUpdateRunUncompleted:
+		filter = fmt.Sprintf("%s=%q AND %s.%s=%q AND %s=%d",
+			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
+			computev1.OSUpdateRunResourceEdgeInstance,
+			computev1.InstanceResourceFieldResourceId, instID,
+			computev1.OSUpdateRunResourceFieldEndTime, SentinelEndTimeUnset,
+		)
+	case OSUpdateRunAll:
+		filter = fmt.Sprintf("%s=%q AND %s.%s=%q",
+			computev1.OSUpdateRunResourceFieldTenantId, tenantID,
+			computev1.OSUpdateRunResourceEdgeInstance,
+			computev1.InstanceResourceFieldResourceId, instID,
+		)
+	default:
+		return nil, errors.Errorfc(codes.InvalidArgument, "Unknown completion filter: %d", completionFilter)
+	}
 
 	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
 		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_OsUpdateRun{}},
@@ -531,7 +570,7 @@ func GetLatestOSUpdateRunByInstanceID(
 		Limit:    1,
 	})
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceID: tenanatID=%s, instance=%s", tenantID, instID)
+		zlog.InfraSec().InfraErr(err).Msgf("GetLatestOSUpdateRunByInstanceIDWithCompletionFilter: tenantID=%s, instance=%s", tenantID, instID)
 		return nil, err
 	}
 

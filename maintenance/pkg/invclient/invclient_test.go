@@ -427,6 +427,10 @@ func TestInvClient_GetOSResourceIDByProfileInfo(t *testing.T) {
 }
 
 //nolint:funlen // long test function due to table driven tests
+/* Tests ProfileVersion which is currently not used in the OS Resource
+ * but is expected to be used in the future.
+ * The test checks that the latest OS Resource with a given profile name is returned.
+ */
 func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := t.Context()
@@ -436,7 +440,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 1"
 		os.ProfileName = "profile name 1"
-		os.ProfileVersion = semverVersion100
+		os.ImageId = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -445,7 +449,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 2"
 		os.ProfileName = "profile name 2"
-		os.ProfileVersion = semverVersion100
+		os.ImageId = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -454,7 +458,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource no version"
 		os.ProfileName = "profile name 2"
-		os.ProfileVersion = ""
+		os.ImageId = ""
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -463,7 +467,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 3"
 		os.ProfileName = "profile name 3"
-		os.ProfileVersion = semverVersion100
+		os.ImageId = semverVersion100
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -472,7 +476,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource 4"
 		os.ProfileName = "profile name 3"
-		os.ProfileVersion = "0.0.1"
+		os.ImageId = "0.0.1"
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
 	})
@@ -481,9 +485,26 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 		os.Sha256 = inv_testing.GenerateRandomSha256()
 		os.Name = "OS Resource with no profile with version"
 		os.ProfileName = "profile name 4"
-		os.ProfileVersion = ""
+		os.ImageId = ""
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	// Create two immutable OS resources with different versions
+	dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "Old OS Resource"
+		os.ProfileName = "profile name 6"
+		os.ImageId = "1.0.20240101.0000"
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+	})
+
+	osRes4 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "New OS Resource "
+		os.ProfileName = "profile name 6"
+		os.ImageId = "2.0.20240601.0000"
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+		os.Sha256 = inv_testing.GenerateRandomSha256()
 	})
 
 	tests := []struct {
@@ -529,6 +550,12 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 			profileName: "",
 			expErr:      true,
 			expErrCode:  codes.NotFound,
+		},
+		{
+			name:          "FindNewOSResWithProfileName5",
+			profileName:   "profile name 6",
+			expErr:        false,
+			expResourceID: osRes4.GetResourceId(),
 		},
 	}
 

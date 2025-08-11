@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -285,4 +286,44 @@ func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.Resour
 	default:
 		return &mm_status.UpdateStatusUnknown
 	}
+}
+
+func ConvertToComparableSemVer(s string) (string, error) {
+	// convert image version string to a comparable semantic version format
+	// Example: "3.0.20250717.0732" -> "3.0.20250717-build0732"
+	parts := strings.Split(s, ".")
+	if len(parts) < 3 {
+		return "", fmt.Errorf("invalid version string: %s", s)
+	}
+
+	// Core: Major.Minor.Patch
+	core := make([]string, 3)
+	copy(core, parts[:3])
+	for i := range core {
+		if core[i] == "" {
+			return "", fmt.Errorf("invalid version segment: empty")
+		}
+		n, err := strconv.Atoi(core[i])
+		if err != nil {
+			return "", fmt.Errorf("invalid number segment: %s", core[i])
+		}
+		core[i] = strconv.Itoa(n) // remove leading zeros
+	}
+
+	// Prerelease — add prefix "build" to segment to avoid starting with 0
+	var prerelease string
+	if len(parts) > 3 {
+		preParts := parts[3:]
+		for i, p := range preParts {
+			if len(p) > 1 && strings.HasPrefix(p, "0") {
+				preParts[i] = "build" + p
+			}
+		}
+		prerelease = strings.Join(preParts, ".")
+	}
+
+	if prerelease != "" {
+		return fmt.Sprintf("%s-%s", strings.Join(core, "."), prerelease), nil
+	}
+	return strings.Join(core, "."), nil
 }
