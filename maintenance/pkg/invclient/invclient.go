@@ -249,6 +249,8 @@ func UpdateInstance(
 	if newOSResID != "" {
 		instRes.CurrentOs = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
 		fields = append(fields, computev1.InstanceResourceEdgeCurrentOs)
+		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
+		fields = append(fields, computev1.InstanceResourceEdgeOs)
 	}
 
 	if newExistingCves != "" {

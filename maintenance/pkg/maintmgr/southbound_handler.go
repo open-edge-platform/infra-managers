@@ -104,10 +104,10 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
 	zlog.Debug().Msgf("GetNewOSResourceIDIfNeeded: Instance's current OS osType=%s, new updateStatus=%s",
-		instance.GetCurrentOs().GetOsType(), mmUpStatus.StatusType)
+		instance.GetCurrentOs().GetOsType(), mmUpStatus.StatusType) // TBD: change to GetOs().GetResourceId()
 
 	if mmUpStatus.StatusType != pb.UpdateStatus_STATUS_TYPE_UPDATED ||
-		instance.GetCurrentOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE {
+		instance.GetCurrentOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE { // TBD: change to GetOs().GetResourceId()
 		zlog.Debug().Msgf("abandoned OS Resource search as not needed")
 		return "", nil
 	}
@@ -123,7 +123,7 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetProfileName() != mmUpStatus.GetProfileName() {
+	if instance.GetCurrentOs().GetProfileName() != mmUpStatus.GetProfileName() { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current profile name differs from the new profile name: current profileName=%s, new profileName=%s",
 			instance.GetCurrentOs().GetProfileName(), mmUpStatus.ProfileName)
@@ -131,7 +131,7 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetImageId() == mmUpStatus.GetOsImageId() {
+	if instance.GetCurrentOs().GetImageId() == mmUpStatus.GetOsImageId() { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Image IDs are identical: current OS ImageID=%s, new OS ImageID=%s",
 			instance.GetCurrentOs().GetImageId(), mmUpStatus.OsImageId)
@@ -146,7 +146,7 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetResourceId() == newOSResID {
+	if instance.GetCurrentOs().GetResourceId() == newOSResID { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Resource IDs are identical: current OS Resource ID=%s, new OS Resource ID=%s",
 			instance.GetCurrentOs().GetResourceId(), newOSResID)
@@ -167,12 +167,6 @@ func handleOSUpdateRun(
 	newStatus := mmUpStatus.StatusType.String()
 	zlog.Debug().Msgf("Handle OSUpdateRun")
 
-	runRes, err := getLatestOSUpdateRunPerIns(ctx, client, tenantID, instRes)
-	if err != nil {
-		zlog.InfraSec().Warn().Err(err).Msgf("OSUpdateRun not found for instanceID: %s", instanceID)
-		runRes = nil
-	}
-
 	// Map pb.UpdateStatus -> local status
 	targetStatuses := map[pb.UpdateStatus_StatusType]string{
 		pb.UpdateStatus_STATUS_TYPE_DOWNLOADING: status.StatusDownloading,
@@ -188,6 +182,12 @@ func handleOSUpdateRun(
 		return
 	}
 
+	runRes, err := getLatestOSUpdateRunPerIns(ctx, client, tenantID, instRes)
+	if err != nil {
+		zlog.InfraSec().Warn().Err(err).Msgf("OSUpdateRun not found for instanceID: %s", instanceID)
+		runRes = nil
+	}
+
 	// If no run exists, always create
 	if runRes == nil {
 		zlog.Debug().
@@ -198,7 +198,7 @@ func handleOSUpdateRun(
 		return
 	}
 
-	// Update only if status differs
+	// Update only if new status differs
 	if runRes.GetStatus() != targetStatus {
 		zlog.Debug().
 			Msgf("Updating OSUpdateRun status, instanceID: %s, old status: %s, new status: %s",
@@ -275,12 +275,7 @@ func updateOSUpdateRun(
 	upStatus *pb.UpdateStatus,
 	runRes *computev1.OSUpdateRunResource,
 ) error {
-	/*runRes, err := getOSUpdateRunPerIns(ctx, c, tenantID, instRes)
-	if err != nil {
-		zlog.InfraSec().Warn().Err(err).Msgf("Failed to find OSUpdateRun Resource")
-		return
-	}
-	*/
+
 	newUpdateStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(upStatus,
 		runRes.GetStatusIndicator(), runRes.GetStatus())
 
@@ -316,8 +311,8 @@ func GetNewExistingCVEs(
 	var newExistingCVEs string
 
 	if newOSResID == "" {
-		// If newOSResID is os zero length, it means there is no new OS Resource update and
-		// also if Instance Status is getting updated from UnSpecified to Idle then only
+		// If newOSResID is of zero length, it means there is no new OS Resource update and
+		// also if Instance Status is getting updated from Unspecified to Idle then only
 		// copy existing CVEs from existing OS resource
 		if instRes.GetUpdateStatusIndicator() == statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED &&
 			newInstUpStatus.StatusIndicator == statusv1.StatusIndication_STATUS_INDICATION_IDLE {
