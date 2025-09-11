@@ -26,6 +26,10 @@ import (
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
+const (
+	semverVersion100 = "1.0.0"
+)
+
 func TestMain(m *testing.M) {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -418,6 +422,127 @@ func TestInvClient_GetOSResourceIDByProfileInfo(t *testing.T) {
 			require.Error(t, err)
 			sts, _ := status.FromError(err)
 			assert.Equal(t, codes.NotFound, sts.Code())
+		})
+	}
+}
+
+//nolint:funlen // long test function due to table driven tests
+func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := t.Context()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	osRes1 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource 1"
+		os.ProfileName = "profile name 1"
+		os.ProfileVersion = semverVersion100
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	osRes2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource 2"
+		os.ProfileName = "profile name 2"
+		os.ProfileVersion = semverVersion100
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource no version"
+		os.ProfileName = "profile name 2"
+		os.ProfileVersion = ""
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	osRes3 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource 3"
+		os.ProfileName = "profile name 3"
+		os.ProfileVersion = semverVersion100
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource 4"
+		os.ProfileName = "profile name 3"
+		os.ProfileVersion = "0.0.1"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = inv_testing.GenerateRandomSha256()
+		os.Name = "OS Resource with no profile with version"
+		os.ProfileName = "profile name 4"
+		os.ProfileVersion = ""
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	tests := []struct {
+		name          string
+		profileName   string
+		expErr        bool
+		expErrCode    codes.Code
+		expResourceID string
+	}{
+		{
+			name:          "FindOSResWithProfileName1",
+			profileName:   "profile name 1",
+			expErr:        false,
+			expErrCode:    codes.OK,
+			expResourceID: osRes1.GetResourceId(),
+		},
+		{
+			name:          "FindOSResWithProfileName2",
+			profileName:   "profile name 2",
+			expErr:        false,
+			expResourceID: osRes2.GetResourceId(),
+		},
+		{
+			name:          "FindOSResWithProfileName3",
+			profileName:   "profile name 3",
+			expErr:        false,
+			expResourceID: osRes3.GetResourceId(),
+		},
+		{
+			name:        "ErrorFindOsResWithoutVersion",
+			profileName: "profile name 4",
+			expErr:      true,
+			expErrCode:  codes.NotFound,
+		},
+		{
+			name:        "ErrorFindNonexistientOSRes",
+			profileName: "profile name 5",
+			expErr:      true,
+			expErrCode:  codes.NotFound,
+		},
+		{
+			name:        "ErrorNoProfileName",
+			profileName: "",
+			expErr:      true,
+			expErrCode:  codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			getOSRes, err := invclient.GetLatestImmutableOSByProfile(ctx, client, mm_testing.Tenant1, tt.profileName)
+			if tt.expErr {
+				require.Error(t, err)
+				assert.Equal(t, tt.expErrCode, status.Code(err))
+			} else {
+				require.NoError(t, err)
+				require.NotEmpty(t, getOSRes)
+				require.Equal(t, tt.expResourceID, getOSRes.GetResourceId())
+			}
 		})
 	}
 }
