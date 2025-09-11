@@ -4,10 +4,13 @@
 package util_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/Masterminds/semver/v3"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -821,5 +824,89 @@ func TestPopulateOsProfileUpdateSource_Matrix(t *testing.T) {
 				assert.Equal(t, tt.want, got)
 			}
 		})
+	}
+}
+
+func TestConvertToComparableSemVer(t *testing.T) {
+	tests := []struct {
+		input       string
+		expected    string
+		expectError bool
+	}{
+		// Valid image versions
+		{"3.0.20250717.0732", "3.0.20250717-build0732", false},
+		{"1.2.3.4.5", "1.2.3-4.5", false},
+		{"10.0.1", "10.0.1", false},
+		{"2025.07.11.0415", "2025.7.11-build0415", false}, // removed leading zeros in core + build in prerelease
+		{"0.0.1", "0.0.1", false},
+
+		// Invalid image versions
+		{"", "", true},
+		{"1", "", true},
+		{"2.5.", "", true},
+		{"a.b.c", "", true},
+	}
+
+	for _, tc := range tests {
+		got, err := util.ConvertToComparableSemVer(tc.input)
+		if tc.expectError {
+			if err == nil {
+				t.Errorf("ConvertToComparableSemVer(%q) expected error, got none", tc.input)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("ConvertToComparableSemVer(%q) unexpected error: %v", tc.input, err)
+			continue
+		}
+		if got != tc.expected {
+			t.Errorf("ConvertToComparableSemVer(%q) = %q; want %q", tc.input, got, tc.expected)
+		}
+		// Check if the result can be parsed as a semver
+		if _, err := semver.NewVersion(got); err != nil {
+			t.Errorf("semver.NewVersion(%q) failed: %v", got, err)
+		}
+	}
+}
+
+func TestConvertToComparableSemVer_Sorting(t *testing.T) {
+	rawVersions := []string{
+		"3.0.20250717.0732",
+		"3.0.20250711.0415",
+		"3.0.20250719.1000",
+		"3.0.20240719.1000",
+	}
+
+	var parsed []*semver.Version
+	for _, rv := range rawVersions {
+		vStr, err := util.ConvertToComparableSemVer(rv)
+		if err != nil {
+			t.Fatalf("convert error for %q: %v", rv, err)
+		}
+		v, err := semver.NewVersion(vStr)
+		if err != nil {
+			t.Fatalf("parse error for %q: %v", vStr, err)
+		}
+		parsed = append(parsed, v)
+	}
+
+	sort.Sort(semver.Collection(parsed))
+
+	got := make([]string, len(parsed))
+	for i, v := range parsed {
+		got[i] = v.String()
+	}
+
+	expected := []string{
+		"3.0.20240719-1000",
+		"3.0.20250711-build0415",
+		"3.0.20250717-build0732",
+		"3.0.20250719-1000",
+	}
+
+	for i := range expected {
+		if got[i] != expected[i] {
+			t.Errorf("sorting mismatch at %d: got %q, want %q", i, got[i], expected[i])
+		}
 	}
 }

@@ -4,11 +4,10 @@
 package util
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"math"
-	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -308,15 +307,42 @@ func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.Resour
 	}
 }
 
-func GenerateRandomOsUpdateRunName() string {
-	return fmt.Sprintf("Test OS Update Policy name #%d", generateRandomInteger(1023)) //nolint:mnd // Testing only
-}
-
-func generateRandomInteger(intMax int64) int64 {
-	nBig, err := rand.Int(rand.Reader, big.NewInt(intMax))
-	if err != nil {
-		panic(err)
+func ConvertToComparableSemVer(s string) (string, error) {
+	// convert image version string to a comparable semantic version format
+	// Example: "3.0.20250717.0732" -> "3.0.20250717-build0732"
+	parts := strings.Split(s, ".")
+	if len(parts) < 3 {
+		return "", fmt.Errorf("invalid version string: %s", s)
 	}
-	n := nBig.Int64()
-	return n
+
+	// Core: Major.Minor.Patch
+	core := make([]string, 3)
+	copy(core, parts[:3])
+	for i := range core {
+		if core[i] == "" {
+			return "", fmt.Errorf("invalid version segment: empty")
+		}
+		n, err := strconv.Atoi(core[i])
+		if err != nil {
+			return "", fmt.Errorf("invalid number segment: %s", core[i])
+		}
+		core[i] = strconv.Itoa(n) // remove leading zeros
+	}
+
+	// Prerelease — add prefix "build" to segment to avoid starting with 0
+	var prerelease string
+	if len(parts) > 3 {
+		preParts := parts[3:]
+		for i, p := range preParts {
+			if len(p) > 1 && strings.HasPrefix(p, "0") {
+				preParts[i] = "build" + p
+			}
+		}
+		prerelease = strings.Join(preParts, ".")
+	}
+
+	if prerelease != "" {
+		return fmt.Sprintf("%s-%s", strings.Join(core, "."), prerelease), nil
+	}
+	return strings.Join(core, "."), nil
 }
