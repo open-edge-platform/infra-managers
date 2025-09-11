@@ -25,7 +25,7 @@ type server struct {
 	authEnabled bool
 }
 
-//nolint:cyclop // cyclomatic complexity is 11 due to validation logic
+//nolint:cyclop,funlen // cyclomatic complexity is 11 due to validation logic
 func (s *server) PlatformUpdateStatus(ctx context.Context,
 	in *pb.PlatformUpdateStatusRequest,
 ) (*pb.PlatformUpdateStatusResponse, error) {
