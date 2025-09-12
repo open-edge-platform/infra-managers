@@ -3,7 +3,7 @@
 
 module github.com/open-edge-platform/infra-managers/maintenance
 
-go 1.24.4
+go 1.24.6
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
