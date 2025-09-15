@@ -208,14 +208,6 @@ github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c h1:cqn374
 github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804120705-5f56ef6a9752 h1:UvW2u6zFwMgCVW0vhv2rOHRiFnlD4t4gBvaph3isDlw=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804120705-5f56ef6a9752/go.mod h1:8B/tr37uweQz+FVU23VzKRcQGfJKuS+0dLwYmdP5oJY=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804150328-df46d04dc4a5 h1:/v1AidQoOusF3kFGn+KV8rH/oZ0q7zG3XBwEA4+O1cM=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804150328-df46d04dc4a5/go.mod h1:8B/tr37uweQz+FVU23VzKRcQGfJKuS+0dLwYmdP5oJY=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804152905-d24d05961cf1 h1:WmTs57Z4dh38G7gS8GNxB6OEreqvzBHuJcQpQypVmVs=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250804152905-d24d05961cf1/go.mod h1:8B/tr37uweQz+FVU23VzKRcQGfJKuS+0dLwYmdP5oJY=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250808153957-a42d445cf848 h1:hZe3CB2gbRYMn40yvB+m7pHf0iuwDs91N0vDz1BsHHw=
-github.com/open-edge-platform/infra-core/inventory/v2 v2.29.1-0.20250808153957-a42d445cf848/go.mod h1:8B/tr37uweQz+FVU23VzKRcQGfJKuS+0dLwYmdP5oJY=
 github.com/open-edge-platform/infra-core/inventory/v2 v2.29.2-0.20250818115341-152c99aad262 h1:S0fcxgeQ5w/7E/vb9sKInSLKcDYQ/BRB6otndhUQd+c=
 github.com/open-edge-platform/infra-core/inventory/v2 v2.29.2-0.20250818115341-152c99aad262/go.mod h1:8B/tr37uweQz+FVU23VzKRcQGfJKuS+0dLwYmdP5oJY=
 github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.37.7 h1:wRNi9vzlbavyJ+7EraxMATG4zFXFCxQJ2Mg/770/+qQ=
