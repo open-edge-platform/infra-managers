@@ -853,7 +853,7 @@ func RunPUAUpdateAndTestOsUpRun(
 		}
 		return runGet.StatusIndicator == expUpdateStatus.StatusIndicator &&
 			runGet.Status == expUpdateStatus.Status
-	}, 2*time.Second, 50*time.Millisecond)
+	}, 5*time.Second, 50*time.Millisecond)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {

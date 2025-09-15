@@ -35,6 +35,14 @@ const (
 	SentinelEndTimeUnset    uint64 = 9999999999 // Sentinel value for end time indicating the run is still ongoing
 )
 
+type OSUpdateRunCompletionFilter int
+
+const (
+	OSUpdateRunAll OSUpdateRunCompletionFilter = iota
+	OSUpdateRunCompleted
+	OSUpdateRunUncompleted
+)
+
 var (
 	zlog = logging.GetLogger("InvClient")
 
@@ -518,14 +526,6 @@ func UpdateOSUpdateRun(
 	})
 	return err
 }
-
-type OSUpdateRunCompletionFilter int
-
-const (
-	OSUpdateRunAll OSUpdateRunCompletionFilter = iota
-	OSUpdateRunCompleted
-	OSUpdateRunUncompleted
-)
 
 func GetLatestOSUpdateRunByInstanceID(
 	ctx context.Context,
