@@ -7,10 +7,9 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Masterminds/semver/v3"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -877,8 +876,8 @@ func TestConvertToComparableSemVer_Sorting(t *testing.T) {
 		"3.0.20240719.1000",
 	}
 
-	var parsed []*semver.Version
-	for _, rv := range rawVersions {
+	parsed := make([]*semver.Version, len(rawVersions))
+	for i, rv := range rawVersions {
 		vStr, err := util.ConvertToComparableSemVer(rv)
 		if err != nil {
 			t.Fatalf("convert error for %q: %v", rv, err)
@@ -887,7 +886,7 @@ func TestConvertToComparableSemVer_Sorting(t *testing.T) {
 		if err != nil {
 			t.Fatalf("parse error for %q: %v", vStr, err)
 		}
-		parsed = append(parsed, v)
+		parsed[i] = v
 	}
 
 	sort.Sort(semver.Collection(parsed))

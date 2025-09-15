@@ -192,7 +192,7 @@ func handleOSUpdateRun(
 	if runRes == nil {
 		zlog.Debug().
 			Msgf("Creating new OSUpdateRun (no existing run found), instanceID: %s, update status: %s", instanceID, newStatus)
-		if runRes, err = createOSUpdateRun(ctx, client, tenantID, mmUpStatus, instRes); err != nil {
+		if _, err = createOSUpdateRun(ctx, client, tenantID, mmUpStatus, instRes); err != nil {
 			zlog.Error().Err(err).Msgf("Failed to create OSUpdateRun for instanceId: %s", instanceID)
 		}
 		return
@@ -275,7 +275,6 @@ func updateOSUpdateRun(
 	upStatus *pb.UpdateStatus,
 	runRes *computev1.OSUpdateRunResource,
 ) error {
-
 	newUpdateStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(upStatus,
 		runRes.GetStatusIndicator(), runRes.GetStatus())
 

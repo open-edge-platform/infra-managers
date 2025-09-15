@@ -33,6 +33,7 @@ const (
 	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
 	ISO8601Format                    = "2006-01-02T15:04:05.999Z"
+	semverCoreSegments               = 3 // Major.Minor.Patch
 )
 
 func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
@@ -311,13 +312,13 @@ func ConvertToComparableSemVer(s string) (string, error) {
 	// convert image version string to a comparable semantic version format
 	// Example: "3.0.20250717.0732" -> "3.0.20250717-build0732"
 	parts := strings.Split(s, ".")
-	if len(parts) < 3 {
+	if len(parts) < semverCoreSegments {
 		return "", fmt.Errorf("invalid version string: %s", s)
 	}
 
 	// Core: Major.Minor.Patch
-	core := make([]string, 3)
-	copy(core, parts[:3])
+	core := make([]string, semverCoreSegments)
+	copy(core, parts[:semverCoreSegments])
 	for i := range core {
 		if core[i] == "" {
 			return "", fmt.Errorf("invalid version segment: empty")
@@ -331,8 +332,8 @@ func ConvertToComparableSemVer(s string) (string, error) {
 
 	// Prerelease — add prefix "build" to segment to avoid starting with 0
 	var prerelease string
-	if len(parts) > 3 {
-		preParts := parts[3:]
+	if len(parts) > semverCoreSegments {
+		preParts := parts[semverCoreSegments:]
 		for i, p := range preParts {
 			if len(p) > 1 && strings.HasPrefix(p, "0") {
 				preParts[i] = "build" + p

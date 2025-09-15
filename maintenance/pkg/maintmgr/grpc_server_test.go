@@ -437,7 +437,7 @@ func Test_DenyRBAC(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-//nolint:funlen // it's a test
+//nolint:funlen // Test functions are long but necessary to test all the cases.
 func TestServer_UpdateEdgeNode(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	// This test case emulates the behavior of PUA while doing an update on a Node
@@ -624,6 +624,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 }
 
+//nolint:funlen // Test functions are long but necessary to test all the cases.
 func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	// This test case emulates the behavior of PUA while doing an update on a Node
@@ -761,7 +762,8 @@ func OSUpdateRunDeleteLatest(
 
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
-	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tenantID, inst.GetResourceId(), invclient.OSUpdateRunAll)
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(
+		ctx, client, tenantID, inst.GetResourceId(), invclient.OSUpdateRunAll)
 	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
 
 	if runGet != nil {
@@ -852,7 +854,6 @@ func RunPUAUpdateAndTestOsUpRun(
 		return runGet.StatusIndicator == expUpdateStatus.StatusIndicator &&
 			runGet.Status == expUpdateStatus.Status
 	}, 2*time.Second, 50*time.Millisecond)
-
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {
