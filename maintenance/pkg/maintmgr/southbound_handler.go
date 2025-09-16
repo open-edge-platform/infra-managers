@@ -22,49 +22,38 @@ import (
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
-func updateInstanceInInv(
+func updateInstance(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
 	tenantID string,
 	mmUpStatus *pb.UpdateStatus,
+	newInstUpStatus *inv_status.ResourceStatus,
 	instRes *computev1.InstanceResource,
 ) {
-	newInstUpStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
-		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
+	zlog.Debug().Msgf("Updating Instance OS and Existing CVEs")
 
-	if needed {
-		zlog.Debug().Msgf("Updating Instance UpdateStatus: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+	newOSResID, err := GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
+		return
+	}
 
-		newUpdateStatusDetail := maintgmr_util.GetUpdateStatusDetailIfNeeded(
-			newInstUpStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
+	zlog.Debug().Msgf("New OS Resource ID: %s", newOSResID)
 
-		newOSResID, err := GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
-			return
-		}
+	newExistingCVEs, err := GetNewExistingCVEs(ctx, client, tenantID, newOSResID, instRes, newInstUpStatus)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new existing CVEs")
+		return
+	}
 
-		zlog.Debug().Msgf("New OS Resource ID: %s", newOSResID)
-
-		newExistingCVEs, err := GetNewExistingCVEs(ctx, client, tenantID, newOSResID, instRes, newInstUpStatus)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new existing CVEs")
-			return
-		}
-
-		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
-			return
-		}
-	} else {
-		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+	err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
+		newOSResID, newExistingCVEs)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
+		return
 	}
 }
 
@@ -104,10 +93,10 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
 	zlog.Debug().Msgf("GetNewOSResourceIDIfNeeded: Instance's current OS osType=%s, new updateStatus=%s",
-		instance.GetCurrentOs().GetOsType(), mmUpStatus.StatusType) // TBD: change to GetOs().GetResourceId()
+		instance.GetOs().GetOsType(), mmUpStatus.StatusType) // TBD: change to GetOs().GetResourceId()
 
 	if mmUpStatus.StatusType != pb.UpdateStatus_STATUS_TYPE_UPDATED ||
-		instance.GetCurrentOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE { // TBD: change to GetOs().GetResourceId()
+		instance.GetOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE { // TBD: change to GetOs().GetResourceId()
 		zlog.Debug().Msgf("abandoned OS Resource search as not needed")
 		return "", nil
 	}
@@ -123,18 +112,18 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetProfileName() != mmUpStatus.GetProfileName() { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetProfileName() != mmUpStatus.GetProfileName() { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current profile name differs from the new profile name: current profileName=%s, new profileName=%s",
-			instance.GetCurrentOs().GetProfileName(), mmUpStatus.ProfileName)
+			instance.GetOs().GetProfileName(), mmUpStatus.ProfileName)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetImageId() == mmUpStatus.GetOsImageId() { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetImageId() == mmUpStatus.GetOsImageId() { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Image IDs are identical: current OS ImageID=%s, new OS ImageID=%s",
-			instance.GetCurrentOs().GetImageId(), mmUpStatus.OsImageId)
+			instance.GetOs().GetImageId(), mmUpStatus.OsImageId)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
@@ -146,17 +135,17 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetResourceId() == newOSResID { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetResourceId() == newOSResID { // TBD: change to GetOs().GetResourceId()
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Resource IDs are identical: current OS Resource ID=%s, new OS Resource ID=%s",
-			instance.GetCurrentOs().GetResourceId(), newOSResID)
+			instance.GetOs().GetResourceId(), newOSResID)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
 	return newOSResID, nil
 }
 
-func handleOSUpdateRun(
+func handleOSUpdateStatusInInventory(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
 	tenantID string,
@@ -203,7 +192,7 @@ func handleOSUpdateRun(
 		zlog.Debug().
 			Msgf("Updating OSUpdateRun status, instanceID: %s, old status: %s, new status: %s",
 				instanceID, runRes.GetStatus(), targetStatus)
-		if err := updateOSUpdateRun(ctx, client, tenantID, instRes, mmUpStatus, runRes); err != nil {
+		if err := updateInventory(ctx, client, tenantID, instRes, mmUpStatus, runRes); err != nil {
 			zlog.Error().Err(err).Msgf("Failed to update OSUpdateRun, instanceId: %s, OSUpdateRunId: %s",
 				instanceID, runRes.GetResourceId())
 		}
@@ -267,7 +256,7 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	return run, nil
 }
 
-func updateOSUpdateRun(
+func updateInventory(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
 	tenantID string,
@@ -290,6 +279,8 @@ func updateOSUpdateRun(
 				"Failed to update OSUpdateRun status: tenantID=%s, instance=%s", tenantID, instRes.GetResourceId())
 			return err
 		}
+
+		updateInstance(ctx, c, tenantID, upStatus, instRes)
 	} else {
 		zlog.Debug().Msgf("No UpdateStatus change needed: old=%v, new=%v",
 			newUpdateStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
