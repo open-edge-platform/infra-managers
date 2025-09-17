@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -16,6 +17,11 @@ import (
 	as "github.com/open-edge-platform/infra-core/inventory/v2/pkg/artifactservice"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
+)
+
+const (
+	semverParts    = 3
+	minSemverParts = 2
 )
 
 var (
@@ -73,32 +79,84 @@ type FixedCVEs []struct {
 	AffectedPackages []*string `json:"affected_packages"`
 }
 
-func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string]*OSProfileManifest, error) {
+func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string][]*OSProfileManifest, error) {
+	enProfileRepo, err := getProfileRepoFromEnv()
+	if err != nil {
+		return map[string][]*OSProfileManifest{}, err
+	}
+
+	// For each of the enabled profiles,
+	//  - fetch all the revisions if tag contains a semver range (tag with ~ as prefix) else fetch the specific revision as in tag
+	//  - fetch the os profile for each of the revisions of that enabled profile and store in a golang map
+	osProfiles := make(map[string][]*OSProfileManifest)
+	for _, pName := range profileNames {
+		osProfileRevisions, err := getProfileRevisionsFromProfileRepo(ctx, enProfileRepo, pName, tag)
+		if err != nil {
+			return map[string][]*OSProfileManifest{}, err
+		}
+		for _, osProfileRevision := range osProfileRevisions {
+			manifest, err := fetchOSProfile(ctx, enProfileRepo, pName, osProfileRevision)
+			if err != nil {
+				return map[string][]*OSProfileManifest{}, err
+			}
+			osProfiles[pName] = append(osProfiles[pName], manifest)
+		}
+	}
+	return osProfiles, nil
+}
+
+func getProfileRepoFromEnv() (string, error) {
 	enProfileRepo := os.Getenv(EnvNameRsEnProfileRepo)
 	if enProfileRepo == "" {
 		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsEnProfileRepo)
 		zlog.Err(invErr).Msg("")
-		return map[string]*OSProfileManifest{}, invErr
+		return "", invErr
 	}
+	return enProfileRepo, nil
+}
 
-	osProfiles := make(map[string]*OSProfileManifest)
-	for _, pName := range profileNames {
-		artifacts, err := as.DownloadArtifacts(ctx, enProfileRepo+pName, tag)
-		if err != nil || artifacts == nil || len(*artifacts) == 0 {
-			invErr := inv_errors.Errorf("Error downloading OS profile manifest for profile name %s and tag %s from Repo: %s",
-				pName, tag, enProfileRepo+pName)
+func getProfileRevisionsFromProfileRepo(ctx context.Context, enProfileRepo, pName, tag string) ([]string, error) {
+	var osProfileRevisions []string
+	if strings.HasPrefix(tag, "~") {
+		profileRevisionStart := strings.TrimPrefix(tag, "~")
+		major, minor, patch := ParseSemver(profileRevisionStart)
+
+		pNameRevisions, err := as.GetRepositoryTags(ctx, enProfileRepo+pName)
+		if err != nil || len(pNameRevisions) == 0 {
+			invErr := inv_errors.Errorf("Error getting os profile revisions for profile name %s from Repo: %s",
+				pName, enProfileRepo+pName)
 			zlog.InfraSec().Error().Err(invErr).Msg(err.Error())
-			return map[string]*OSProfileManifest{}, invErr
+			return nil, invErr
 		}
 
-		var enManifest OSProfileManifest
-		if err := yaml.Unmarshal((*artifacts)[0].Data, &enManifest); err != nil {
-			zlog.InfraSec().Error().Err(err).Msg("Error unmarshalling OSProfileManifest JSON")
-			return map[string]*OSProfileManifest{}, inv_errors.Wrap(err)
+		for _, pNameRevision := range pNameRevisions {
+			pNameRevisionMajor, pNameRevisionMinor, pNameRevisionPatch := ParseSemver(pNameRevision)
+			if pNameRevisionMajor == major && pNameRevisionMinor == minor && pNameRevisionPatch >= patch {
+				osProfileRevisions = append(osProfileRevisions, pNameRevision)
+			}
 		}
-		osProfiles[pName] = &enManifest
+	} else {
+		osProfileRevisions = append(osProfileRevisions, tag)
 	}
-	return osProfiles, nil
+	return osProfileRevisions, nil
+}
+
+func fetchOSProfile(ctx context.Context, repo, profileName, tag string) (*OSProfileManifest, error) {
+	artifacts, err := as.DownloadArtifacts(ctx, repo+profileName, tag)
+	if err != nil || artifacts == nil || len(*artifacts) == 0 {
+		invErr := inv_errors.Errorf(
+			"Error downloading OS profile manifest for profile name %s and osProfileRevision %s from Repo: %s",
+			profileName, tag, repo+profileName)
+		zlog.InfraSec().Error().Err(invErr).Msg(err.Error())
+		return nil, invErr
+	}
+	var enManifest OSProfileManifest
+	if err := yaml.Unmarshal((*artifacts)[0].Data, &enManifest); err != nil {
+		zlog.InfraSec().Error().Err(err).Msg("Error unmarshalling OSProfileManifest JSON")
+		return nil, inv_errors.Wrap(err)
+	}
+
+	return &enManifest, nil
 }
 
 func GetPackageManifest(ctx context.Context, packageManifestURL string) (string, error) {
@@ -238,4 +296,31 @@ func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error
 
 func GetFixedCVEs(ctx context.Context, fixedCVEsURL string) (string, error) {
 	return getCVEsFromURL(ctx, fixedCVEsURL, "fixed")
+}
+
+// ParseSemver parses a semver version string (e.g., "1.2.3") and returns major, minor, and patch as integers.
+// If any part is missing or invalid, it defaults to 0 for that part.
+func ParseSemver(version string) (int, int, int) {
+	parts := strings.SplitN(version, ".", semverParts)
+	var major, minor, patch int
+	var err error
+	if len(parts) >= 1 {
+		major, err = strconv.Atoi(parts[0])
+		if err != nil {
+			major = 0
+		}
+	}
+	if len(parts) >= minSemverParts {
+		minor, err = strconv.Atoi(parts[1])
+		if err != nil {
+			minor = 0
+		}
+	}
+	if len(parts) == semverParts {
+		patch, err = strconv.Atoi(parts[2])
+		if err != nil {
+			patch = 0
+		}
+	}
+	return major, minor, patch
 }

@@ -5,6 +5,7 @@ package reconcilers
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -136,7 +137,7 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 
 //nolint:cyclop // cyclomatic complexity is 11
 func (tr *TenantReconciler) initializeProviderIfNeeded(
-	ctx context.Context, tenant *tenant_v1.Tenant, allOsProfiles map[string]*fsclient.OSProfileManifest,
+	ctx context.Context, tenant *tenant_v1.Tenant, allOsProfiles map[string][]*fsclient.OSProfileManifest,
 ) error {
 	if *common.DisableProviderAutomationFlag {
 		zlogTenant.Debug().Msgf("Provider auto-creation disabled by feature flag")
@@ -164,7 +165,7 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 	defaultOSResourceID := ""
 	if tr.osConfig.AutoProvision {
 		defaultOSProfile, exists := allOsProfiles[tr.osConfig.DefaultProfile]
-		if !exists {
+		if !exists || len(defaultOSProfile) == 0 {
 			errMsg := inv_errors.Errorf("Default profile %s is not included in the list of OS profiles",
 				tr.osConfig.DefaultProfile)
 			zlogTenant.Error().Err(errMsg).Msg("")
@@ -172,10 +173,10 @@ func (tr *TenantReconciler) initializeProviderIfNeeded(
 		}
 
 		defaultOSResourceID, err = tr.invClient.FindOSResourceID(ctx, tenant.GetTenantId(),
-			defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
+			defaultOSProfile[0].Spec.ProfileName, defaultOSProfile[0].Spec.OsImageVersion)
 		if err != nil {
 			zlogTenant.Error().Err(err).Msgf("Cannot find OS resource ID based on profile name %s"+
-				"and OS image version %s", defaultOSProfile.Spec.ProfileName, defaultOSProfile.Spec.OsImageVersion)
+				"and OS image version %s", defaultOSProfile[0].Spec.ProfileName, defaultOSProfile[0].Spec.OsImageVersion)
 			return err
 		}
 	}
@@ -222,27 +223,30 @@ func (tr *TenantReconciler) reconcileTenant(
 			mapProfileIDToOSResource[osResProfileID] = osRes
 		}
 
-		for _, osProfile := range osProfiles {
-			profileID := osProfile.Spec.ProfileName + osProfile.Spec.OsImageVersion
+		for _, enabledProfile := range osProfiles {
+			for _, osProfile := range enabledProfile {
+				profileID := osProfile.Spec.ProfileName + osProfile.Spec.OsImageVersion
 
-			_, exists := mapProfileIDToOSResource[profileID]
-			if exists {
-				zlogTenant.Debug().Msgf("OS resource %s %s already exists",
-					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+				_, exists := mapProfileIDToOSResource[profileID]
+				if exists {
+					zlogTenant.Debug().Msgf("OS resource %s %s already exists",
+						osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
 
-				// OS resource for given OS profile exists, update it
-				err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(), mapProfileIDToOSResource[profileID], osProfile)
+					// OS resource for given OS profile exists, update it
+					err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(),
+						mapProfileIDToOSResource[profileID], osProfile)
+					if err != nil {
+						return err
+					}
+
+					continue
+				}
+
+				// OS resource for given OS profile doesn't exist, create it
+				_, err = tr.createNewOSResourceFromOSProfile(ctx, tenant.GetTenantId(), osProfile)
 				if err != nil {
 					return err
 				}
-
-				continue
-			}
-
-			// OS resource for given OS profile doesn't exist, create it
-			_, err = tr.createNewOSResourceFromOSProfile(ctx, tenant.GetTenantId(), osProfile)
-			if err != nil {
-				return err
 			}
 		}
 
@@ -274,7 +278,7 @@ func (tr *TenantReconciler) reconcileTenant(
 }
 
 func (tr *TenantReconciler) updateInstancesIfNeeded(
-	ctx context.Context, tenantID string, latestOSProfiles map[string]*fsclient.OSProfileManifest,
+	ctx context.Context, tenantID string, latestOSProfiles map[string][]*fsclient.OSProfileManifest,
 ) error {
 	if tr.osConfig.ManualMode {
 		zlogTenant.Debug().Msgf("ManualMode set to true, Instances will not be auto-updated.")
@@ -282,7 +286,11 @@ func (tr *TenantReconciler) updateInstancesIfNeeded(
 	}
 
 	profileNameToOSResourceID := make(map[string]string)
-	for _, osProfile := range latestOSProfiles {
+	for _, enabledProfile := range latestOSProfiles {
+		if len(enabledProfile) == 0 {
+			return errors.New("missing os profile for the enabled profile")
+		}
+		osProfile := enabledProfile[len(enabledProfile)-1]
 		id, err := tr.invClient.FindOSResourceID(ctx, tenantID, osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
 		if err != nil {
 			return err
