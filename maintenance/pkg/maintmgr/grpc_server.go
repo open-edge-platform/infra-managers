@@ -74,7 +74,7 @@ func (s *server) PlatformUpdateStatus(ctx context.Context,
 		return nil, inv_errors.Errorfc(codes.FailedPrecondition, "")
 	}
 
-	handleOSUpdateStatusInInventory(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
+	syncInstanceOSUpdateStatusToInventory(ctx, invMgrCli.InvClient, tenantID, in.GetUpdateStatus(), instRes)
 
 	ssRes, err := invclient.ListSingleSchedules(ctx, invMgrCli, tenantID, hostRes)
 	if err != nil {
@@ -182,7 +182,7 @@ func populateImmutableUpdateDetails(
 	policy *computev1.OSUpdatePolicyResource,
 	tenantID, profileName, guid string,
 ) error {
-	osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
+	osRes, err := getNewOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
 		return err

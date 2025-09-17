@@ -20,7 +20,6 @@ import (
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
-	schedule_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/schedule/v1"
 	schedule_cache "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client/cache/schedule"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
@@ -30,7 +29,6 @@ import (
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/invclient"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/maintmgr"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
-	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
@@ -438,193 +436,6 @@ func Test_DenyRBAC(t *testing.T) {
 }
 
 //nolint:funlen // Test functions are long but necessary to test all the cases.
-func TestServer_UpdateEdgeNode(t *testing.T) {
-	dao := inv_testing.NewInvResourceDAOOrFail(t)
-	// This test case emulates the behavior of PUA while doing an update on a Node
-
-	invCli := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
-	scheduleCache := schedule_cache.NewScheduleCacheClient(invCli)
-	hScheduleCache, err := schedule_cache.NewHScheduleCacheClient(scheduleCache)
-	require.NoError(t, err)
-	client := invclient.NewInvGrpcClient(invCli, hScheduleCache)
-	maintmgr.SetInvGrpcCli(client)
-
-	// Host1 has both single and repeated schedule associated to
-	h := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
-	h.TenantId = mm_testing.Tenant1
-	h.Uuid = uuid.NewString()
-	host := mm_testing.CreateHost(t, mm_testing.Tenant1, &h)
-	sSched := schedule_v1.SingleScheduleResource{
-		TenantId:       mm_testing.Tenant1,
-		ScheduleStatus: schedule_v1.ScheduleStatus_SCHEDULE_STATUS_OS_UPDATE,
-		//nolint:gosec // no overflow for some time.
-		StartSeconds: uint64(time.Now().Unix()) + 1, // 1 second from now.
-	}
-
-	mm_testing.CreateAndBindSingleSchedule(t, mm_testing.Tenant1, &sSched, host, nil)
-	rSched := mm_testing.RepeatedSchedule1 //nolint:govet // ok to copy locks in test
-	rSched.TenantId = mm_testing.Tenant1
-	mm_testing.CreateAndBindRepeatedSchedule(t, mm_testing.Tenant1, &rSched, host, nil)
-	time.Sleep(2 * time.Second) // wait for the single schedule to be active
-
-	scheduleCache.LoadAllSchedulesFromInv()
-
-	os := dao.CreateOs(t, mm_testing.Tenant1)
-	osUpdatePolicy := dao.CreateOSUpdatePolicy(
-		t, mm_testing.Tenant1,
-		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
-		inv_testing.OSUpdatePolicyTarget(),
-		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
-	)
-	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
-		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
-		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = "packages"
-		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
-	})
-
-	// Host and instance start with RUNNING status
-	updateStatusTime, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
-	require.NoError(t, err)
-	require.NotNil(t, inst.GetOsUpdatePolicy())
-
-	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
-	defer cancel()
-
-	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, inst.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
-		computev1.InstanceResourceFieldUpdateStatus,
-		computev1.InstanceResourceFieldUpdateStatusIndicator,
-		computev1.InstanceResourceFieldUpdateStatusTimestamp,
-	}}, &inv_v1.Resource{
-		Resource: &inv_v1.Resource_Instance{
-			Instance: &computev1.InstanceResource{
-				UpdateStatus:          mm_status.UpdateStatusUpToDate.Status,
-				UpdateStatusIndicator: mm_status.UpdateStatusUpToDate.StatusIndicator,
-				UpdateStatusTimestamp: updateStatusTime,
-			},
-		},
-	})
-
-	require.NoError(t, err)
-
-	// TODO validate with list of repeated schedule from inventory
-	sSchedNow := &pb.SingleSchedule{
-		StartSeconds: sSched.StartSeconds,
-	}
-	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
-		UpdateSchedule: &pb.UpdateSchedule{
-			SingleSchedule:    sSchedNow,
-			RepeatedSchedule:  mm_testing.MmRepeatedSchedule1[0],
-			RepeatedSchedules: mm_testing.MmRepeatedSchedule1,
-		},
-		UpdateSource: &pb.UpdateSource{
-			KernelCommand: osUpdatePolicy.GetKernelCommand(),
-			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
-		},
-		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
-		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
-		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
-	}
-
-	// First request with UP_TO_DATE to gather schedules
-	// init host and instance statuses in the inventory but leave update status unspecified
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_UNSPECIFIED,
-		mm_status.UpdateStatusUnknown,
-		expUpdateResponse,
-	)
-
-	// The repeated request results in MM updating the inventory with only with the instance's update status
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_UP_TO_DATE,
-		mm_status.UpdateStatusUpToDate,
-		expUpdateResponse,
-	)
-
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_DOWNLOADING,
-		mm_status.UpdateStatusDownloading,
-		expUpdateResponse,
-	)
-
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_DOWNLOADED,
-		mm_status.UpdateStatusDownloaded,
-		expUpdateResponse,
-	)
-
-	// STARTED
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_STARTED,
-		mm_status.UpdateStatusInProgress,
-		expUpdateResponse,
-	)
-
-	// UPDATED
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_UPDATED,
-		mm_status.UpdateStatusDone,
-		expUpdateResponse,
-	)
-
-	// FAILED
-	RunPUAUpdateAndAssert(
-		t,
-		mm_testing.Tenant1,
-		host, inst,
-		pb.UpdateStatus_STATUS_TYPE_FAILED,
-		mm_status.UpdateStatusFailed,
-		expUpdateResponse,
-	)
-
-	// should not handle untrusted
-	// Host and instance start with RUNNING status
-	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, host.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
-		computev1.HostResourceFieldCurrentState,
-	}}, &inv_v1.Resource{
-		Resource: &inv_v1.Resource_Host{
-			Host: &computev1.HostResource{
-				CurrentState: computev1.HostState_HOST_STATE_UNTRUSTED,
-			},
-		},
-	})
-	require.NoError(t, err)
-
-	_, err = MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
-		HostGuid: host.Uuid,
-		UpdateStatus: &pb.UpdateStatus{
-			StatusType: pb.UpdateStatus_STATUS_TYPE_UPDATED,
-		},
-	})
-
-	require.Error(t, err)
-	assert.Equal(t, codes.Unauthenticated, status.Code(err))
-
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-}
-
-//nolint:funlen // Test functions are long but necessary to test all the cases.
 func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	// This test case emulates the behavior of PUA while doing an update on a Node
@@ -748,6 +559,39 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	// Delete the OsUpdateRun resources created in previous step
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+
+	// should not handle untrusted
+	// Host and instance start with RUNNING status
+	invCli := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	scheduleCache := schedule_cache.NewScheduleCacheClient(invCli)
+	hScheduleCache, err := schedule_cache.NewHScheduleCacheClient(scheduleCache)
+	require.NoError(t, err)
+	client := invclient.NewInvGrpcClient(invCli, hScheduleCache)
+	maintmgr.SetInvGrpcCli(client)
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
+	defer cancel()
+
+	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, host.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
+		computev1.HostResourceFieldCurrentState,
+	}}, &inv_v1.Resource{
+		Resource: &inv_v1.Resource_Host{
+			Host: &computev1.HostResource{
+				CurrentState: computev1.HostState_HOST_STATE_UNTRUSTED,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	_, err = MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
+		HostGuid: host.Uuid,
+		UpdateStatus: &pb.UpdateStatus{
+			StatusType: pb.UpdateStatus_STATUS_TYPE_UPDATED,
+		},
+	})
+
+	require.Error(t, err)
+	assert.Equal(t, codes.Unauthenticated, status.Code(err))
 }
 
 func OSUpdateRunDeleteLatest(
@@ -770,43 +614,6 @@ func OSUpdateRunDeleteLatest(
 		err = invclient.DeleteOSUpdateRun(ctx, client, tenantID, runGet)
 		require.NoError(t, err)
 	}
-}
-
-func RunPUAUpdateAndAssert(
-	t *testing.T,
-	tenantID string,
-	host *computev1.HostResource,
-	inst *computev1.InstanceResource,
-	upStatus pb.UpdateStatus_StatusType,
-	expUpdateStatus inv_status.ResourceStatus,
-	expResponse *pb.PlatformUpdateStatusResponse,
-) {
-	t.Helper()
-
-	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
-	defer cancel()
-	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
-
-	// TODO validate with list of repeated schedule from inventory
-	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
-		HostGuid: host.Uuid,
-		UpdateStatus: &pb.UpdateStatus{
-			StatusType:  upStatus,
-			ProfileName: "immutable OS profile name",
-			OsImageId:   "2.0.0",
-		},
-	})
-	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
-	if eq, diff := inv_testing.ProtoEqualOrDiff(expResponse, resp); !eq {
-		t.Errorf("Wrong response: %v", diff)
-	}
-
-	gResp, err := client.Get(ctx, tenantID, inst.ResourceId)
-	require.NoError(t, err)
-	instGet := gResp.GetResource().GetInstance()
-	require.NotNil(t, instGet)
-	assert.Equal(t, expUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
-	assert.Equal(t, expUpdateStatus.Status, instGet.UpdateStatus)
 }
 
 func RunPUAUpdateAndTestOsUpRun(
@@ -845,7 +652,7 @@ func RunPUAUpdateAndTestOsUpRun(
 	tID := instGet.GetTenantId()
 	instID := instGet.GetResourceId()
 
-	// Check that the OsUpdateRun reaches the expected status within 2 seconds to prevent race condition errors
+	// Check that the OsUpdateRun reaches the expected status within 3 seconds to prevent race condition errors
 	require.Eventually(t, func() bool {
 		runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID, invclient.OSUpdateRunAll)
 		if err != nil || runGet == nil {
@@ -853,7 +660,7 @@ func RunPUAUpdateAndTestOsUpRun(
 		}
 		return runGet.StatusIndicator == expUpdateStatus.StatusIndicator &&
 			runGet.Status == expUpdateStatus.Status
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 3*time.Second, 50*time.Millisecond)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {
