@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -17,11 +16,6 @@ import (
 	as "github.com/open-edge-platform/infra-core/inventory/v2/pkg/artifactservice"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-)
-
-const (
-	semverParts    = 3
-	minSemverParts = 2
 )
 
 var (
@@ -258,31 +252,4 @@ func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error
 
 func GetFixedCVEs(ctx context.Context, fixedCVEsURL string) (string, error) {
 	return getCVEsFromURL(ctx, fixedCVEsURL, "fixed")
-}
-
-// ParseSemver parses a semver version string (e.g., "1.2.3") and returns major, minor, and patch as integers.
-// If any part is missing or invalid, it defaults to 0 for that part.
-func ParseSemver(version string) (int, int, int) {
-	parts := strings.SplitN(version, ".", semverParts)
-	var major, minor, patch int
-	var err error
-	if len(parts) >= 1 {
-		major, err = strconv.Atoi(parts[0])
-		if err != nil {
-			major = 0
-		}
-	}
-	if len(parts) >= minSemverParts {
-		minor, err = strconv.Atoi(parts[1])
-		if err != nil {
-			minor = 0
-		}
-	}
-	if len(parts) == semverParts {
-		patch, err = strconv.Atoi(parts[2])
-		if err != nil {
-			patch = 0
-		}
-	}
-	return major, minor, patch
 }
