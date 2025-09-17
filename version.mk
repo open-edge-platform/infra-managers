@@ -7,7 +7,7 @@ GOLINTVERSION_HAVE             := $(shell golangci-lint version | sed 's/.*versi
 GOLINTVERSION_REQ              := 1.64.5
 GOJUNITREPORTVERSION_HAVE      := $(shell go-junit-report -version | sed s/.*" v"// | sed 's/ .*//')
 GOJUNITREPORTVERSION_REQ       := 2.1.0
-GOVERSION_REQ                  := 1.24.4
+GOVERSION_REQ                  := 1.24.6
 GOVERSION_HAVE                 := $(shell go version | sed 's/.*version go//' | sed 's/ .*//')           := 1.6.0
 PROTOCGENDOCVERSION_HAVE       := $(shell protoc-gen-doc --version | sed s/.*"version "// | sed 's/ .*//')
 PROTOCGENDOCVERSION_REQ        := 1.5.1
