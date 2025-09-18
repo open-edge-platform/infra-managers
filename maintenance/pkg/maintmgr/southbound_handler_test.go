@@ -39,7 +39,7 @@ func setTestingVariables(mmProfileName, instanceProfileName, currentImageID, new
 	}
 
 	inst := &computev1.InstanceResource{
-		CurrentOs: currentOs,
+		Os: currentOs,
 	}
 
 	return mmUpStatus, inst
@@ -225,7 +225,6 @@ func TestGetNewExistingCVEs(t *testing.T) {
 	instanceRes := &computev1.InstanceResource{
 		ResourceId: "test-instance-123",
 		Os:         currentOSRes,
-		CurrentOs:  currentOSRes,
 	}
 
 	// Manual cleanup
@@ -290,7 +289,6 @@ func TestGetNewExistingCVEs(t *testing.T) {
 			testInstance := &computev1.InstanceResource{
 				ResourceId:            instanceRes.ResourceId,
 				Os:                    currentOSRes,
-				CurrentOs:             currentOSRes,
 				UpdateStatusIndicator: tt.instanceUpdateIndicator,
 			}
 

@@ -104,10 +104,10 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
 	zlog.Debug().Msgf("GetNewOSResourceIDIfNeeded: Instance's current OS osType=%s, new updateStatus=%s",
-		instance.GetCurrentOs().GetOsType(), mmUpStatus.StatusType) // TBD: change to GetOs().GetResourceId()
+		instance.GetOs().GetOsType(), mmUpStatus.StatusType)
 
 	if mmUpStatus.StatusType != pb.UpdateStatus_STATUS_TYPE_UPDATED ||
-		instance.GetCurrentOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE { // TBD: change to GetOs().GetResourceId()
+		instance.GetOs().GetOsType() != os_v1.OsType_OS_TYPE_IMMUTABLE {
 		zlog.Debug().Msgf("abandoned OS Resource search as not needed")
 		return "", nil
 	}
@@ -123,18 +123,18 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetProfileName() != mmUpStatus.GetProfileName() { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetProfileName() != mmUpStatus.GetProfileName() {
 		err := errors.Errorfc(codes.Internal,
 			"current profile name differs from the new profile name: current profileName=%s, new profileName=%s",
-			instance.GetCurrentOs().GetProfileName(), mmUpStatus.ProfileName)
+			instance.GetOs().GetProfileName(), mmUpStatus.ProfileName)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetImageId() == mmUpStatus.GetOsImageId() { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetImageId() == mmUpStatus.GetOsImageId() {
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Image IDs are identical: current OS ImageID=%s, new OS ImageID=%s",
-			instance.GetCurrentOs().GetImageId(), mmUpStatus.OsImageId)
+			instance.GetOs().GetImageId(), mmUpStatus.OsImageId)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
@@ -146,10 +146,10 @@ func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInv
 		return "", err
 	}
 
-	if instance.GetCurrentOs().GetResourceId() == newOSResID { // TBD: change to GetOs().GetResourceId()
+	if instance.GetOs().GetResourceId() == newOSResID {
 		err := errors.Errorfc(codes.Internal,
 			"current and new OS Resource IDs are identical: current OS Resource ID=%s, new OS Resource ID=%s",
-			instance.GetCurrentOs().GetResourceId(), newOSResID)
+			instance.GetOs().GetResourceId(), newOSResID)
 		zlog.InfraSec().InfraErr(err).Msg("")
 		return "", err
 	}
