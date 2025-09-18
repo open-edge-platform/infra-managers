@@ -39,7 +39,7 @@ func setTestingVariables(mmProfileName, instanceProfileName, currentImageID, new
 	}
 
 	inst := &computev1.InstanceResource{
-		CurrentOs: currentOs,
+		Os: currentOs,
 	}
 
 	return mmUpStatus, inst

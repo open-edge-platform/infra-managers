@@ -22,8 +22,6 @@ import (
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testing"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/invclient"
-	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
-	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
 const (
@@ -270,8 +268,8 @@ func TestInvClient_GetInstanceResourceByHostGUID(t *testing.T) {
 		osRes := dao.CreateOs(t, mm_testing.Tenant1)
 		host := dao.CreateHost(t, mm_testing.Tenant1)
 		inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
-		inst.DesiredOs = osRes
-		inst.CurrentOs = osRes
+		inst.DesiredOs = osRes //TODO: remove when dao.CreateInstance fixed
+		inst.CurrentOs = osRes //TODO: remove when dao.CreateInstance fixed
 		inst.Os = osRes
 		inst.Host = host
 
@@ -296,64 +294,65 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678",
-			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "")
+			newOSRes.GetResourceId(), "")
 		require.Error(t, err)
 		sts, _ := status.FromError(err)
 		assert.Equal(t, codes.NotFound, sts.Code())
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	t.Run("UpdateInstStatusNotCurrentOS", func(t *testing.T) {
-		timeBeforeUpdate := time.Now().Unix()
-		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusInProgress, "", "", "")
-
-		require.NoError(t, err)
-		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
-		require.NoError(t, err)
-		assert.Equal(t, mm_status.UpdateStatusInProgress.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
-		assert.Equal(t, mm_status.UpdateStatusInProgress.StatusIndicator,
-			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
-
-		timeBefore, err := inv_utils.SafeInt64ToUint64(timeBeforeUpdate)
-		require.NoError(t, err)
-		assert.LessOrEqual(t, timeBefore, updatedInst.GetResource().GetInstance().GetUpdateStatusTimestamp())
-	})
-
-	t.Run("UpdateInstStatusAndCurrentOS", func(t *testing.T) {
+	t.Run("UpdateInstanceOS", func(t *testing.T) {
+		// Get instance before update
 		beforeUpdateInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
-		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
+
+		// Verify the OS is different before update
+		assert.NotEqual(t, newOSRes.GetResourceId(), beforeUpdateInst.GetResource().GetInstance().GetOs().GetResourceId())
+
+		// Update instance with new OS
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
+			newOSRes.GetResourceId(), "")
 		require.NoError(t, err)
+
+		// Verify the OS was updated
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
-		assert.Equal(t, mm_status.UpdateStatusDone.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
-		assert.Equal(t, mm_status.UpdateStatusDone.StatusIndicator,
-			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "some update status detail", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
-		assert.Equal(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
-		assert.NotEqual(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetDesiredOs().GetSha256())
+		assert.Equal(t, newOSRes.GetResourceId(), updatedInst.GetResource().GetInstance().GetOs().GetResourceId())
 	})
 
-	t.Run("UpdateUpdateStatusToRunning", func(t *testing.T) {
-		// initial setup of instance status to running and update status to unknown
+	t.Run("UpdateInstanceCVEs", func(t *testing.T) {
+		newCVEs := "CVE-2023-1234,CVE-2023-5678"
+
+		// Update instance with new CVEs
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "")
+			"", newCVEs)
 		require.NoError(t, err)
-		// setup only the update status as instance status is already set to running
-		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
-		require.NoError(t, err)
+
+		// Verify the CVEs were updated
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
-		assert.Equal(t, mm_status.UpdateStatusDone.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
-		assert.Equal(t, mm_status.UpdateStatusDone.StatusIndicator,
-			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "some update status detail", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
+		assert.Equal(t, newCVEs, updatedInst.GetResource().GetInstance().GetExistingCves())
+	})
+
+	t.Run("UpdateInstanceOSAndCVEs", func(t *testing.T) {
+		anotherOSRes := dao.CreateOs(t, mm_testing.Tenant1)
+		newCVEs := "CVE-2023-9999,CVE-2023-8888"
+
+		// Update both OS and CVEs
+		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
+			anotherOSRes.GetResourceId(), newCVEs)
+		require.NoError(t, err)
+
+		// Verify both were updated
+		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
+		require.NoError(t, err)
+		assert.Equal(t, anotherOSRes.GetResourceId(), updatedInst.GetResource().GetInstance().GetOs().GetResourceId())
+		assert.Equal(t, newCVEs, updatedInst.GetResource().GetInstance().GetExistingCves())
+	})
+
+	t.Run("UpdateInstanceNoChanges", func(t *testing.T) {
+		// Call with empty parameters - should succeed but make no changes
+		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, "", "")
+		require.NoError(t, err)
 	})
 }
 

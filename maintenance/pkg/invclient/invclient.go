@@ -223,40 +223,17 @@ func UpdateInstance(
 	c inv_client.TenantAwareInventoryClient,
 	tenantID string,
 	instanceID string,
-	updateStatus inv_status.ResourceStatus,
-	updateStatusDetail string,
 	newOSResID string,
 	newExistingCves string,
 ) error {
-	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
-		tenantID, instanceID, updateStatus, updateStatusDetail)
+	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s",
+		tenantID, instanceID)
 
-	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msg("Conversion Overflow Error")
-		return err
-	}
+	instRes := &computev1.InstanceResource{}
 
-	instRes := &computev1.InstanceResource{
-		UpdateStatus:          updateStatus.Status,
-		UpdateStatusIndicator: updateStatus.StatusIndicator,
-		UpdateStatusTimestamp: timeNow,
-	}
-
-	fields := []string{
-		computev1.InstanceResourceFieldUpdateStatus,
-		computev1.InstanceResourceFieldUpdateStatusIndicator,
-		computev1.InstanceResourceFieldUpdateStatusTimestamp,
-	}
-
-	if updateStatusDetail != "" {
-		instRes.UpdateStatusDetail = updateStatusDetail
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusDetail)
-	}
+	fields := []string{}
 
 	if newOSResID != "" {
-		instRes.CurrentOs = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
-		fields = append(fields, computev1.InstanceResourceEdgeCurrentOs)
 		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
 		fields = append(fields, computev1.InstanceResourceEdgeOs)
 	}
