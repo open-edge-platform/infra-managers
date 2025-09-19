@@ -355,7 +355,7 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, instT1)
+		require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, instT1))
 
 		require.NoError(t, err)
 		require.NotNil(t, resp)
@@ -597,8 +597,11 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		expUpdateResponse,
 	)
 
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	// Delete the OsUpdateRun resources created in previous step
+	err = OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	require.NoError(t, err)
+	err = OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	require.NoError(t, err)
 
 	// should not handle untrusted
 	// Host and instance start with RUNNING status
@@ -746,16 +749,17 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		expUpdateResponse,
 	)
 	// Delete the OsUpdateRun resources created in previous step
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-
+	err1 := OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	err2 := OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 }
 
 func OSUpdateRunDeleteLatest(
 	t *testing.T,
 	tenantID string,
 	inst *computev1.InstanceResource,
-) {
+) error {
 	t.Helper()
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
@@ -765,18 +769,22 @@ func OSUpdateRunDeleteLatest(
 
 	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(
 		ctx, client, tenantID, inst.GetResourceId(), invclient.OSUpdateRunAll)
-	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+	if err != nil {
+		return err
+	}
 
 	if runGet != nil {
 		err = invclient.DeleteOSUpdateRun(ctx, client, tenantID, runGet)
-		require.NoError(t, err)
+		if err != nil {
+			return err
+		}
 
-		// Wait until the OSUpdateRun is deleted
 		require.Eventually(t, func() bool {
 			_, err := client.Get(ctx, tenantID, runGet.GetResourceId())
 			return errors.IsNotFound(err)
 		}, 5*time.Second, 50*time.Millisecond)
 	}
+	return nil
 }
 
 func RunPUAUpdateAndAssert(
