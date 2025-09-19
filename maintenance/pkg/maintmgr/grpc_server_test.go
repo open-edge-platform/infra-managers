@@ -597,6 +597,9 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		expUpdateResponse,
 	)
 
+	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+
 	// should not handle untrusted
 	// Host and instance start with RUNNING status
 	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, host.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
@@ -619,9 +622,6 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 
 	require.Error(t, err)
 	assert.Equal(t, codes.Unauthenticated, status.Code(err))
-
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 }
 
 //nolint:funlen // Test functions are long but necessary to test all the cases.
@@ -748,6 +748,8 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	// Delete the OsUpdateRun resources created in previous step
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
+	// Wait for the OSUpdateRun resources to be deleted
+	time.Sleep(2 * time.Second)
 }
 
 func OSUpdateRunDeleteLatest(
