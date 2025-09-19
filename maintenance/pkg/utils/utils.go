@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ var zlog = logging.GetLogger("MaintenanceManagerUtils")
 const (
 	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
+	semverCoreSegments               = 3 // Major.Minor.Patch
 )
 
 func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
@@ -96,34 +98,13 @@ func PopulateUpdateSchedule(rsResources []*schedule_v1.RepeatedScheduleResource,
 	return &sche, nil
 }
 
-// PopulateUpdateSource populates a valid SB UpdateSource given the provided Inventory OS Resource.
-func PopulateUpdateSource(os *os_v1.OperatingSystemResource) *pb.UpdateSource {
-	// TODO: this will never happen once we enforce OS presence in the Instance.
-	upSrc := &pb.UpdateSource{}
-	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
-		zlog.InfraSec().InfraErr(err).Msg("")
-		return upSrc
-	}
-
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		upSrc.KernelCommand = os.KernelCommand
-		upSrc.CustomRepos = os.UpdateSources
-
-		if err := upSrc.ValidateAll(); err != nil {
-			zlog.InfraSec().InfraErr(err).Msg("")
-		}
-	}
-	return upSrc
-}
-
-func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProfileUpdateSource {
+func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) (*pb.OSProfileUpdateSource, error) {
 	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
 
 	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
+		err := inv_errors.Errorfc(codes.Internal, "missing OSUpdatePolicy resource")
 		zlog.InfraSec().InfraErr(err).Msg("")
-		return osProfileUpdateSource
+		return nil, err
 	}
 
 	if os.GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
@@ -136,9 +117,13 @@ func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) *pb.OSProf
 		if err := osProfileUpdateSource.ValidateAll(); err != nil {
 			zlog.InfraSec().InfraErr(err).Msg("")
 		}
+	} else {
+		err := inv_errors.Errorfc(codes.Internal, "unsupported OS type: %s", os.GetOsType())
+		zlog.InfraSec().InfraErr(err).Msgf("Wrong OS type, we expect IMMUTABLE")
+		return nil, err
 	}
 
-	return osProfileUpdateSource
+	return osProfileUpdateSource, nil
 }
 
 func PopulateInstalledPackages(os *os_v1.OperatingSystemResource) string {
@@ -301,4 +286,63 @@ func SafeInt64ToUint64(i int64) (uint64, error) {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "int64 value is negative and cannot be converted to uint64")
 	}
 	return uint64(i), nil
+}
+
+func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.ResourceStatus {
+	switch newUpdateStatus.StatusType {
+	case pb.UpdateStatus_STATUS_TYPE_STARTED:
+		return &mm_status.UpdateStatusInProgress
+	case pb.UpdateStatus_STATUS_TYPE_UPDATED:
+		return &mm_status.UpdateStatusDone
+	case pb.UpdateStatus_STATUS_TYPE_FAILED:
+		return &mm_status.UpdateStatusFailed
+	case pb.UpdateStatus_STATUS_TYPE_UP_TO_DATE:
+		return &mm_status.UpdateStatusUpToDate
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADING:
+		return &mm_status.UpdateStatusDownloading
+	case pb.UpdateStatus_STATUS_TYPE_DOWNLOADED:
+		return &mm_status.UpdateStatusDownloaded
+	default:
+		return &mm_status.UpdateStatusUnknown
+	}
+}
+
+func ConvertToComparableSemVer(s string) (string, error) {
+	// convert image version string to a comparable semantic version format
+	// Example: "3.0.20250717.0732" -> "3.0.20250717-build0732"
+	parts := strings.Split(s, ".")
+	if len(parts) < semverCoreSegments {
+		return "", fmt.Errorf("invalid version string: %s", s)
+	}
+
+	// Core: Major.Minor.Patch
+	core := make([]string, semverCoreSegments)
+	copy(core, parts[:semverCoreSegments])
+	for i := range core {
+		if core[i] == "" {
+			return "", fmt.Errorf("invalid version segment: empty")
+		}
+		n, err := strconv.Atoi(core[i])
+		if err != nil {
+			return "", fmt.Errorf("invalid number segment: %s", core[i])
+		}
+		core[i] = strconv.Itoa(n) // remove leading zeros
+	}
+
+	// Prerelease — add prefix "build" to segment to avoid starting with 0
+	var prerelease string
+	if len(parts) > semverCoreSegments {
+		preParts := parts[semverCoreSegments:]
+		for i, p := range preParts {
+			if len(p) > 1 && strings.HasPrefix(p, "0") {
+				preParts[i] = "build" + p
+			}
+		}
+		prerelease = strings.Join(preParts, ".")
+	}
+
+	if prerelease != "" {
+		return fmt.Sprintf("%s-%s", strings.Join(core, "."), prerelease), nil
+	}
+	return strings.Join(core, "."), nil
 }

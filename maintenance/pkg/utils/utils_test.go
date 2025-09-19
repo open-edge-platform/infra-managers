@@ -4,8 +4,10 @@
 package util_test
 
 import (
+	"sort"
 	"testing"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -93,45 +95,6 @@ func TestGetHostSchedule(t *testing.T) {
 				if eq, diff := inv_testing.ProtoEqualOrDiff(tt.wantSche, sched); !eq {
 					t.Errorf("Wrong host schedule: %v", diff)
 				}
-			}
-		})
-	}
-}
-
-func TestGetUpdateSource(t *testing.T) {
-	tests := []struct {
-		name       string
-		os         *os_v1.OperatingSystemResource
-		wantUpdate *pb.UpdateSource
-	}{
-		{
-			name:       "No_OS",
-			wantUpdate: &pb.UpdateSource{},
-		},
-		{
-			name: "Valid_OS",
-			os: &os_v1.OperatingSystemResource{
-				Name:          "Test Name",
-				Architecture:  "x86_64",
-				UpdateSources: []string{"test source"},
-				ImageUrl:      "Repo test entry",
-				Sha256:        inv_testing.GenerateRandomSha256(),
-				ProfileName:   "Test OS profile name",
-				KernelCommand: "test kernel command",
-				OsType:        os_v1.OsType_OS_TYPE_MUTABLE,
-			},
-			wantUpdate: &pb.UpdateSource{
-				KernelCommand: "test kernel command",
-				CustomRepos:   []string{"test source"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			source := util.PopulateUpdateSource(tt.os)
-			require.NotNil(t, source)
-			if eq, diff := inv_testing.ProtoEqualOrDiff(tt.wantUpdate, source); !eq {
-				t.Errorf("Wrong update schedule: %v", diff)
 			}
 		})
 	}
@@ -769,5 +732,180 @@ func TestGetUpdatedUpdateStatusIfNeeded(t *testing.T) {
 			assert.Equal(t, tt.want1, newStatus)
 			assert.Equal(t, tt.want2, ifNeeded)
 		})
+	}
+}
+
+func TestPopulateOsProfileUpdateSource(t *testing.T) {
+	immutableOS := &os_v1.OperatingSystemResource{
+		OsType:         os_v1.OsType_OS_TYPE_IMMUTABLE,
+		ProfileName:    "test-profile",
+		ProfileVersion: "1.2.3",
+		ImageUrl:       "http://example.com/image",
+		ImageId:        "img-123",
+		Sha256:         "sha256sum",
+	}
+	mutableOS := &os_v1.OperatingSystemResource{
+		OsType: os_v1.OsType_OS_TYPE_MUTABLE,
+	}
+	t.Run("nil input", func(t *testing.T) {
+		res, err := util.PopulateOsProfileUpdateSource(nil)
+		assert.Nil(t, res)
+		assert.Error(t, err)
+	})
+	t.Run("immutable os", func(t *testing.T) {
+		res, err := util.PopulateOsProfileUpdateSource(immutableOS)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		assert.Equal(t, immutableOS.ProfileName, res.ProfileName)
+		assert.Equal(t, immutableOS.ProfileVersion, res.ProfileVersion)
+		assert.Equal(t, immutableOS.ImageUrl, res.OsImageUrl)
+		assert.Equal(t, immutableOS.ImageId, res.OsImageId)
+		assert.Equal(t, immutableOS.Sha256, res.OsImageSha)
+	})
+	t.Run("mutable os", func(t *testing.T) {
+		res, err := util.PopulateOsProfileUpdateSource(mutableOS)
+		assert.Nil(t, res)
+		assert.Error(t, err)
+	})
+}
+
+func TestPopulateOsProfileUpdateSource_Matrix(t *testing.T) {
+	immutableOS := &os_v1.OperatingSystemResource{
+		OsType:         os_v1.OsType_OS_TYPE_IMMUTABLE,
+		ProfileName:    "test-profile",
+		ProfileVersion: "1.2.3",
+		ImageUrl:       "http://example.com/image",
+		ImageId:        "img-123",
+		Sha256:         "sha256sum",
+	}
+	mutableOS := &os_v1.OperatingSystemResource{
+		OsType: os_v1.OsType_OS_TYPE_MUTABLE,
+	}
+	tests := []struct {
+		name    string
+		input   *os_v1.OperatingSystemResource
+		want    *pb.OSProfileUpdateSource
+		wantErr bool
+	}{
+		{
+			name:    "nil input",
+			input:   nil,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:  "immutable os",
+			input: immutableOS,
+			want: &pb.OSProfileUpdateSource{
+				ProfileName:    "test-profile",
+				ProfileVersion: "1.2.3",
+				OsImageUrl:     "http://example.com/image",
+				OsImageId:      "img-123",
+				OsImageSha:     "sha256sum",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "mutable os",
+			input:   mutableOS,
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := util.PopulateOsProfileUpdateSource(tt.input)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, got)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestConvertToComparableSemVer(t *testing.T) {
+	tests := []struct {
+		input       string
+		expected    string
+		expectError bool
+	}{
+		// Valid image versions
+		{"3.0.20250717.0732", "3.0.20250717-build0732", false},
+		{"1.2.3.4.5", "1.2.3-4.5", false},
+		{"10.0.1", "10.0.1", false},
+		{"2025.07.11.0415", "2025.7.11-build0415", false}, // removed leading zeros in core + build in prerelease
+		{"0.0.1", "0.0.1", false},
+
+		// Invalid image versions
+		{"", "", true},
+		{"1", "", true},
+		{"2.5.", "", true},
+		{"a.b.c", "", true},
+	}
+
+	for _, tc := range tests {
+		got, err := util.ConvertToComparableSemVer(tc.input)
+		if tc.expectError {
+			if err == nil {
+				t.Errorf("ConvertToComparableSemVer(%q) expected error, got none", tc.input)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("ConvertToComparableSemVer(%q) unexpected error: %v", tc.input, err)
+			continue
+		}
+		if got != tc.expected {
+			t.Errorf("ConvertToComparableSemVer(%q) = %q; want %q", tc.input, got, tc.expected)
+		}
+		// Check if the result can be parsed as a semver
+		if _, err := semver.NewVersion(got); err != nil {
+			t.Errorf("semver.NewVersion(%q) failed: %v", got, err)
+		}
+	}
+}
+
+func TestConvertToComparableSemVer_Sorting(t *testing.T) {
+	rawVersions := []string{
+		"3.0.20250717.0732",
+		"3.0.20250711.0415",
+		"3.0.20250719.1000",
+		"3.0.20240719.1000",
+	}
+
+	parsed := make([]*semver.Version, len(rawVersions))
+	for i, rv := range rawVersions {
+		vStr, err := util.ConvertToComparableSemVer(rv)
+		if err != nil {
+			t.Fatalf("convert error for %q: %v", rv, err)
+		}
+		v, err := semver.NewVersion(vStr)
+		if err != nil {
+			t.Fatalf("parse error for %q: %v", vStr, err)
+		}
+		parsed[i] = v
+	}
+
+	sort.Sort(semver.Collection(parsed))
+
+	got := make([]string, len(parsed))
+	for i, v := range parsed {
+		got[i] = v.String()
+	}
+
+	expected := []string{
+		"3.0.20240719-1000",
+		"3.0.20250711-build0415",
+		"3.0.20250717-build0732",
+		"3.0.20250719-1000",
+	}
+
+	for i := range expected {
+		if got[i] != expected[i] {
+			t.Errorf("sorting mismatch at %d: got %q, want %q", i, got[i], expected[i])
+		}
 	}
 }
