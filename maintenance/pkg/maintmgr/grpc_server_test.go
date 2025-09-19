@@ -748,8 +748,7 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	// Delete the OsUpdateRun resources created in previous step
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
 	OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	// Wait for the OSUpdateRun resources to be deleted
-	time.Sleep(2 * time.Second)
+
 }
 
 func OSUpdateRunDeleteLatest(
@@ -771,6 +770,12 @@ func OSUpdateRunDeleteLatest(
 	if runGet != nil {
 		err = invclient.DeleteOSUpdateRun(ctx, client, tenantID, runGet)
 		require.NoError(t, err)
+
+		// Wait until the OSUpdateRun is deleted
+		require.Eventually(t, func() bool {
+			_, err := client.Get(ctx, tenantID, runGet.GetResourceId())
+			return errors.IsNotFound(err)
+		}, 5*time.Second, 50*time.Millisecond)
 	}
 }
 
