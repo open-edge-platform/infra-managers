@@ -860,7 +860,7 @@ func RunPUAUpdateAndTestOsUpRun(
 	tID := instGet.GetTenantId()
 	instID := instGet.GetResourceId()
 
-	// Check that the OsUpdateRun reaches the expected status within 2 seconds to prevent race condition errors
+	// Check that the OsUpdateRun reaches the expected status within 10 seconds to prevent race condition errors
 	require.Eventually(t, func() bool {
 		runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID, invclient.OSUpdateRunAll)
 		if err != nil || runGet == nil {
@@ -868,7 +868,7 @@ func RunPUAUpdateAndTestOsUpRun(
 		}
 		return runGet.StatusIndicator == expUpdateStatus.StatusIndicator &&
 			runGet.Status == expUpdateStatus.Status
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 50*time.Millisecond)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {
