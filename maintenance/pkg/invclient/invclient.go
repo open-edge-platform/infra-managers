@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	DefaultInventoryTimeout        = 5 * time.Second // TODO: revert, increased for testing
+	DefaultInventoryTimeout        = 5 * time.Second
 	batchSize                      = 1000
 	SentinelEndTimeUnset    uint64 = 9999999999 // Sentinel value for end time indicating the run is still ongoing
 )
