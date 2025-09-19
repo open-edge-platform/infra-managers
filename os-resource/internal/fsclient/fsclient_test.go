@@ -126,12 +126,12 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 
 	var ubuntuProfile OSProfileManifest
 	if err := yaml.Unmarshal(osrm_testing.ExampleUbuntuOSArtifact.Data, &ubuntuProfile); err != nil {
-		t.Errorf("Error unmarshalling ExampleUbuntuOSArtifact.Data JSON")
+		t.Errorf("error unmarshalling ExampleUbuntuOSArtifact.Data JSON")
 	}
 
 	var edgeMicrovisorToolkitProfile OSProfileManifest
 	if err := yaml.Unmarshal(osrm_testing.ExampleEdgeMicrovisorToolkitArtifact.Data, &edgeMicrovisorToolkitProfile); err != nil {
-		t.Errorf("Error unmarshalling ExampleEdgeMicrovisorToolkitArtifact.Data JSON")
+		t.Errorf("error unmarshalling ExampleEdgeMicrovisorToolkitArtifact.Data JSON")
 	}
 
 	type args struct {
@@ -147,7 +147,7 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 		wantErr           bool
 	}{
 		{
-			name: "Successful - return two OS profiles",
+			name: "successful - return two OS profiles",
 			args: args{
 				ctx:          context.Background(),
 				profileNames: []string{ubuntuProfile.Spec.ProfileName, edgeMicrovisorToolkitProfile.Spec.ProfileName},
@@ -161,7 +161,7 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 			wantErr:           false,
 		},
 		{
-			name: "Successful - empty OS profiles request",
+			name: "successful - empty OS profiles request",
 			args: args{
 				ctx:          context.Background(),
 				profileNames: []string{},
@@ -172,7 +172,7 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 			wantErr:           false,
 		},
 		{
-			name: "Failure - missing tag",
+			name: "failure - missing tag",
 			args: args{
 				ctx:          context.Background(),
 				profileNames: []string{ubuntuProfile.Spec.ProfileName},
@@ -189,9 +189,9 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for i := range tt.args.profileNames {
-				m.On("DownloadArtifacts", osrm_testing.EnProfileRepo+tt.args.profileNames[i], tt.args.tag).
-					Return(&[]as.Artifact{tt.args.artifacts[i]}, tt.downloadOSProfile)
+			for idx := range tt.args.profileNames {
+				m.On("DownloadArtifacts", osrm_testing.EnProfileRepo+tt.args.profileNames[idx], tt.args.tag).
+					Return(&[]as.Artifact{tt.args.artifacts[idx]}, tt.downloadOSProfile)
 			}
 
 			osProfiles, err := GetLatestOsProfiles(tt.args.ctx, tt.args.profileNames, tt.args.tag)
@@ -201,8 +201,12 @@ func Test_GetLatestOsProfiles(t *testing.T) {
 
 			if !tt.wantErr {
 				assert.Len(t, osProfiles, len(tt.args.profileNames))
-				for i := range tt.args.profileNames {
-					assert.Equal(t, tt.args.profileNames[i], osProfiles[tt.args.profileNames[i]].Spec.ProfileName)
+				for _, name := range tt.args.profileNames {
+					profileSlice := osProfiles[name]
+					assert.NotEmpty(t, profileSlice)
+					for _, profile := range profileSlice {
+						assert.Equal(t, name, profile.Spec.ProfileName)
+					}
 				}
 			}
 		})

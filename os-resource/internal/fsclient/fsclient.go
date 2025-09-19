@@ -73,32 +73,46 @@ type FixedCVEs []struct {
 	AffectedPackages []*string `json:"affected_packages"`
 }
 
-func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string]*OSProfileManifest, error) {
+func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string][]*OSProfileManifest, error) {
 	enProfileRepo := os.Getenv(EnvNameRsEnProfileRepo)
 	if enProfileRepo == "" {
 		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsEnProfileRepo)
 		zlog.Err(invErr).Msg("")
-		return map[string]*OSProfileManifest{}, invErr
+		return map[string][]*OSProfileManifest{}, invErr
 	}
-
-	osProfiles := make(map[string]*OSProfileManifest)
+	// For each of the enabled profiles,
+	//  - fetch all the revisions if tag contains a semver range (tag with ~ as prefix) else fetch the specific revision as in tag
+	//  - fetch the os profile for each of the revisions of that enabled profile and store in a golang map
+	osProfiles := make(map[string][]*OSProfileManifest)
 	for _, pName := range profileNames {
-		artifacts, err := as.DownloadArtifacts(ctx, enProfileRepo+pName, tag)
-		if err != nil || artifacts == nil || len(*artifacts) == 0 {
-			invErr := inv_errors.Errorf("Error downloading OS profile manifest for profile name %s and tag %s from Repo: %s",
-				pName, tag, enProfileRepo+pName)
-			zlog.InfraSec().Error().Err(invErr).Msg(err.Error())
-			return map[string]*OSProfileManifest{}, invErr
+		manifests, err := fetchOSProfileArtifacts(ctx, enProfileRepo, pName, tag)
+		if err != nil {
+			return map[string][]*OSProfileManifest{}, err
 		}
-
-		var enManifest OSProfileManifest
-		if err := yaml.Unmarshal((*artifacts)[0].Data, &enManifest); err != nil {
-			zlog.InfraSec().Error().Err(err).Msg("Error unmarshalling OSProfileManifest JSON")
-			return map[string]*OSProfileManifest{}, inv_errors.Wrap(err)
-		}
-		osProfiles[pName] = &enManifest
+		osProfiles[pName] = manifests
 	}
 	return osProfiles, nil
+}
+
+func fetchOSProfileArtifacts(ctx context.Context, repo, profileName, tag string) ([]*OSProfileManifest, error) {
+	artifacts, err := as.DownloadArtifacts(ctx, repo+profileName, tag)
+	if err != nil || artifacts == nil || len(*artifacts) == 0 {
+		invErr := inv_errors.Errorf("Error downloading OS profile manifest for profile name %s and tag %s from Repo: %s",
+			profileName, tag, repo+profileName)
+		zlog.InfraSec().Error().Err(invErr).Msg(err.Error())
+		return nil, invErr
+	}
+
+	manifests := make([]*OSProfileManifest, 0, len(*artifacts))
+	for _, artifact := range *artifacts {
+		var enManifest OSProfileManifest
+		if err := yaml.Unmarshal(artifact.Data, &enManifest); err != nil {
+			zlog.InfraSec().Error().Err(err).Msg("Error unmarshalling OSProfileManifest JSON")
+			return nil, inv_errors.Wrap(err)
+		}
+		manifests = append(manifests, &enManifest)
+	}
+	return manifests, nil
 }
 
 func GetPackageManifest(ctx context.Context, packageManifestURL string) (string, error) {
