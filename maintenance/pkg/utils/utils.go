@@ -32,7 +32,6 @@ var zlog = logging.GetLogger("MaintenanceManagerUtils")
 const (
 	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
-	ISO8601Format                    = "2006-01-02T15:04:05.999Z"
 	semverCoreSegments               = 3 // Major.Minor.Patch
 )
 
