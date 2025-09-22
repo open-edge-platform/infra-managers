@@ -598,10 +598,8 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	)
 
 	// Delete the OsUpdateRun resources created in previous step
-	err = OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	require.NoError(t, err)
-	err = OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	require.NoError(t, err)
+	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
+	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
 
 	// should not handle untrusted
 	// Host and instance start with RUNNING status
@@ -669,7 +667,7 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
 
-	// Status DOWNLOADING created new OsUpdateRun
+	// Status DOWNLOADING creates new OsUpdateRun
 	RunPUAUpdateAndTestOsUpRun(
 		t,
 		mm_testing.Tenant1,
@@ -749,10 +747,18 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		expUpdateResponse,
 	)
 	// Delete the OsUpdateRun resources created in previous step
-	err1 := OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	err2 := OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst)
-	require.NoError(t, err1)
-	require.NoError(t, err2)
+	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
+	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
+
+	// Check that all OsUpdateRun resources for this instance are deleted
+	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	runs, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, mm_testing.Tenant1, inst.GetResourceId(), invclient.OSUpdateRunAll)
+	require.Error(t, err)
+	assert.Equal(t, codes.NotFound, status.Code(err))
+	assert.Nil(t, runs)
+
 }
 
 func OSUpdateRunDeleteLatest(
@@ -860,15 +866,13 @@ func RunPUAUpdateAndTestOsUpRun(
 	tID := instGet.GetTenantId()
 	instID := instGet.GetResourceId()
 
-	// Check that the OsUpdateRun reaches the expected status within 10 seconds to prevent race condition errors
-	require.Eventually(t, func() bool {
-		runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID, invclient.OSUpdateRunAll)
-		if err != nil || runGet == nil {
-			return false
-		}
-		return runGet.StatusIndicator == expUpdateStatus.StatusIndicator &&
-			runGet.Status == expUpdateStatus.Status
-	}, 10*time.Second, 50*time.Millisecond)
+	// Wait briefly to allow OsUpdateRun resource to be created/updated
+	time.Sleep(200 * time.Millisecond)
+	runGet, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, tID, instID, invclient.OSUpdateRunAll)
+	require.NoError(t, err)
+	require.NotNil(t, runGet)
+	assert.Equal(t, expUpdateStatus.StatusIndicator, runGet.StatusIndicator)
+	assert.Equal(t, expUpdateStatus.Status, runGet.Status)
 }
 
 func TestGetSanitizeErrorGrpcInterceptor(t *testing.T) {
