@@ -227,6 +227,7 @@ func UpdateInstance(
 	updateStatusDetail string,
 	newOSResID string,
 	newExistingCves string,
+	availableOSID string,
 ) error {
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, updateStatus, updateStatusDetail)
@@ -264,6 +265,11 @@ func UpdateInstance(
 	if newExistingCves != "" {
 		instRes.ExistingCves = newExistingCves
 		fields = append(fields, computev1.InstanceResourceFieldExistingCves)
+	}
+
+	if availableOSID != "" {
+		instRes.OsUpdateAvailable = availableOSID
+		fields = append(fields, computev1.InstanceResourceFieldOsUpdateAvailable)
 	}
 
 	fieldMask, err := fieldmaskpb.New(instRes, fields...)
