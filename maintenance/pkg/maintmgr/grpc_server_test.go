@@ -754,7 +754,8 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 	defer cancel()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
-	runs, err := invclient.GetLatestOSUpdateRunByInstanceID(ctx, client, mm_testing.Tenant1, inst.GetResourceId(), invclient.OSUpdateRunAll)
+	runs, err := invclient.GetLatestOSUpdateRunByInstanceID(
+		ctx, client, mm_testing.Tenant1, inst.GetResourceId(), invclient.OSUpdateRunAll)
 	require.Error(t, err)
 	assert.Equal(t, codes.NotFound, status.Code(err))
 	assert.Nil(t, runs)
