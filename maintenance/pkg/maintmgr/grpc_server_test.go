@@ -758,7 +758,6 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, codes.NotFound, status.Code(err))
 	assert.Nil(t, runs)
-
 }
 
 func OSUpdateRunDeleteLatest(
