@@ -242,6 +242,9 @@ func (tr *TenantReconciler) reconcileTenant(
 					continue
 				}
 
+				zlogTenant.Debug().Msgf("Creating OS resource %s %s",
+					osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+
 				// OS resource for given OS profile doesn't exist, create it
 				_, err = tr.createNewOSResourceFromOSProfile(ctx, tenant.GetTenantId(), osProfile)
 				if err != nil {
