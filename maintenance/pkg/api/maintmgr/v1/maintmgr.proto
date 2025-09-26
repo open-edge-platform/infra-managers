@@ -24,7 +24,7 @@ message UpdateStatus {
   string profile_name = 3;
   string profile_version = 4;
   string os_image_id = 5;
-  string os_updates_available = 6;
+  string os_update_available = 6;
 }
 
 message PlatformUpdateStatusRequest {

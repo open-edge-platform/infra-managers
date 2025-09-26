@@ -166,7 +166,7 @@
 | profile_name | [string](#string) |  |  |
 | profile_version | [string](#string) |  |  |
 | os_image_id | [string](#string) |  |  |
-| os_updates_available | [string](#string) |  |  |
+| os_update_available | [string](#string) |  |  |
 
 
 
