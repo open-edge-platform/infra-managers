@@ -761,6 +761,120 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	assert.Nil(t, runs)
 }
 
+func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	immutableOsProfileName := "immutable OS profile name"
+	osImageSha256 := inv_testing.GenerateRandomSha256()
+	osImageSha2562 := inv_testing.GenerateRandomSha256()
+	tenantID := mm_testing.Tenant1
+	h1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h1.TenantId = tenantID
+	h1.Uuid = uuid.NewString()
+	host1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1)
+
+	h2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h2.TenantId = tenantID
+	h2.Uuid = uuid.NewString()
+	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
+
+	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = osImageSha256
+		os.ProfileName = immutableOsProfileName
+		os.ImageId = "3.0.20240720.2000"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	// Instance has no Update Status
+	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, immutableOs, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = "packages"
+		inst.OsUpdatePolicy = nil
+	})
+
+	// Instance has update status already set to UpToDate
+	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, immutableOs, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = "packages"
+		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
+		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
+		inst.UpdateStatusTimestamp = uint64(time.Now().Unix())
+		inst.OsUpdatePolicy = nil
+	})
+
+	immutableOs2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Name = "Immutable OS 2"
+		os.Sha256 = osImageSha2562
+		os.ProfileName = immutableOsProfileName
+		os.ImageId = "3.0.20240820.2000"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
+		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
+	})
+
+	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
+		UpdateSchedule:        &pb.UpdateSchedule{},
+		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_IMMUTABLE,
+		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
+		UpdateSource:          &pb.UpdateSource{},
+	}
+
+	expectedUpdateStatus := mm_status.UpdateStatusUpToDate
+
+	instances := []struct {
+		name string
+		host *computev1.HostResource
+		inst *computev1.InstanceResource
+	}{
+		{
+			name: "Set OsUpdateAvailable together with UpdateStatus ",
+			host: host1,
+			inst: inst1,
+		},
+		{
+			name: "Set OsUpdateAvailable when UpdateStatus does not require update",
+			host: host2,
+			inst: inst2,
+		},
+	}
+	for _, tc := range instances {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
+
+			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+			defer cancel()
+			client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+			// TODO validate with list of repeated schedule from inventory
+			resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
+				HostGuid: host1.Uuid,
+				UpdateStatus: &pb.UpdateStatus{
+					StatusType:        pb.UpdateStatus_STATUS_TYPE_UP_TO_DATE,
+					ProfileName:       "immutable OS profile name",
+					OsImageId:         "3.0.20250909",
+					OsUpdateAvailable: "Edge Microvisor Toolkit 3.0.20250909",
+				},
+			})
+			require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+			if eq, diff := inv_testing.ProtoEqualOrDiff(expUpdateResponse, resp); !eq {
+				t.Errorf("Wrong response: %v", diff)
+			}
+
+			gResp, err := client.Get(ctx, tenantID, inst1.ResourceId)
+			require.NoError(t, err)
+
+			instGet := gResp.GetResource().GetInstance()
+			require.NotNil(t, instGet)
+
+			require.NotEmpty(t, instGet.GetOsUpdateAvailable())
+			require.Equal(t, immutableOs2.GetName(), instGet.GetOsUpdateAvailable())
+			assert.Equal(t, expectedUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
+			assert.Equal(t, expectedUpdateStatus.Status, instGet.UpdateStatus)
+		})
+	}
+}
+
 func OSUpdateRunDeleteLatest(
 	t *testing.T,
 	tenantID string,
@@ -812,9 +926,10 @@ func RunPUAUpdateAndAssert(
 	resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
 		HostGuid: host.Uuid,
 		UpdateStatus: &pb.UpdateStatus{
-			StatusType:  upStatus,
-			ProfileName: "immutable OS profile name",
-			OsImageId:   "2.0.0",
+			StatusType:        upStatus,
+			ProfileName:       "immutable OS profile name",
+			OsImageId:         "3.0.20250909",
+			OsUpdateAvailable: "Edge Microvisor Toolkit 3.0.20250909",
 		},
 	})
 	require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))

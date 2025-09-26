@@ -74,7 +74,7 @@ func updateInstanceInInv(
 
 	if statusUpdateNeeded || availableUpdateOS != nil {
 		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOS.GetResourceId())
+			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOS.GetName())
 		if err != nil {
 			// Return and continue in case of errors
 			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
