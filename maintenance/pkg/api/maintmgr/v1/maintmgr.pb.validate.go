@@ -70,6 +70,8 @@ func (m *UpdateStatus) validate(all bool) error {
 
 	// no validation rules for OsImageId
 
+	// no validation rules for OsUpdateAvailable
+
 	if len(errors) > 0 {
 		return UpdateStatusMultiError(errors)
 	}
