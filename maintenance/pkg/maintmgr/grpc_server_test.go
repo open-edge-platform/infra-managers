@@ -649,7 +649,7 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = "packages"
+		inst.RuntimePackages = "runtimepackages"
 		inst.OsUpdatePolicy = &computev1.OSUpdatePolicyResource{ResourceId: osUpdatePolicy.GetResourceId()}
 	})
 
@@ -761,6 +761,7 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	assert.Nil(t, runs)
 }
 
+//nolint:funlen // Test functions are long but necessary to test all the cases.
 func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	immutableOsProfileName := "immutable OS profile name"
@@ -777,6 +778,7 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 
+	runtime_packages := "packages"
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = immutableOsProfileName
@@ -789,7 +791,7 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = "packages"
+		inst.RuntimePackages = runtime_packages
 		inst.OsUpdatePolicy = nil
 	})
 
@@ -797,10 +799,12 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = "packages"
+		inst.RuntimePackages = runtime_packages
 		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
 		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
-		inst.UpdateStatusTimestamp = uint64(time.Now().Unix())
+		timestamp, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+		inst.UpdateStatusTimestamp = timestamp
 		inst.OsUpdatePolicy = nil
 	})
 
