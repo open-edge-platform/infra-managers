@@ -250,9 +250,9 @@ func UpdateInstance(
 		instRes.UpdateStatus = updateStatus.Status
 		instRes.UpdateStatusIndicator = updateStatus.StatusIndicator
 		instRes.UpdateStatusTimestamp = timeNow
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus)
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusIndicator)
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusTimestamp)
+		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus,
+			computev1.InstanceResourceFieldUpdateStatusIndicator,
+			computev1.InstanceResourceFieldUpdateStatusTimestamp)
 	}
 
 	if updateStatusDetail != "" {

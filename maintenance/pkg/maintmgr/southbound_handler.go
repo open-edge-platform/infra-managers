@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	grpc_status "google.golang.org/grpc/status"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -35,12 +36,15 @@ func updateInstanceInInv(
 
 	newInstUpStatus, statusUpdateNeeded := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
 		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
-
 	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
 		availableUpdateOS, err = getAvailableUpdateOS(ctx, client, tenantID, instRes)
 		if err != nil {
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to check if available OS update exists")
-			return
+			if grpc_status.Code(err) != codes.NotFound {
+				zlog.InfraSec().Warn().Err(err).Msgf("Failed to check if available OS update exists")
+				return
+			}
+			// NotFound means no newer immutable OS is available; continue without aborting.
+			zlog.InfraSec().Debug().Err(err).Msgf("Failed to get new OS Resource")
 		}
 	}
 
@@ -67,13 +71,11 @@ func updateInstanceInInv(
 			return
 		}
 	}
-	if availableUpdateOS != nil {
-		zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
-			availableUpdateOS.GetResourceId())
-	}
 
 	availableUpdateOSName := ""
 	if availableUpdateOS != nil {
+		zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
+			availableUpdateOS.GetResourceId())
 		availableUpdateOSName = availableUpdateOS.GetName()
 	}
 
@@ -119,8 +121,9 @@ func getAvailableUpdateOS(
 					instRes.GetOs().GetResourceId(), availableUpdateOS.GetResourceId())
 			}
 		} else {
-			// No update is available.
-			return nil, nil
+			// No update is available; return a sentinel NotFound error.
+			return nil, errors.Errorfc(codes.NotFound, "no newer immutable OS available for current OS resourceID=%s",
+				instRes.GetOs().GetResourceId())
 		}
 	}
 
