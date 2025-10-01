@@ -72,18 +72,30 @@ func updateInstanceInInv(
 			availableUpdateOS.GetResourceId())
 	}
 
-	if statusUpdateNeeded || availableUpdateOS != nil {
-		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOS.GetName())
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
-			return
-		}
-	} else {
-		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+	availableUpdateOSName := ""
+	if availableUpdateOS != nil {
+		availableUpdateOSName = availableUpdateOS.GetName()
 	}
+
+	err = invclient.UpdateInstance(
+		ctx,
+		client,
+		tenantID,
+		instRes.GetResourceId(),
+		*newInstUpStatus,
+		newUpdateStatusDetail,
+		newOSResID,
+		newExistingCVEs,
+		availableUpdateOSName,
+		statusUpdateNeeded,
+	)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
+		return
+	}
+	zlog.Debug().Msgf("Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOS=%s",
+		newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSName)
 }
 
 func getAvailableUpdateOS(
@@ -100,10 +112,16 @@ func getAvailableUpdateOS(
 		zlog.InfraSec().Warn().Err(err).Msgf("Failed to get latest OS")
 		return nil, err
 	}
-	if availableUpdateOS != nil && availableUpdateOS.GetResourceId() != instRes.GetOs().GetResourceId() {
-		zlog.Debug().Msgf("Found available OS update: current OS ResourceID=%s, available OS ResourceID=%s",
-			instRes.GetOs().GetResourceId(), availableUpdateOS.GetResourceId())
-		return availableUpdateOS, nil
+	if availableUpdateOS != nil {
+		if availableUpdateOS.GetResourceId() != instRes.GetOs().GetResourceId() {
+			if maintgmr_util.CompareImageVersions(availableUpdateOS.GetImageId(), instRes.GetOs().GetImageId()) {
+				zlog.Debug().Msgf("Found available OS update: current OS ResourceID=%s, available OS ResourceID=%s",
+					instRes.GetOs().GetResourceId(), availableUpdateOS.GetResourceId())
+			}
+		} else {
+			// No update is available.
+			return nil, nil
+		}
 	}
 
 	return availableUpdateOS, nil
