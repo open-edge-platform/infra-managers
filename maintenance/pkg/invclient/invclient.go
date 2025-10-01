@@ -355,7 +355,7 @@ func GetLatestImmutableOSByProfile(
 			codes.NotFound, "OS resource not found: tenantID=%s, profile_name=%s", tenantID, profileName)
 	}
 
-	// Find the OS profile with the highest semantic version using the extracted comparison function
+	// Find the OS profile with the highest semantic version
 	var latestOS *os_v1.OperatingSystemResource
 	var latestImageVersion string
 
