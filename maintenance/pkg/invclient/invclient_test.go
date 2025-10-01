@@ -524,6 +524,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 			name:          "FindOSResWithProfileName2",
 			profileName:   "profile name 2",
 			expErr:        false,
+			expErrCode:    codes.OK,
 			expResourceID: osRes2.GetResourceId(),
 		},
 		{

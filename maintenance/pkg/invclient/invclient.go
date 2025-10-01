@@ -367,6 +367,10 @@ func GetLatestImmutableOSByProfile(
 		}
 
 		imageVersion := os.GetImageId() // TODO change to GetProfileVersion() when available
+		if imageVersion == "" {
+			zlog.Warn().Msgf("OS resource missing image version: %s", os.GetResourceId())
+			continue // Skip OS resources without a version
+		}
 		if latestOS == nil || utils.CompareImageVersions(imageVersion, latestImageVersion) {
 			latestOS = os
 			latestImageVersion = imageVersion
