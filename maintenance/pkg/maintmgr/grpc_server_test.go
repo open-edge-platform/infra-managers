@@ -850,7 +850,6 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 			defer cancel()
 			client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 
-			// TODO validate with list of repeated schedule from inventory
 			resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
 				HostGuid: host1.Uuid,
 				UpdateStatus: &pb.UpdateStatus{
