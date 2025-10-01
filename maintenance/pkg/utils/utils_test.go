@@ -910,7 +910,7 @@ func TestConvertToComparableSemVer_Sorting(t *testing.T) {
 	}
 }
 
-func TestCompareImageVersions_EdgeCases(t *testing.T) {
+func TestCompareImageVersions(t *testing.T) {
 	tests := []struct {
 		name     string
 		version1 string
