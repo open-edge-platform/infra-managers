@@ -909,3 +909,58 @@ func TestConvertToComparableSemVer_Sorting(t *testing.T) {
 		}
 	}
 }
+
+func TestCompareImageVersions(t *testing.T) {
+	tests := []struct {
+		name     string
+		version1 string
+		version2 string
+		expected bool
+	}{
+		{
+			name:     "version with many leading zeros",
+			version1: "3.0.20250717.0001",
+			version2: "3.0.20250717.0000",
+			expected: true,
+		},
+		{
+			name:     "versions identical except for leading zeros",
+			version1: "3.0.20250717.0",
+			version2: "3.0.20250717.0000",
+			expected: false, // Should be treated as equal
+		},
+		{
+			name:     "very long build numbers",
+			version1: "3.0.20250717.123456789",
+			version2: "3.0.20250717.123456788",
+			expected: true,
+		},
+		{
+			name:     "version1 has higher patch version",
+			version1: "3.0.20250817.1234",
+			version2: "3.0.20250717.1234",
+			expected: true,
+		},
+		{
+			name:     "version1 has higher minor version",
+			version1: "3.1.20250717.1234",
+			version2: "3.0.20250717.1234",
+			expected: true,
+		},
+		{
+			name:     "version1 has higher minor version",
+			version1: "4.0.20250717.1234",
+			version2: "3.0.20250717.1234",
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := util.CompareImageVersions(tt.version1, tt.version2)
+			assert.Equal(t, tt.expected, result,
+				"CompareImageVersions(%q, %q) = %v, expected %v",
+				tt.version1, tt.version2, result, tt.expected)
+		})
+	}
+}

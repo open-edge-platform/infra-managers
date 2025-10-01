@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc/codes"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
@@ -345,4 +346,32 @@ func ConvertToComparableSemVer(s string) (string, error) {
 		return fmt.Sprintf("%s-%s", strings.Join(core, "."), prerelease), nil
 	}
 	return strings.Join(core, "."), nil
+}
+
+// CompareImageVersions compares two OS image versions and returns true if version1 is greater than version2.
+// Returns false if either version is invalid or if version1 <= version2.
+func CompareImageVersions(version1, version2 string) bool {
+	imageVer1ToSemVer, err := ConvertToComparableSemVer(version1)
+	if err != nil {
+		zlog.Warn().Err(err).Msgf("Failed to convert image version to semantic version: %s", version1)
+		return false
+	}
+	semVer1, err := semver.NewVersion(imageVer1ToSemVer)
+	if err != nil {
+		zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", imageVer1ToSemVer)
+		return false
+	}
+
+	imageVer2ToSemVer, err := ConvertToComparableSemVer(version2)
+	if err != nil {
+		zlog.Warn().Err(err).Msgf("Failed to convert image version to semantic version: %s", version2)
+		return false
+	}
+	semVer2, err := semver.NewVersion(imageVer2ToSemVer)
+	if err != nil {
+		zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", imageVer2ToSemVer)
+		return false
+	}
+
+	return semVer1.GreaterThan(semVer2)
 }

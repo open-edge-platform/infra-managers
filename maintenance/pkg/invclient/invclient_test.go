@@ -270,8 +270,8 @@ func TestInvClient_GetInstanceResourceByHostGUID(t *testing.T) {
 		osRes := dao.CreateOs(t, mm_testing.Tenant1)
 		host := dao.CreateHost(t, mm_testing.Tenant1)
 		inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
-		inst.DesiredOs = osRes
-		inst.CurrentOs = osRes
+		inst.DesiredOs = osRes // TODO: Remove in future when DesiredOs is removed from inventory testing_utils.go
+		inst.CurrentOs = osRes // TODO: Remove in future when DesiredOs is removed from inventory testing_utils.go
 		inst.Os = osRes
 		inst.Host = host
 
@@ -296,7 +296,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678",
-			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "")
+			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "", "", true)
 		require.Error(t, err)
 		sts, _ := status.FromError(err)
 		assert.Equal(t, codes.NotFound, sts.Code())
@@ -307,7 +307,7 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateInstStatusNotCurrentOS", func(t *testing.T) {
 		timeBeforeUpdate := time.Now().Unix()
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusInProgress, "", "", "")
+			mm_status.UpdateStatusInProgress, "", "", "", "", true)
 
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
@@ -325,9 +325,9 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	t.Run("UpdateInstStatusAndCurrentOS", func(t *testing.T) {
 		beforeUpdateInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
-		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
+		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetOs().GetSha256())
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "", "", true)
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -335,18 +335,17 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		assert.Equal(t, mm_status.UpdateStatusDone.StatusIndicator,
 			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
 		assert.Equal(t, "some update status detail", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
-		assert.Equal(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetCurrentOs().GetSha256())
-		assert.NotEqual(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetDesiredOs().GetSha256())
+		assert.Equal(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetOs().GetSha256())
 	})
 
 	t.Run("UpdateUpdateStatusToRunning", func(t *testing.T) {
 		// initial setup of instance status to running and update status to unknown
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "")
+			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "", "", true)
 		require.NoError(t, err)
 		// setup only the update status as instance status is already set to running
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "")
+			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "", "", true)
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -525,6 +524,7 @@ func TestInvClient_GetLatestImmutableOSByProfile(t *testing.T) {
 			name:          "FindOSResWithProfileName2",
 			profileName:   "profile name 2",
 			expErr:        false,
+			expErrCode:    codes.OK,
 			expResourceID: osRes2.GetResourceId(),
 		},
 		{
