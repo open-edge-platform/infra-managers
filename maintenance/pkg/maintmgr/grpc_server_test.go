@@ -778,6 +778,7 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 
+	runtimePackages := "packages"
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = immutableOsProfileName
@@ -790,6 +791,7 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = runtimePackages
 		inst.OsUpdatePolicy = nil
 	})
 
@@ -797,6 +799,7 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = runtimePackages
 		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
 		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
 		timestamp, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
@@ -875,7 +878,6 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	}
 }
 
-//nolint:funlen // Test functions are long but necessary to test all the cases.
 func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	mutableOsProfileName := "mutable OS profile name"
@@ -891,8 +893,6 @@ func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 
-	runtimePackages := "packages"
-
 	mutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = mutableOsProfileName
@@ -905,7 +905,6 @@ func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, mutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = runtimePackages
 		inst.OsUpdatePolicy = nil
 	})
 
@@ -913,7 +912,6 @@ func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, mutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = runtimePackages
 		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
 		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
 		timestamp, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
