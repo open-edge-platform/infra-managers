@@ -34,6 +34,8 @@ func updateInstanceInInv(
 	var err error
 	var availableUpdateOS *os_v1.OperatingSystemResource
 
+	availableUpdateOSPkgs := ""
+
 	newInstUpStatus, statusUpdateNeeded := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
 		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
 	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
@@ -46,6 +48,16 @@ func updateInstanceInInv(
 			// NotFound means no newer immutable OS is available; continue without aborting.
 			zlog.InfraSec().Debug().Err(err).Msgf("Failed to get new OS Resource")
 		}
+
+		if availableUpdateOS != nil {
+			zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
+				availableUpdateOS.GetResourceId())
+			availableUpdateOSPkgs = availableUpdateOS.GetName()
+		}
+	}
+
+	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
+		availableUpdateOSPkgs = mmUpStatus.OsUpdateAvailable
 	}
 
 	if statusUpdateNeeded {
@@ -72,13 +84,6 @@ func updateInstanceInInv(
 		}
 	}
 
-	availableUpdateOSName := ""
-	if availableUpdateOS != nil {
-		zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
-			availableUpdateOS.GetResourceId())
-		availableUpdateOSName = availableUpdateOS.GetName()
-	}
-
 	err = invclient.UpdateInstance(
 		ctx,
 		client,
@@ -88,7 +93,7 @@ func updateInstanceInInv(
 		newUpdateStatusDetail,
 		newOSResID,
 		newExistingCVEs,
-		availableUpdateOSName,
+		availableUpdateOSPkgs,
 		statusUpdateNeeded,
 	)
 	if err != nil {
@@ -96,8 +101,8 @@ func updateInstanceInInv(
 		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
 		return
 	}
-	zlog.Debug().Msgf("Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOS=%s",
-		newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSName)
+	zlog.Debug().Msgf("Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOSPkgs=%s",
+		newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSPkgs)
 }
 
 func getAvailableUpdateOS(

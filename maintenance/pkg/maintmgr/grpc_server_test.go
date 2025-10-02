@@ -778,7 +778,6 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	h2.Uuid = uuid.NewString()
 	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
 
-	runtimePackages := "packages"
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Sha256 = osImageSha256
 		os.ProfileName = immutableOsProfileName
@@ -791,7 +790,6 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = runtimePackages
 		inst.OsUpdatePolicy = nil
 	})
 
@@ -799,7 +797,6 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, immutableOs, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		inst.RuntimePackages = runtimePackages
 		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
 		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
 		timestamp, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
@@ -872,6 +869,118 @@ func TestServer_OSUpdateAvailableImmutableOS(t *testing.T) {
 
 			require.NotEmpty(t, instGet.GetOsUpdateAvailable())
 			require.Equal(t, immutableOs2.GetName(), instGet.GetOsUpdateAvailable())
+			assert.Equal(t, expectedUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
+			assert.Equal(t, expectedUpdateStatus.Status, instGet.UpdateStatus)
+		})
+	}
+}
+
+//nolint:funlen // Test functions are long but necessary to test all the cases.
+func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	mutableOsProfileName := "mutable OS profile name"
+	osImageSha256 := inv_testing.GenerateRandomSha256()
+	tenantID := mm_testing.Tenant1
+	h1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h1.TenantId = tenantID
+	h1.Uuid = uuid.NewString()
+	host1 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h1)
+
+	h2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
+	h2.TenantId = tenantID
+	h2.Uuid = uuid.NewString()
+	host2 := mm_testing.CreateHost(t, mm_testing.Tenant1, &h2)
+
+	runtimePackages := "packages"
+
+	mutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
+		os.Sha256 = osImageSha256
+		os.ProfileName = mutableOsProfileName
+		os.ImageId = "22.04.5"
+		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
+		os.OsType = os_v1.OsType_OS_TYPE_MUTABLE
+	})
+
+	// Instance has no Update Status
+	inst1 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host1, mutableOs, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = runtimePackages
+		inst.OsUpdatePolicy = nil
+	})
+
+	// Instance has update status already set to UpToDate
+	inst2 := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host2, mutableOs, true, func(inst *computev1.InstanceResource) {
+		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+		inst.RuntimePackages = runtimePackages
+		inst.UpdateStatus = mm_status.UpdateStatusUpToDate.Status
+		inst.UpdateStatusIndicator = mm_status.UpdateStatusUpToDate.StatusIndicator
+		timestamp, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+		inst.UpdateStatusTimestamp = timestamp
+		inst.OsUpdatePolicy = nil
+	})
+
+	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
+		UpdateSchedule:        &pb.UpdateSchedule{},
+		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
+		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
+		UpdateSource:          &pb.UpdateSource{},
+	}
+
+	expectedUpdateStatus := mm_status.UpdateStatusUpToDate
+	updatePackages := "wget\ncurl"
+
+	instances := []struct {
+		name string
+		host *computev1.HostResource
+		inst *computev1.InstanceResource
+		pkgs string
+	}{
+		{
+			name: "Set OsUpdateAvailable together with UpdateStatus",
+			host: host1,
+			inst: inst1,
+			pkgs: updatePackages,
+		},
+		{
+			name: "Set OsUpdateAvailable when UpdateStatus does not require update",
+			host: host2,
+			inst: inst2,
+			pkgs: updatePackages,
+		},
+	}
+	for _, tc := range instances {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Helper()
+
+			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenantID)
+			defer cancel()
+			client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+			resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, &pb.PlatformUpdateStatusRequest{
+				HostGuid: host1.Uuid,
+				UpdateStatus: &pb.UpdateStatus{
+					StatusType:        pb.UpdateStatus_STATUS_TYPE_UP_TO_DATE,
+					ProfileName:       mutableOsProfileName,
+					OsImageId:         "22.04.5",
+					OsUpdateAvailable: updatePackages,
+				},
+			})
+			require.NoErrorf(t, err, errors.ErrorToStringWithDetails(err))
+			if eq, diff := inv_testing.ProtoEqualOrDiff(expUpdateResponse, resp); !eq {
+				t.Errorf("Wrong response: %v", diff)
+			}
+
+			gResp, err := client.Get(ctx, tenantID, inst1.ResourceId)
+			require.NoError(t, err)
+
+			instGet := gResp.GetResource().GetInstance()
+			require.NotNil(t, instGet)
+
+			require.NotEmpty(t, instGet.GetOsUpdateAvailable())
+			require.Equal(t, tc.pkgs, instGet.GetOsUpdateAvailable())
 			assert.Equal(t, expectedUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
 			assert.Equal(t, expectedUpdateStatus.Status, instGet.UpdateStatus)
 		})
