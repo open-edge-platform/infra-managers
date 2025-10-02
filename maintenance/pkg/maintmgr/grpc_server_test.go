@@ -940,13 +940,11 @@ func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 			name: "Set OsUpdateAvailable together with UpdateStatus",
 			host: host1,
 			inst: inst1,
-			pkgs: updatePackages,
 		},
 		{
 			name: "Set OsUpdateAvailable when UpdateStatus does not require update",
 			host: host2,
 			inst: inst2,
-			pkgs: updatePackages,
 		},
 	}
 	for _, tc := range instances {
@@ -978,7 +976,7 @@ func TestServer_OSUpdateAvailableMutableOS(t *testing.T) {
 			require.NotNil(t, instGet)
 
 			require.NotEmpty(t, instGet.GetOsUpdateAvailable())
-			require.Equal(t, tc.pkgs, instGet.GetOsUpdateAvailable())
+			require.Equal(t, updatePackages, instGet.GetOsUpdateAvailable())
 			assert.Equal(t, expectedUpdateStatus.StatusIndicator, instGet.UpdateStatusIndicator)
 			assert.Equal(t, expectedUpdateStatus.Status, instGet.UpdateStatus)
 		})
