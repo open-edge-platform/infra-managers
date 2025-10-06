@@ -46,8 +46,8 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages"),
 	)
 	immutableOsProfileName := "immutable OS profile name"
 	osImageSha256 := inv_testing.GenerateRandomSha256()
@@ -180,11 +180,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					KernelCommand: mutableOSUpdatePolicy.GetUpdateKernelCommand(),
 					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
+				InstalledPackages:     mutableOSUpdatePolicy.GetUpdatePackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -199,11 +199,11 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			valid: true,
 			expReply: &pb.PlatformUpdateStatusResponse{
 				UpdateSource: &pb.UpdateSource{
-					KernelCommand: mutableOSUpdatePolicy.GetKernelCommand(),
+					KernelCommand: mutableOSUpdatePolicy.GetUpdateKernelCommand(),
 					CustomRepos:   mutableOSUpdatePolicy.GetUpdateSources(),
 				},
 				UpdateSchedule:        &pb.UpdateSchedule{},
-				InstalledPackages:     mutableOSUpdatePolicy.GetInstallPackages(),
+				InstalledPackages:     mutableOSUpdatePolicy.GetUpdatePackages(),
 				OsType:                pb.PlatformUpdateStatusResponse_OSType(os.GetOsType()),
 				OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 			},
@@ -274,8 +274,8 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy T1"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command T1"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages T1"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command T1"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages T1"),
 	)
 
 	h1T1 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
@@ -301,8 +301,8 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages T2"),
 	)
 	h1T2 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	h1T2.TenantId = mm_testing.Tenant2
@@ -329,8 +329,8 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command T2"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages T2"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command T2"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages T2"),
 	)
 	hT0 := mm_testing.HostResource1 //nolint:govet // ok to copy locks in test
 	hT0.TenantId = mm_testing.DefaultTenantID
@@ -475,8 +475,8 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages"),
 	)
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
@@ -520,10 +520,10 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 			RepeatedSchedules: mm_testing.MmRepeatedSchedule1,
 		},
 		UpdateSource: &pb.UpdateSource{
-			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			KernelCommand: osUpdatePolicy.GetUpdateKernelCommand(),
 			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
 		},
-		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
+		InstalledPackages:     osUpdatePolicy.GetUpdatePackages(),
 		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
@@ -643,8 +643,8 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		inv_testing.OsUpdatePolicyName("Test Mutable OS Update Policy"),
 		inv_testing.OSUpdatePolicyTarget(),
 		inv_testing.OSUpdatePolicyUpdateSources([]string{}),
-		inv_testing.OSUpdatePolicyKernelCommand("test command"),
-		inv_testing.OSUpdatePolicyInstallPackages("test packages"),
+		inv_testing.OSUpdatePolicyUpdateKernelCommand("test command"),
+		inv_testing.OSUpdatePolicyUpdatePackages("test packages"),
 	)
 	inst := dao.CreateInstanceWithOpts(t, mm_testing.Tenant1, host, os, true, func(inst *computev1.InstanceResource) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
@@ -659,10 +659,10 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 	expUpdateResponse := &pb.PlatformUpdateStatusResponse{
 		UpdateSchedule: &pb.UpdateSchedule{},
 		UpdateSource: &pb.UpdateSource{
-			KernelCommand: osUpdatePolicy.GetKernelCommand(),
+			KernelCommand: osUpdatePolicy.GetUpdateKernelCommand(),
 			CustomRepos:   osUpdatePolicy.GetUpdateSources(),
 		},
-		InstalledPackages:     osUpdatePolicy.GetInstallPackages(),
+		InstalledPackages:     osUpdatePolicy.GetUpdatePackages(),
 		OsType:                pb.PlatformUpdateStatusResponse_OS_TYPE_MUTABLE,
 		OsProfileUpdateSource: &pb.OSProfileUpdateSource{},
 	}
