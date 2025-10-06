@@ -227,7 +227,6 @@ func UpdateInstance(
 	newOSResID string,
 	newExistingCves string,
 	availableOSVersion string,
-	statusUpdateNeeded bool,
 ) error {
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
 		tenantID, instanceID, updateStatus, updateStatusDetail)
@@ -239,20 +238,17 @@ func UpdateInstance(
 	}
 
 	instRes := &computev1.InstanceResource{
-		OsUpdateAvailable: availableOSVersion,
+		OsUpdateAvailable:     availableOSVersion,
+		UpdateStatus:          updateStatus.Status,
+		UpdateStatusIndicator: updateStatus.StatusIndicator,
+		UpdateStatusTimestamp: timeNow,
 	}
 
 	fields := []string{
 		computev1.InstanceResourceFieldOsUpdateAvailable,
-	}
-
-	if statusUpdateNeeded {
-		instRes.UpdateStatus = updateStatus.Status
-		instRes.UpdateStatusIndicator = updateStatus.StatusIndicator
-		instRes.UpdateStatusTimestamp = timeNow
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus,
-			computev1.InstanceResourceFieldUpdateStatusIndicator,
-			computev1.InstanceResourceFieldUpdateStatusTimestamp)
+		computev1.InstanceResourceFieldUpdateStatus,
+		computev1.InstanceResourceFieldUpdateStatusIndicator,
+		computev1.InstanceResourceFieldUpdateStatusTimestamp,
 	}
 
 	if updateStatusDetail != "" {

@@ -30,40 +30,19 @@ func updateInstanceInInv(
 	mmUpStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
 ) {
-	var newUpdateStatusDetail, newExistingCVEs, newOSResID string
-	var err error
-	var availableUpdateOS *os_v1.OperatingSystemResource
+	var (
+		newUpdateStatusDetail string
+		newExistingCVEs       string
+		newOSResID            string
+		err                   error
+		availableUpdateOS     *os_v1.OperatingSystemResource
+		availableUpdateOSPkgs string
+	)
 
-	availableUpdateOSPkgs := ""
-
-	newInstUpStatus, statusUpdateNeeded := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
+	newInstUpStatus, updateNeeded := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
 		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
-	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
-		availableUpdateOS, err = getAvailableUpdateOS(ctx, client, tenantID, instRes)
-		if err != nil {
-			if grpc_status.Code(err) != codes.NotFound {
-				zlog.InfraSec().Warn().Err(err).Msgf("Failed to check if available OS update exists")
-				return
-			}
-			// NotFound means no newer immutable OS is available; continue without aborting.
-			zlog.InfraSec().Debug().Err(err).Msgf("Failed to get new OS Resource")
-		}
 
-		if availableUpdateOS != nil {
-			zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
-				availableUpdateOS.GetResourceId())
-			availableUpdateOSPkgs = availableUpdateOS.GetName()
-		}
-	}
-
-	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		availableUpdateOSPkgs = mmUpStatus.OsUpdateAvailable
-	}
-
-	if statusUpdateNeeded {
-		zlog.Debug().Msgf("Updating Instance UpdateStatus: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
-
+	if updateNeeded {
 		newUpdateStatusDetail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
 			newInstUpStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
 
@@ -84,25 +63,63 @@ func updateInstanceInInv(
 		}
 	}
 
-	err = invclient.UpdateInstance(
-		ctx,
-		client,
-		tenantID,
-		instRes.GetResourceId(),
-		*newInstUpStatus,
-		newUpdateStatusDetail,
-		newOSResID,
-		newExistingCVEs,
-		availableUpdateOSPkgs,
-		statusUpdateNeeded,
-	)
-	if err != nil {
-		// Return and continue in case of errors
-		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
-		return
+	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
+		availableUpdateOS, err = getAvailableUpdateOS(ctx, client, tenantID, instRes)
+		if err != nil {
+			if grpc_status.Code(err) != codes.NotFound {
+				// Return and continue in case of errors
+				zlog.InfraSec().Warn().Err(err).Msgf("Failed to check if available OS update exists")
+				return
+			}
+			// NotFound means no newer immutable OS is available; continue without aborting.
+			zlog.InfraSec().Debug().Err(err).Msgf("Failed to get new OS Resource")
+		}
+
+		if availableUpdateOS != nil {
+			zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
+				availableUpdateOS.GetResourceId())
+			availableUpdateOSPkgs = availableUpdateOS.GetName()
+			updateNeeded = true
+		}
 	}
-	zlog.Debug().Msgf("Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOSPkgs=%s",
-		newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSPkgs)
+
+	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE &&
+		instRes.GetOsUpdateAvailable() != mmUpStatus.OsUpdateAvailable {
+
+		availableUpdateOSPkgs = mmUpStatus.OsUpdateAvailable
+		updateNeeded = true
+	}
+
+	// if one of the required conditions is fulfilled, update the Instance:
+	// 1. UpdateStatus or UpdateStatusDetail changed
+	// 2. Available OS update for immutable OS
+	// 3. Available OS update for mutable OS
+	if updateNeeded {
+		zlog.Debug().Msgf("Updating Instance UpdateStatus=%s,  UpdateStatusDetail=%s, osUpdateAvailable=%s, newOSResID=%s, existingCVEs=%s",
+			newInstUpStatus.Status, newUpdateStatusDetail, availableUpdateOSPkgs, newOSResID, newExistingCVEs)
+
+		err = invclient.UpdateInstance(
+			ctx,
+			client,
+			tenantID,
+			instRes.GetResourceId(),
+			*newInstUpStatus,
+			newUpdateStatusDetail,
+			newOSResID,
+			newExistingCVEs,
+			availableUpdateOSPkgs,
+		)
+		if err != nil {
+			// Return and continue in case of errors
+			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
+			return
+		}
+		zlog.Debug().Msgf("Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOSPkgs=%s",
+			newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSPkgs)
+	} else {
+		zlog.Debug().Msgf("No Instance update needed: status=%v detail=%s newOSResID=%s existingCVEs=%s availableUpdateOSPkgs=%s",
+			newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOSPkgs)
+	}
 }
 
 func getAvailableUpdateOS(
