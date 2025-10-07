@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
+	grpc_status "google.golang.org/grpc/status"
 
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	os_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -22,6 +23,110 @@ import (
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
+func resolveOsResAndCVEsIfNeeded(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	mmUpStatus *pb.UpdateStatus,
+	instRes *computev1.InstanceResource,
+	status *inv_status.ResourceStatus,
+	needed bool,
+) (osResID, existingCVEs string, err error) {
+	if !needed {
+		return "", "", nil
+	}
+	osResID, err = GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
+	if err != nil {
+		return "", "", err
+	}
+	existingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, osResID, instRes, status)
+	if err != nil {
+		return "", "", err
+	}
+	return osResID, existingCVEs, nil
+}
+
+func evalOsUpdateAvailable(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	instRes *computev1.InstanceResource,
+	mmUpStatus *pb.UpdateStatus,
+) (osUpdateAvailable string, needed bool, err error) {
+	switch instRes.GetOs().GetOsType() {
+	case os_v1.OsType_OS_TYPE_IMMUTABLE:
+		availableUpdateOS, err := getAvailableUpdateOS(ctx, client, tenantID, instRes)
+		if err != nil {
+			if grpc_status.Code(err) == codes.NotFound {
+				// No newer immutable OS is available; not an error.
+				zlog.InfraSec().Debug().Err(err).Msgf("Failed to get new OS Resource")
+				return "", false, nil
+			}
+			return "", false, err
+		}
+		if availableUpdateOS != nil {
+			return availableUpdateOS.GetName(), true, nil
+		}
+		return "", false, nil
+
+	case os_v1.OsType_OS_TYPE_MUTABLE:
+		if instRes.GetOsUpdateAvailable() != mmUpStatus.OsUpdateAvailable {
+			return mmUpStatus.OsUpdateAvailable, true, nil
+		}
+		return "", false, nil
+
+	default:
+		// Includes OS_TYPE_UNSPECIFIED - should never happen.
+		zlog.Debug().Msg("OS type unspecified; skipping OS update availability evaluation")
+		return "", false, nil
+	}
+}
+
+func buildInstanceUpdatePlan(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	mmUpStatus *pb.UpdateStatus,
+	instRes *computev1.InstanceResource,
+) (invclient.InstanceUpdatePlan, error) {
+	var (
+		err    error
+		update invclient.InstanceUpdatePlan
+	)
+
+	// Compute status & whether we need to update it.
+	update.Status, update.Needed = maintgmr_util.GetUpdatedUpdateStatusIfNeeded(
+		mmUpStatus, instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus(),
+	)
+
+	// Only set update.Detail when status update is needed.
+	if update.Needed {
+		update.Detail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
+			update.Status, mmUpStatus, instRes.GetCurrentOs().GetOsType(),
+		)
+
+		// Resolve OS resource & CVEs only if needed.
+		update.OsResID, update.ExistingCVEs, err = resolveOsResAndCVEsIfNeeded(
+			ctx, client, tenantID, mmUpStatus, instRes, update.Status, update.Needed,
+		)
+		if err != nil {
+			return update, err
+		}
+	}
+
+	// Evaluate available updates across OS types.
+	var osAvailNeeded bool
+	update.OsUpdateAvailable, osAvailNeeded, err = evalOsUpdateAvailable(
+		ctx, client, tenantID, instRes, mmUpStatus,
+	)
+	if err != nil {
+		return update, err
+	}
+	update.Needed = update.Needed || osAvailNeeded
+
+	return update, nil
+}
+
 func updateInstanceInInv(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
@@ -29,61 +134,73 @@ func updateInstanceInInv(
 	mmUpStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
 ) {
-	var newUpdateStatusDetail, newExistingCVEs, newOSResID string
-	var err error
-	var availableUpdateOS *os_v1.OperatingSystemResource
-
-	newInstUpStatus, statusUpdateNeeded := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(mmUpStatus,
-		instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus())
-
-	if instRes.GetOs().GetOsType() == os_v1.OsType_OS_TYPE_IMMUTABLE {
-		availableUpdateOS, err = getAvailableUpdateOS(ctx, client, tenantID, instRes)
-		if err != nil {
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to check if available OS update exists")
-			return
-		}
+	update, err := buildInstanceUpdatePlan(ctx, client, tenantID, mmUpStatus, instRes)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to build update plan for Instance")
+		return
 	}
 
-	if statusUpdateNeeded {
-		zlog.Debug().Msgf("Updating Instance UpdateStatus: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
+	if !update.Needed {
+		zlog.Debug().Msgf(
+			"No Instance update needed: status=%v detail=%s newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
+			update.Status, update.Detail, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
+		)
+		return
+	}
 
-		newUpdateStatusDetail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
-			newInstUpStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
+	zlog.Debug().Msgf(
+		"Updating Instance UpdateStatus=%s,  UpdateStatusDetail=%s, osUpdateAvailable=%s, newOSResID=%s, existingCVEs=%s",
+		update.Status.Status, update.Detail, update.OsUpdateAvailable, update.OsResID, update.ExistingCVEs,
+	)
 
-		newOSResID, err = GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
-			return
-		}
+	err = invclient.UpdateInstance(
+		ctx,
+		client,
+		tenantID,
+		instRes.GetResourceId(),
+		update,
+	)
+	if err != nil {
+		// Return and continue in case of errors
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
+		return
+	}
 
-		zlog.Debug().Msgf("New OS Resource ID: %s", newOSResID)
+	zlog.Debug().Msgf(
+		"Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
+		update.Status, update.Detail, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
+	)
+}
 
-		newExistingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, newOSResID, instRes, newInstUpStatus)
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new existing CVEs")
-			return
-		}
+func getAvailableUpdateOS(
+	ctx context.Context,
+	client inv_client.TenantAwareInventoryClient,
+	tenantID string,
+	instRes *computev1.InstanceResource,
+) (*os_v1.OperatingSystemResource, error) {
+	var availableUpdateOS *os_v1.OperatingSystemResource
+	var err error
+
+	availableUpdateOS, err = invclient.GetLatestImmutableOSByProfile(ctx, client, tenantID, instRes.GetOs().GetProfileName())
+	if err != nil {
+		zlog.InfraSec().Warn().Err(err).Msgf("Failed to get latest OS")
+		return nil, err
 	}
 	if availableUpdateOS != nil {
-		zlog.Debug().Msgf("Updating Instance osUpdateAvailable:  OS resourceID=%v",
-			availableUpdateOS.GetResourceId())
+		if availableUpdateOS.GetResourceId() != instRes.GetOs().GetResourceId() {
+			if maintgmr_util.CompareImageVersions(availableUpdateOS.GetImageId(), instRes.GetOs().GetImageId()) {
+				zlog.Debug().Msgf("Found available OS update: current OS ResourceID=%s, available OS ResourceID=%s",
+					instRes.GetOs().GetResourceId(), availableUpdateOS.GetResourceId())
+			}
+		} else {
+			// No update is available; return a sentinel NotFound error.
+			return nil, errors.Errorfc(codes.NotFound, "no newer immutable OS available for current OS resourceID=%s",
+				instRes.GetOs().GetResourceId())
+		}
 	}
 
-	if statusUpdateNeeded || availableUpdateOS != nil {
-		err = invclient.UpdateInstance(ctx, client, tenantID, instRes.GetResourceId(),
-			*newInstUpStatus, newUpdateStatusDetail, newOSResID, newExistingCVEs, availableUpdateOS.GetName())
-		if err != nil {
-			// Return and continue in case of errors
-			zlog.InfraSec().Warn().Err(err).Msgf("Failed to update Instance Status")
-			return
-		}
-	} else {
-		zlog.Debug().Msgf("No Instance UpdateStatus update needed: old=%v, new=%v",
-			newInstUpStatus, maintgmr_util.GetUpdateStatusFromInstance(instRes))
-	}
+	return availableUpdateOS, nil
 }
 
 func getAvailableUpdateOS(
@@ -338,8 +455,6 @@ func updateOSUpdateRun(
 	return nil
 }
 
-// GetNewExistingCVEs retrieves the new existing CVEs based on the new OS Resource ID.
-// or from the current OS resource if no new OS Resource ID is provided.
 func GetNewExistingCVEs(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,

@@ -173,9 +173,9 @@ func getOSUpdatePolicyInfo(ctx context.Context, resp *pb.PlatformUpdateStatusRes
 }
 
 func populateMutableUpdateDetails(resp *pb.PlatformUpdateStatusResponse, policy *computev1.OSUpdatePolicyResource) {
-	resp.UpdateSource.KernelCommand = policy.GetKernelCommand()
+	resp.UpdateSource.KernelCommand = policy.GetUpdateKernelCommand()
 	resp.UpdateSource.CustomRepos = policy.GetUpdateSources()
-	resp.InstalledPackages = policy.GetInstallPackages()
+	resp.InstalledPackages = policy.GetUpdatePackages()
 }
 
 func populateImmutableUpdateDetails(

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
@@ -44,10 +43,19 @@ const (
 )
 
 var (
-	zlog = logging.GetLogger("InvClient")
-
+	zlog             = logging.GetLogger("InvClient")
 	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
 )
+
+// InstanceUpdatePlan contains all the fields that may need updating in an Instance resource.
+type InstanceUpdatePlan struct {
+	Status            *inv_status.ResourceStatus
+	Detail            string
+	OsResID           string
+	ExistingCVEs      string
+	OsUpdateAvailable string
+	Needed            bool
+}
 
 type InvGrpcClient struct {
 	InvClient            inv_client.TenantAwareInventoryClient
@@ -223,14 +231,10 @@ func UpdateInstance(
 	c inv_client.TenantAwareInventoryClient,
 	tenantID string,
 	instanceID string,
-	updateStatus inv_status.ResourceStatus,
-	updateStatusDetail string,
-	newOSResID string,
-	newExistingCves string,
-	availableOSVersion string,
+	updatePlan InstanceUpdatePlan,
 ) error {
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
-		tenantID, instanceID, updateStatus, updateStatusDetail)
+		tenantID, instanceID, updatePlan.Status, updatePlan.Detail)
 
 	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
 	if err != nil {
@@ -239,31 +243,34 @@ func UpdateInstance(
 	}
 
 	instRes := &computev1.InstanceResource{
-		UpdateStatus:          updateStatus.Status,
-		UpdateStatusIndicator: updateStatus.StatusIndicator,
-		UpdateStatusTimestamp: timeNow,
+		OsUpdateAvailable: updatePlan.OsUpdateAvailable,
 	}
 
 	fields := []string{
-		computev1.InstanceResourceFieldUpdateStatus,
-		computev1.InstanceResourceFieldUpdateStatusIndicator,
-		computev1.InstanceResourceFieldUpdateStatusTimestamp,
+		computev1.InstanceResourceFieldOsUpdateAvailable,
 	}
 
-	if updateStatusDetail != "" {
-		instRes.UpdateStatusDetail = updateStatusDetail
+	if updatePlan.Status != nil {
+		instRes.UpdateStatus = updatePlan.Status.Status
+		instRes.UpdateStatusIndicator = updatePlan.Status.StatusIndicator
+		instRes.UpdateStatusTimestamp = timeNow
+		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus,
+			computev1.InstanceResourceFieldUpdateStatusIndicator,
+			computev1.InstanceResourceFieldUpdateStatusTimestamp)
+	}
+
+	if updatePlan.Detail != "" {
+		instRes.UpdateStatusDetail = updatePlan.Detail
 		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusDetail)
 	}
 
-	if newOSResID != "" {
-		instRes.CurrentOs = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
-		fields = append(fields, computev1.InstanceResourceEdgeCurrentOs)
-		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
+	if updatePlan.OsResID != "" {
+		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: updatePlan.OsResID}
 		fields = append(fields, computev1.InstanceResourceEdgeOs)
 	}
 
-	if newExistingCves != "" {
-		instRes.ExistingCves = newExistingCves
+	if updatePlan.ExistingCVEs != "" {
+		instRes.ExistingCves = updatePlan.ExistingCVEs
 		fields = append(fields, computev1.InstanceResourceFieldExistingCves)
 	}
 
@@ -357,9 +364,9 @@ func GetLatestImmutableOSByProfile(
 			codes.NotFound, "OS resource not found: tenantID=%s, profile_name=%s", tenantID, profileName)
 	}
 
-	// Find the OS profile with the highest semantic version using Masterminds/semver
+	// Find the OS profile with the highest semantic version
 	var latestOS *os_v1.OperatingSystemResource
-	var latestVersion *semver.Version
+	var latestImageVersion string
 
 	for _, resource := range resp.GetResources() {
 		os := resource.GetResource().GetOs()
@@ -369,21 +376,13 @@ func GetLatestImmutableOSByProfile(
 		}
 
 		imageVersion := os.GetImageId() // TODO change to GetProfileVersion() when available
-		imageVerToSemVer, err := utils.ConvertToComparableSemVer(imageVersion)
-		if err != nil {
-			zlog.Warn().Err(err).Msgf("Failed to convert image version to semantic version: %s", imageVersion)
-			continue // Skip this OS if the version is invalid
+		if imageVersion == "" {
+			zlog.Warn().Msgf("OS resource missing image version: %s", os.GetResourceId())
+			continue // Skip OS resources without a version
 		}
-		currentVersion, err := semver.NewVersion(imageVerToSemVer)
-		if err != nil {
-			zlog.Warn().Err(err).Msgf("Failed to parse semantic version: %s", imageVerToSemVer)
-			continue // Skip this OS if the version is invalid
-		}
-
-		// If this is the first valid version we've seen, or if it's higher than our current latest
-		if latestVersion == nil || currentVersion.GreaterThan(latestVersion) {
+		if latestOS == nil || utils.CompareImageVersions(imageVersion, latestImageVersion) {
 			latestOS = os
-			latestVersion = currentVersion
+			latestImageVersion = imageVersion
 		}
 	}
 
@@ -393,7 +392,7 @@ func GetLatestImmutableOSByProfile(
 	}
 
 	zlog.Debug().Msgf("Found OS resource with resourceID: %s, version: %s",
-		latestOS.GetResourceId(), latestVersion.String())
+		latestOS.GetResourceId(), latestImageVersion)
 
 	return latestOS, nil
 }
