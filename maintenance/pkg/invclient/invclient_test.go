@@ -295,8 +295,11 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
-		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678",
-			mm_status.UpdateStatusUpToDate, "", newOSRes.GetResourceId(), "", "")
+		plan := invclient.InstanceUpdatePlan{
+			Status:  &mm_status.UpdateStatusUpToDate,
+			OsResID: newOSRes.GetResourceId(),
+		}
+		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, "inst-12345678", plan)
 		require.Error(t, err)
 		sts, _ := status.FromError(err)
 		assert.Equal(t, codes.NotFound, sts.Code())
@@ -304,11 +307,13 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+
 	t.Run("UpdateInstStatusNotCurrentOS", func(t *testing.T) {
 		timeBeforeUpdate := time.Now().Unix()
-		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusInProgress, "", "", "", "")
-
+		plan := invclient.InstanceUpdatePlan{
+			Status: &mm_status.UpdateStatusInProgress,
+		}
+		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -326,8 +331,12 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		beforeUpdateInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
 		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetOs().GetSha256())
-		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "", "")
+		plan := invclient.InstanceUpdatePlan{
+			Status:  &mm_status.UpdateStatusDone,
+			Detail:  "some update status detail",
+			OsResID: newOSRes.GetResourceId(),
+		}
+		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
@@ -340,12 +349,16 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 
 	t.Run("UpdateUpdateStatusToRunning", func(t *testing.T) {
 		// initial setup of instance status to running and update status to unknown
-		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusUnknown, "some update status detail", newOSRes.GetResourceId(), "", "")
+		plan := invclient.InstanceUpdatePlan{
+			Status:  &mm_status.UpdateStatusUnknown,
+			Detail:  "some update status detail",
+			OsResID: newOSRes.GetResourceId(),
+		}
+		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
 		require.NoError(t, err)
-		// setup only the update status as instance status is already set to running
-		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId,
-			mm_status.UpdateStatusDone, "some update status detail", newOSRes.GetResourceId(), "", "")
+		// update only the update status (instance status already set)
+		plan.Status = &mm_status.UpdateStatusDone
+		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
 		require.NoError(t, err)
 		updatedInst, err := client.Get(ctx, mm_testing.Tenant1, inst.ResourceId)
 		require.NoError(t, err)
