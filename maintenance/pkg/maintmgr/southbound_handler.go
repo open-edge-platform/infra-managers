@@ -51,7 +51,7 @@ func updateInstanceInInv(
 		newUpdateStatusDetail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
 			newInstUpStatus, mmUpStatus, instRes.GetCurrentOs().GetOsType())
 
-		newOSResID, err := GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
+		newOSResID, err = GetNewOSResourceIDIfNeeded(ctx, client, tenantID, mmUpStatus, instRes)
 		if err != nil {
 			// Return and continue in case of errors
 			zlog.InfraSec().Warn().Err(err).Msgf("Failed to get new OS Resource")
