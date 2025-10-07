@@ -127,7 +127,7 @@ func buildInstanceUpdatePlan(
 	return update, nil
 }
 
-func updateInstanceInInv(
+func updateInventory(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
 	tenantID string,
@@ -171,6 +171,9 @@ func updateInstanceInInv(
 		"Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
 		update.Status, update.Detail, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
 	)
+
+	// Create or update OSUpdateRun resource
+	handleOSUpdateRun(ctx, invMgrCli.InvClient, tenantID, mmUpStatus, instRes)
 }
 
 func getAvailableUpdateOS(
@@ -302,7 +305,7 @@ func handleOSUpdateRun(
 	newStatus := mmUpStatus.StatusType.String()
 	zlog.Debug().Msgf("Handle OSUpdateRun")
 
-	// Map pb.UpdateStatus -> local status
+	// Map pb.UpdateStatus to local status
 	targetStatuses := map[pb.UpdateStatus_StatusType]string{
 		pb.UpdateStatus_STATUS_TYPE_DOWNLOADING: status.StatusDownloading,
 		pb.UpdateStatus_STATUS_TYPE_DOWNLOADED:  status.StatusDownloaded,
@@ -317,13 +320,13 @@ func handleOSUpdateRun(
 		return
 	}
 
-	runRes, err := getLatestOSUpdateRunPerIns(ctx, client, tenantID, instRes)
+	runRes, err := getLatestUncompletedOSUpdateRunPerIns(ctx, client, tenantID, instRes)
 	if err != nil {
 		zlog.InfraSec().Warn().Err(err).Msgf("OSUpdateRun not found for instanceID: %s", instanceID)
 		runRes = nil
 	}
 
-	// If no run exists, always create
+	// If no uncompleted run exists, always create a new one
 	if runRes == nil {
 		zlog.Debug().
 			Msgf("Creating new OSUpdateRun (no existing run found), instanceID: %s, update status: %s", instanceID, newStatus)
@@ -349,7 +352,7 @@ func handleOSUpdateRun(
 	}
 }
 
-func getLatestOSUpdateRunPerIns(ctx context.Context, client inv_client.TenantAwareInventoryClient,
+func getLatestUncompletedOSUpdateRunPerIns(ctx context.Context, client inv_client.TenantAwareInventoryClient,
 	tenantID string, instRes *computev1.InstanceResource,
 ) (*computev1.OSUpdateRunResource, error) {
 	instID := instRes.GetResourceId()
