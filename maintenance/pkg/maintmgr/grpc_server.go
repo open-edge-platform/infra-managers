@@ -184,17 +184,23 @@ func populateImmutableUpdateDetails(
 	policy *computev1.OSUpdatePolicyResource,
 	tenantID, profileName, guid string,
 ) error {
-	osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return err
-	}
-	zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+	resp.UpdateSource.KernelCommand = policy.GetUpdateKernelCommand()
+	// If KernelCommand is set in the OSUpdatePolicy, skip fetching the OS resource.
+	// As we will not update the OS in this case.
+	if resp.UpdateSource.KernelCommand == "" {
 
-	resp.OsProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
-		return err
+		osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
+		if err != nil {
+			zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+			return err
+		}
+		zlog.Debug().Msgf("OS resource from Instance backlink: tenantID=%s, OSResource=%v", tenantID, osRes)
+
+		resp.OsProfileUpdateSource, err = maintgmr_util.PopulateOsProfileUpdateSource(osRes)
+		if err != nil {
+			zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
+			return err
+		}
 	}
 	return nil
 }
