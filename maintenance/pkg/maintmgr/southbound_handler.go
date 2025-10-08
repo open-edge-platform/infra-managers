@@ -94,18 +94,16 @@ func buildInstanceUpdatePlan(
 		update invclient.InstanceUpdatePlan
 	)
 
-	// Compute status & whether we need to update it.
+	// Compute update status and whether we need to update it.
 	update.Status, update.Needed = maintgmr_util.GetUpdatedUpdateStatusIfNeeded(
 		mmUpStatus, instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus(),
 	)
 
-	// Only set update.Detail when status update is needed.
+ 	// Only set update detail, OS and CVEs when status update is needed.
 	if update.Needed {
 		update.Detail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
 			update.Status, mmUpStatus, instRes.GetCurrentOs().GetOsType(),
 		)
-
-		// Resolve OS resource & CVEs only if needed.
 		update.OsResID, update.ExistingCVEs, err = resolveOsResAndCVEsIfNeeded(
 			ctx, client, tenantID, mmUpStatus, instRes, update.Status, update.Needed,
 		)
@@ -114,7 +112,7 @@ func buildInstanceUpdatePlan(
 		}
 	}
 
-	// Evaluate available updates across OS types.
+	// Evaluate available updates for mutable/immutable OS.
 	var osAvailNeeded bool
 	update.OsUpdateAvailable, osAvailNeeded, err = evalOsUpdateAvailable(
 		ctx, client, tenantID, instRes, mmUpStatus,
