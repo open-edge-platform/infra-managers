@@ -597,6 +597,17 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		expUpdateResponse,
 	)
 
+	// FAILED - should neither update the existing OsUpdateRun nor create a new one
+	// because the previous status is already FAILED.
+	RunPUAUpdateAndAssert(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_FAILED,
+		mm_status.UpdateStatusFailed,
+		expUpdateResponse,
+	)
+
 	// Delete the OsUpdateRun resources created in previous step
 	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
 	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
@@ -737,7 +748,7 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		expUpdateResponse,
 	)
 
-	// Status UPDATED updates the latest OsUpdateRun
+	// Status FAILED updates the latest OsUpdateRun
 	RunPUAUpdateAndTestOsUpRun(
 		t,
 		mm_testing.Tenant1,
@@ -746,6 +757,18 @@ func TestServer_HandleUpdateRunDuringEdgeNodeUpdate(t *testing.T) {
 		mm_status.UpdateStatusFailed,
 		expUpdateResponse,
 	)
+
+	// FAILED - should neither update the existing OsUpdateRun nor create a new one
+	// because the previous status is already FAILED.
+	RunPUAUpdateAndTestOsUpRun(
+		t,
+		mm_testing.Tenant1,
+		host, inst,
+		pb.UpdateStatus_STATUS_TYPE_FAILED,
+		mm_status.UpdateStatusFailed,
+		expUpdateResponse,
+	)
+
 	// Delete the OsUpdateRun resources created in previous step
 	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
 	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
