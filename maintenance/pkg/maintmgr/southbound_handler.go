@@ -99,7 +99,7 @@ func buildInstanceUpdatePlan(
 		mmUpStatus, instRes.GetUpdateStatusIndicator(), instRes.GetUpdateStatus(),
 	)
 
- 	// Only set update detail, OS and CVEs when status update is needed.
+	// Only set update detail, OS and CVEs when status update is needed.
 	if update.Needed {
 		update.Detail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
 			update.Status, mmUpStatus, instRes.GetCurrentOs().GetOsType(),
