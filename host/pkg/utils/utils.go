@@ -39,9 +39,10 @@ var mapNodeStatusToHostStatus = map[pb.HostStatus_HostStatus]inv_status.Resource
 
 var mapNodeStatusToInstanceStatus = map[pb.InstanceStatus]inv_status.ResourceStatus{
 	pb.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED: hrm_status.InstanceStatusEmpty,
-	pb.InstanceStatus_INSTANCE_STATUS_BOOTING:     hrm_status.InstanceStatusRunning, // Map booting to running as it's a transient state
-	pb.InstanceStatus_INSTANCE_STATUS_RUNNING:     hrm_status.InstanceStatusRunning,
-	pb.InstanceStatus_INSTANCE_STATUS_ERROR:       hrm_status.InstanceStatusError,
+	// Map booting to running as it's a transient state
+	pb.InstanceStatus_INSTANCE_STATUS_BOOTING: hrm_status.InstanceStatusRunning,
+	pb.InstanceStatus_INSTANCE_STATUS_RUNNING: hrm_status.InstanceStatusRunning,
+	pb.InstanceStatus_INSTANCE_STATUS_ERROR:   hrm_status.InstanceStatusError,
 	// Other legacy instance statuses are not mapped to modern "instance status", because they are
 	// handled by other modern status (e.g., update_status).
 }
