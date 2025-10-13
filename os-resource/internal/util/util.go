@@ -103,6 +103,7 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 		OsProvider:      osProvider,
 		PlatformBundle:  platformBundle,
 		Description:     osProfile.Spec.Description,
+		TlsCaCert:       osProfile.Spec.TLSCaCert,
 	}, nil
 }
 
