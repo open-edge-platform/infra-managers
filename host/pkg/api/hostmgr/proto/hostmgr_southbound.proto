@@ -407,6 +407,7 @@ enum InstanceStatus {
   INSTANCE_STATUS_ERROR = 7;
   INSTANCE_STATUS_UPDATING = 9;
   INSTANCE_STATUS_UPDATE_FAILED = 10;
+  INSTANCE_STATUS_INITIALIZING = 11;
 }
 
 message UpdateInstanceStateStatusByHostGUIDRequest {
