@@ -239,7 +239,7 @@ func (c *InventoryClient) GetProviderSingularByName(
 	return resources[0].GetProvider(), nil
 }
 
-func (c *InventoryClient) UpdateInstanceDesiredOS(
+/*func (c *InventoryClient) UpdateInstanceDesiredOS(
 	ctx context.Context, tenantID, resourceID, desiredOsResID string,
 ) error {
 	fm := &fieldmaskpb.FieldMask{
@@ -260,7 +260,7 @@ func (c *InventoryClient) UpdateInstanceDesiredOS(
 
 	_, err := c.Client.Update(ctx, tenantID, resourceID, fm, res)
 	return err
-}
+}*/
 
 func (c *InventoryClient) UpdateTenantOSWatcher(
 	ctx context.Context,

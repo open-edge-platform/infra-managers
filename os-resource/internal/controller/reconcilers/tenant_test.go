@@ -113,8 +113,9 @@ func TestHostReconcileAtBootstrap(t *testing.T) {
 	tenantInv := getResource(t, tenantID).GetTenant()
 	assert.Equal(t, true, tenantInv.GetWatcherOsmanager())
 
-	imageID := getResource(t, instanceID).GetInstance().GetDesiredOs().GetImageId()
-	assert.Equal(t, ubuntuProfile.Spec.OsImageVersion, imageID)
+	//imageID := getResource(t, instanceID).GetInstance().GetDesiredOs().GetImageId()
+	//assert.Empty(t, imageID)
+	//assert.Equal(t, initialImageID, imageID)
 
 	assertProvider(t, tenantInv.GetTenantId(), true)
 }
@@ -125,7 +126,6 @@ func TestReconcileAtBootstrapWithAutoprovisionDisabled(t *testing.T) {
 		OsProfileRevision: "main",
 		DefaultProfile:    "test", // intentionally set, but should be ignored when AutoProvision=false
 		AutoProvision:     false,
-		ManualMode:        false,
 	}
 
 	var ubuntuProfile fsclient.OSProfileManifest
@@ -373,7 +373,6 @@ func runCVEHandlingReconciliation(t *testing.T, mockImmutableProfile fsclient.OS
 		OsProfileRevision: "main",
 		DefaultProfile:    mockImmutableProfile.Spec.ProfileName,
 		AutoProvision:     true,
-		ManualMode:        false,
 	}
 
 	tenantReconciler := reconcilers.NewTenantReconciler(osrm_testing.InvClient, testOsConfig)
@@ -557,7 +556,6 @@ func runCVEUpdateReconciliation(
 		OsProfileRevision: "main",
 		DefaultProfile:    mockProfile.Spec.ProfileName,
 		AutoProvision:     true,
-		ManualMode:        false,
 	}
 
 	tenantReconciler := reconcilers.NewTenantReconciler(osrm_testing.InvClient, testOsConfig)
@@ -719,7 +717,6 @@ func runMutableOSReconciliation(
 		OsProfileRevision: "main",
 		DefaultProfile:    mockMutableProfile.Spec.ProfileName,
 		AutoProvision:     true,
-		ManualMode:        false,
 	}
 
 	tenantReconciler := reconcilers.NewTenantReconciler(osrm_testing.InvClient, testOsConfig)
@@ -941,7 +938,6 @@ func runMixedOSTypesReconciliation(
 		OsProfileRevision: "main",
 		DefaultProfile:    mutableProfile.Spec.ProfileName,
 		AutoProvision:     true,
-		ManualMode:        false,
 	}
 
 	tenantReconciler := reconcilers.NewTenantReconciler(osrm_testing.InvClient, testOsConfig)

@@ -5,7 +5,6 @@ package reconcilers
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
@@ -263,10 +262,10 @@ func (tr *TenantReconciler) reconcileTenant(
 			return err
 		}
 
-		err = tr.updateInstancesIfNeeded(ctx, tenant.GetTenantId(), osProfiles)
+		/*err = tr.updateInstancesIfNeeded(ctx, tenant.GetTenantId(), osProfiles)
 		if err != nil {
 			return err
-		}
+		}*/
 	}
 
 	if tenant.GetDesiredState() == tenant_v1.TenantState_TENANT_STATE_DELETED {
@@ -280,7 +279,7 @@ func (tr *TenantReconciler) reconcileTenant(
 	return nil
 }
 
-func (tr *TenantReconciler) updateInstancesIfNeeded(
+/*func (tr *TenantReconciler) updateInstancesIfNeeded(
 	ctx context.Context, tenantID string, latestOSProfiles map[string][]*fsclient.OSProfileManifest,
 ) error {
 	if tr.osConfig.ManualMode {
@@ -319,4 +318,4 @@ func (tr *TenantReconciler) updateInstancesIfNeeded(
 	}
 
 	return nil
-}
+}*/

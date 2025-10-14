@@ -73,7 +73,7 @@ var ExampleOsConfig = common.OsConfig{
 	OsProfileRevision: "main",
 	DefaultProfile:    "ubuntu-22.04-lts-generic",
 	AutoProvision:     true,
-	ManualMode:        false,
+	//ManualMode:        false,
 }
 
 type MockArtifactService struct {
