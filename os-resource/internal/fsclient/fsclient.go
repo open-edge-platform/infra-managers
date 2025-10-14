@@ -57,6 +57,7 @@ type OSProfileManifest struct {
 		SecurityFeature      string                 `yaml:"securityFeature"`
 		PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 		Description          string                 `yaml:"description"`
+		TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 	} `yaml:"spec"`
 }
 
