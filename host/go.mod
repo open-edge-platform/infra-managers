@@ -9,7 +9,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.30.10
-	github.com/open-edge-platform/infra-managers/maintenance v1.23.4
+	github.com/open-edge-platform/infra-managers/maintenance v1.23.5
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.7
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1

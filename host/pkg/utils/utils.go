@@ -37,9 +37,10 @@ var mapNodeStatusToHostStatus = map[pb.HostStatus_HostStatus]inv_status.Resource
 }
 
 var mapNodeStatusToInstanceStatus = map[pb.InstanceStatus]inv_status.ResourceStatus{
-	pb.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED: hrm_status.InstanceStatusEmpty,
-	pb.InstanceStatus_INSTANCE_STATUS_RUNNING:     hrm_status.InstanceStatusRunning,
-	pb.InstanceStatus_INSTANCE_STATUS_ERROR:       hrm_status.InstanceStatusError,
+	pb.InstanceStatus_INSTANCE_STATUS_UNSPECIFIED:  hrm_status.InstanceStatusEmpty,
+	pb.InstanceStatus_INSTANCE_STATUS_INITIALIZING: hrm_status.InstanceStatusInitializing,
+	pb.InstanceStatus_INSTANCE_STATUS_RUNNING:      hrm_status.InstanceStatusRunning,
+	pb.InstanceStatus_INSTANCE_STATUS_ERROR:        hrm_status.InstanceStatusError,
 	// Other legacy instance statuses are not mapped to modern "instance status", because they are
 	// handled by other modern status (e.g., update_status).
 }
@@ -70,6 +71,7 @@ var instanceStatusToHostStatus = map[pb.InstanceStatus]pb.HostStatus_HostStatus{
 	pb.InstanceStatus_INSTANCE_STATUS_ERROR:            pb.HostStatus_ERROR,
 	pb.InstanceStatus_INSTANCE_STATUS_UPDATING:         pb.HostStatus_UPDATING,
 	pb.InstanceStatus_INSTANCE_STATUS_UPDATE_FAILED:    pb.HostStatus_UPDATEFAILED,
+	pb.InstanceStatus_INSTANCE_STATUS_INITIALIZING:     pb.HostStatus_RUNNING,
 }
 
 var zlog = logging.GetLogger("HostMgrUtils")
