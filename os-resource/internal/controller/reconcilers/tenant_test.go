@@ -99,23 +99,11 @@ func TestHostReconcileAtBootstrap(t *testing.T) {
 	})
 	tenantID := tenant.GetResourceId()
 
-	osResource := inv_testing.CreateOsWithArgs(t, "", "random", osrm_testing.ExampleOsConfig.DefaultProfile,
-		osv1.SecurityFeature_SECURITY_FEATURE_UNSPECIFIED, osv1.OsType_OS_TYPE_MUTABLE)
-	instance := inv_testing.CreateInstance(t, nil, osResource)
-	instanceID := instance.GetResourceId()
-
-	initialImageID := getResource(t, instanceID).GetInstance().GetDesiredOs().GetImageId()
-	assert.NotEqual(t, ubuntuProfile.Spec.OsImageVersion, initialImageID)
-
 	runReconcilationFunc(t, tenantController)
 	defer cleanupProvider(t, tenant.GetTenantId())
 
 	tenantInv := getResource(t, tenantID).GetTenant()
 	assert.Equal(t, true, tenantInv.GetWatcherOsmanager())
-
-	//imageID := getResource(t, instanceID).GetInstance().GetDesiredOs().GetImageId()
-	//assert.Empty(t, imageID)
-	//assert.Equal(t, initialImageID, imageID)
 
 	assertProvider(t, tenantInv.GetTenantId(), true)
 }

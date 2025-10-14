@@ -10,11 +10,10 @@ import (
 )
 
 type OsConfig struct {
-	EnabledProfiles   []string
-	OsProfileRevision string
-	DefaultProfile    string
-	AutoProvision     bool
-	//ManualMode              bool
+	EnabledProfiles         []string
+	OsProfileRevision       string
+	DefaultProfile          string
+	AutoProvision           bool
 	OSSecurityFeatureEnable bool
 }
 

@@ -261,11 +261,6 @@ func (tr *TenantReconciler) reconcileTenant(
 		if err != nil {
 			return err
 		}
-
-		/*err = tr.updateInstancesIfNeeded(ctx, tenant.GetTenantId(), osProfiles)
-		if err != nil {
-			return err
-		}*/
 	}
 
 	if tenant.GetDesiredState() == tenant_v1.TenantState_TENANT_STATE_DELETED {
@@ -278,44 +273,3 @@ func (tr *TenantReconciler) reconcileTenant(
 
 	return nil
 }
-
-/*func (tr *TenantReconciler) updateInstancesIfNeeded(
-	ctx context.Context, tenantID string, latestOSProfiles map[string][]*fsclient.OSProfileManifest,
-) error {
-	if tr.osConfig.ManualMode {
-		zlogTenant.Debug().Msgf("ManualMode set to true, Instances will not be auto-updated.")
-		return nil
-	}
-
-	profileNameToOSResourceID := make(map[string]string)
-	for _, enabledProfile := range latestOSProfiles {
-		if len(enabledProfile) == 0 {
-			return errors.New("missing os profile for the enabled profile")
-		}
-		osProfile := enabledProfile[len(enabledProfile)-1]
-		id, err := tr.invClient.FindOSResourceID(ctx, tenantID, osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
-		if err != nil {
-			return err
-		}
-		profileNameToOSResourceID[osProfile.Spec.ProfileName] = id
-	}
-
-	instances, err := tr.invClient.ListInstancesForTenant(ctx, tenantID)
-	if err != nil {
-		return err
-	}
-
-	for _, i := range instances {
-		profileName := i.DesiredOs.GetProfileName()
-
-		if i.DesiredOs.GetResourceId() != profileNameToOSResourceID[profileName] {
-			err = tr.invClient.UpdateInstanceDesiredOS(ctx, tenantID, i.GetResourceId(),
-				profileNameToOSResourceID[profileName])
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}*/

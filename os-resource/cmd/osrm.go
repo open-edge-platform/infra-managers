@@ -38,7 +38,6 @@ var (
 	tlsCertPath = flag.String(client.TLSCertPath, "", client.TLSCertPathDescription)
 	tlsKeyPath  = flag.String(client.TLSKeyPath, "", client.TLSKeyPathDescription)
 
-	//manualMode        = flag.Bool(common.ManualMode, true, common.ManualModeDescription)
 	osProfileRevision = flag.String(common.OsProfileRevision, "", common.OsProfileRevisionDescription)
 	enabledProfiles   = flag.String(common.EnabledProfiles, "", common.EnabledProfilesDescription)
 	defaultProfile    = flag.String(common.DefaultProfile, "", common.DefaultProfileDescription)
