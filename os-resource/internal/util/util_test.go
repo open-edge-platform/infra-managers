@@ -135,6 +135,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "{\"artifactName\":\"artifact\"}",
 				Description:     "test-description",
+				TlsCaCert:       "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==",
 			},
 			wantErr: false,
 		},
