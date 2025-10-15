@@ -239,29 +239,6 @@ func (c *InventoryClient) GetProviderSingularByName(
 	return resources[0].GetProvider(), nil
 }
 
-/*func (c *InventoryClient) UpdateInstanceDesiredOS(
-	ctx context.Context, tenantID, resourceID, desiredOsResID string,
-) error {
-	fm := &fieldmaskpb.FieldMask{
-		Paths: []string{
-			computev1.InstanceResourceEdgeDesiredOs,
-		},
-	}
-
-	res := &inv_v1.Resource{
-		Resource: &inv_v1.Resource_Instance{
-			Instance: &computev1.InstanceResource{
-				DesiredOs: &osv1.OperatingSystemResource{
-					ResourceId: desiredOsResID,
-				},
-			},
-		},
-	}
-
-	_, err := c.Client.Update(ctx, tenantID, resourceID, fm, res)
-	return err
-}*/
-
 func (c *InventoryClient) UpdateTenantOSWatcher(
 	ctx context.Context,
 	tenantID string,
