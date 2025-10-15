@@ -29,6 +29,8 @@ spec:
   osImageUrl: https://cloud-images.ubuntu.com/releases/22.04/release-20241217/ubuntu-22.04-server-cloudimg-amd64.img
   osImageVersion: 22.04.5
   osImageSha256: 0d8345a343c2547e55ac815342e6cb4a593aa5556872651eb47e6856a2bb0cdd
+  osExistingCvesURL: https://security-metadata.canonical.com/oval/com.ubuntu.jammy.cve.oval.xml.bz2
+  osFixedCvesURL: https://security-metadata.canonical.com/oval/com.ubuntu.jammy.usn.oval.xml.bz2
   securityFeature: SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
   platformBundle:
     artifact: edge-orch/edge-node/file/profile-scripts/file/ubuntu-22.04-lts-generic
@@ -49,6 +51,8 @@ spec:
   osImageVersion: 3.0.20250324.1008
   osImageSha256: 89d691eded21e158e94cf52235106d8eb6c17f81f37b1a79c70514776744bc74
   osPackageManifestURL: files-edge-orch/repository/microvisor/non_rt/edge-readonly-3.0.20250324.1008_pkg_manifest.json
+  osExistingCvesURL: files-edge-orch/microvisor/iso/EdgeMicrovisorToolkit-3.1_cve.json
+  osFixedCvesURL:
   securityFeature: SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION
   platformBundle:
 `

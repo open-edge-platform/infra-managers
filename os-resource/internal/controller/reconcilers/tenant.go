@@ -80,24 +80,22 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 	// FIXME: ITEP-22977 remove this check when enforcing JSON-encoded string for `installedPackages`
 	// retrieve package manifest and existing CVEs JSON contnet only for IMMUTABLE OS
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
-		var err error
 		osRes.InstalledPackages, err = fsclient.GetPackageManifest(ctx, osProfile.Spec.OsPackageManifestURL)
 		if err != nil {
 			return "", err
 		}
-		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
-		if err != nil {
-			return "", err
-		}
-		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
-		osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.OsFixedCvesURL)
-		if err != nil {
-			// Fixed CVEs list is not getting published as of now, but it will be supported in future.
-			// SO for now, when there is error in fetching fixed CVEs, do not return error, instead log it.
-			zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
-		}
-		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 	}
+
+	osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
+	if err != nil {
+		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
+	}
+	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+	osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
+	if err != nil {
+		zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
+	}
+	osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 
 	return tr.invClient.CreateOSResource(ctx, tenantID, osRes)
 }
@@ -105,33 +103,29 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
 ) error {
-	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
-		var err error
-		var existingCVEs string
+	var err error
+	var existingCVEs string
 
-		existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.OsExistingCvesURL)
+	existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
+	if err != nil {
+		return err
+	}
+
+	// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
+	if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
+		zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
+			tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
+		osRes.ExistingCves = existingCVEs
+
+		err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
 		if err != nil {
 			return err
 		}
-
-		// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
-		if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
-			zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
-				tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
-			osRes.ExistingCves = existingCVEs
-
-			err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
-			if err != nil {
-				return err
-			}
-		} else {
-			zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
-				tenantID, osProfile.Spec.ProfileName)
-		}
 	} else {
-		// For mutable OS, we do not update the existing OS resource.
-		zlogTenant.Debug().Msgf("Skipping update for mutable OS profile %s", osProfile.Spec.ProfileName)
+		zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
+			tenantID, osProfile.Spec.ProfileName)
 	}
+
 	return nil
 }
 
@@ -236,6 +230,8 @@ func (tr *TenantReconciler) reconcileTenant(
 					err = tr.updateOSResourceFromOSProfile(ctx, tenant.GetTenantId(),
 						mapProfileIDToOSResource[profileID], osProfile)
 					if err != nil {
+						zlogTenant.Warn().Err(err).Msgf(
+							"Failed to update OS resource from profile: %s", osProfile.Spec.ProfileName)
 						return err
 					}
 
@@ -248,6 +244,8 @@ func (tr *TenantReconciler) reconcileTenant(
 				// OS resource for given OS profile doesn't exist, create it
 				_, err = tr.createNewOSResourceFromOSProfile(ctx, tenant.GetTenantId(), osProfile)
 				if err != nil {
+					zlogTenant.Warn().Err(err).Msgf(
+						"Failed to create new OS resource from profile: %s", osProfile.Spec.ProfileName)
 					return err
 				}
 			}

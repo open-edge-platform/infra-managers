@@ -4,13 +4,16 @@
 package fsclient
 
 import (
+	"compress/bzip2"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -20,8 +23,13 @@ import (
 )
 
 const (
-	semverParts    = 3
-	minSemverParts = 2
+	semverParts             = 3
+	minSemverParts          = 2
+	cveCountLimit           = 1000
+	ovalDefDescriptionParts = 2
+	cveTypeExisting         = "existing"
+	cveTypeFixed            = "fixed"
+	cveDownloadTimeout      = time.Minute // 1 minute timeout for CVE downloads
 )
 
 var (
@@ -77,6 +85,67 @@ type FixedCVEs []struct {
 	CveID            *string   `json:"cve_id"`
 	Priority         *string   `json:"priority"`
 	AffectedPackages []*string `json:"affected_packages"`
+}
+
+// Define the structure based on the OVAL XML format.
+type OvalDefinitions struct {
+	XMLName     xml.Name     `xml:"oval_definitions"` //nolint:tagliatelle // OVAL XML standard
+	Definitions []Definition `xml:"definitions>definition"`
+}
+type Definition struct {
+	ID          string      `xml:"id,attr"`
+	Class       string      `xml:"class,attr"`
+	Title       string      `xml:"metadata>title"`
+	Description string      `xml:"metadata>description"`
+	Reference   []Reference `xml:"metadata>reference"`
+	Affected    []Affected  `xml:"metadata>affected"`
+	Advisory    struct {
+		Issued struct {
+			Date string `xml:"date,attr"`
+		} `xml:"issued"`
+	} `xml:"metadata>advisory"`
+}
+type Reference struct {
+	Source string `xml:"source,attr"`
+	RefID  string `xml:"ref_id,attr"`  //nolint:tagliatelle // OVAL XML standard
+	RefURL string `xml:"ref_url,attr"` //nolint:tagliatelle // OVAL XML standard
+}
+type Affected struct {
+	Family   string `xml:"family,attr"`
+	Platform string `xml:"platform"`
+}
+type CVEInfo struct {
+	CVEID            string   `json:"cve_id"`
+	Priority         string   `json:"priority"`
+	AffectedPackages []string `json:"affected_packages"`
+}
+
+func extractPriority(title string) string {
+	title = strings.ToLower(title)
+	for _, p := range []string{"critical", "high", "medium", "low", "negligible"} {
+		if strings.Contains(title, p) {
+			return p
+		}
+	}
+	return "unknown"
+}
+
+func extractPackages(description string) []string {
+	var pkgs []string
+	lines := strings.Split(description, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, " - ") && !strings.HasPrefix(line, "Run ") {
+			parts := strings.Split(line, " - ")
+			if len(parts) == ovalDefDescriptionParts {
+				pkg := strings.Fields(parts[0])
+				if len(pkg) > 0 {
+					pkgs = append(pkgs, pkg[0])
+				}
+			}
+		}
+	}
+	return pkgs
 }
 
 func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string][]*OSProfileManifest, error) {
@@ -215,15 +284,12 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 }
 
 // getCVEsFromURL is a helper function to download and validate CVE data.
-func getCVEsFromURL(ctx context.Context, cveURL, cveType string) (string, error) {
-	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
-	if rsProxyAddress == "" {
-		invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
-		zlog.Err(invErr).Msg("")
-		return "", invErr
-	}
+func getCVEsFromURL(ctx context.Context, osType, cveURL, cveType string) (string, error) {
+	// Create a new context with extended timeout for CVE downloads
+	cveCtx, cancel := context.WithTimeout(ctx, cveDownloadTimeout)
+	defer cancel()
 
-	respBody, err := downloadCVEData(ctx, rsProxyAddress, cveURL, cveType)
+	respBody, err := downloadCVEData(cveCtx, osType, cveURL, cveType)
 	if err != nil {
 		return "", err
 	}
@@ -236,35 +302,171 @@ func getCVEsFromURL(ctx context.Context, cveURL, cveType string) (string, error)
 	cvesList := string(respBody)
 	cvesList = strings.ReplaceAll(cvesList, "\n", "")
 	cvesList = strings.ReplaceAll(cvesList, " ", "")
+
 	return cvesList, nil
 }
 
 // downloadCVEData downloads CVE data from the given URL.
-func downloadCVEData(ctx context.Context, rsProxyAddress, cveURL, cveType string) ([]byte, error) {
-	url := "http://" + rsProxyAddress + cveURL
-	zlog.InfraSec().Info().Msgf("Downloading %s CVEs list from URL: %s", cveType, url)
+func downloadCVEData(ctx context.Context, osType, cveURL, cveType string) ([]byte, error) {
+	switch osType {
+	case "OS_TYPE_MUTABLE":
+		return downloadMutableCVEData(ctx, cveURL, cveType)
+	case "OS_TYPE_IMMUTABLE":
+		rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
+		if rsProxyAddress == "" {
+			invErr := inv_errors.Errorf("%s env variable is not set", EnvNameRsFilesProxyAddress)
+			zlog.Err(invErr).Msg("")
+			return nil, invErr
+		}
+		return downloadImmutableCVEData(ctx, rsProxyAddress, cveURL, cveType)
+	default:
+		invErr := inv_errors.Errorf("unknown osType: %s", osType)
+		zlog.Err(invErr).Msg("Missing URL to download CVE data")
+		return nil, invErr
+	}
+}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+// downloadMutableCVEData handles downloading and parsing CVE data for mutable OS types.
+func downloadMutableCVEData(ctx context.Context, cveURL, cveType string) ([]byte, error) {
+	data, err := downloadAndDecompressCVEData(ctx, cveURL, cveType)
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := parseCVEData(data, cveType)
+	if err != nil {
+		return nil, err
+	}
+
+	return formatCVEResults(results)
+}
+
+func downloadAndDecompressCVEData(ctx context.Context, cveURL, cveType string) ([]byte, error) {
+	zlog.InfraSec().Info().Msgf("Downloading %s CVEs list from URL: %s", cveType, cveURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cveURL, http.NoBody)
 	if err != nil {
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
 		return nil, err
 	}
-
-	// Perform the HTTP GET request
 	resp, err := client.Do(req)
 	if err != nil {
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+	bz2Reader := bzip2.NewReader(resp.Body)
+	data, readErr := io.ReadAll(bz2Reader)
+	if readErr != nil {
+		zlog.InfraSec().Error().Err(readErr).
+			Msgf("Error reading decompressed data for downloading %s CVEs list: %v", cveType, readErr)
+		return nil, readErr
+	}
+	return data, nil
+}
 
-	// Read the response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the %s CVEs list content: %v", cveType, err)
-		return nil, err
+func parseCVEData(data []byte, cveType string) ([]CVEInfo, error) {
+	var oval OvalDefinitions
+	var unmarshalErr error
+	if unmarshalErr = xml.Unmarshal(data, &oval); unmarshalErr != nil {
+		zlog.InfraSec().Error().Err(unmarshalErr).
+			Msgf("Error parsing XML for downloading %s CVEs list: %v", cveType, unmarshalErr)
+		return nil, unmarshalErr
+	}
+	results := make([]CVEInfo, 0, len(oval.Definitions))
+	for _, def := range oval.Definitions {
+		cveID, hasUSN := extractCVEIDAndUSN(def, cveType)
+		if cveID == "" || hasUSN {
+			continue
+		}
+		priority := extractPriority(def.Title)
+		affectedPkgs := extractPackages(def.Description)
+		results = append(results, CVEInfo{
+			CVEID:            cveID,
+			Priority:         priority,
+			AffectedPackages: affectedPkgs,
+		})
+	}
+	return results, nil
+}
+
+func formatCVEResults(results []CVEInfo) ([]byte, error) {
+	if len(results) > cveCountLimit {
+		results = results[:cveCountLimit]
+	}
+	var marshalErr error
+	// Convert to the format expected by validateCVEData (with pointers)
+	validationResults := make([]struct {
+		CveID            *string   `json:"cve_id"`
+		Priority         *string   `json:"priority"`
+		AffectedPackages []*string `json:"affected_packages"`
+	}, 0, len(results))
+	for _, result := range results {
+		var affectedPkgs []*string
+		for _, pkg := range result.AffectedPackages {
+			pkgCopy := pkg
+			affectedPkgs = append(affectedPkgs, &pkgCopy)
+		}
+		validationResults = append(validationResults, struct {
+			CveID            *string   `json:"cve_id"`
+			Priority         *string   `json:"priority"`
+			AffectedPackages []*string `json:"affected_packages"`
+		}{
+			CveID:            &result.CVEID,
+			Priority:         &result.Priority,
+			AffectedPackages: affectedPkgs,
+		})
+	}
+	respBody, marshalErr := json.MarshalIndent(validationResults, "", "  ")
+	if marshalErr != nil {
+		zlog.InfraSec().Error().Err(marshalErr).
+			Msgf("Error converting to JSON for downloading CVEs list: %v", marshalErr)
+		return nil, marshalErr
 	}
 
+	return respBody, nil
+}
+
+// extractCVEIDAndUSN extracts the CVE ID and USN presence from a definition, reducing cyclomatic complexity.
+func extractCVEIDAndUSN(def Definition, cveType string) (string, bool) {
+	var cveID string
+	hasUSN := false
+	for _, ref := range def.Reference {
+		if ref.Source == "CVE" {
+			cveID = ref.RefID
+		}
+		if ref.Source == "USN" {
+			hasUSN = true
+		}
+	}
+	// For fixed CVEs (USN data), we want to include USN entries, not skip them
+	// So we return hasUSN=false to prevent skipping
+	if cveType == cveTypeFixed {
+		hasUSN = false
+	}
+	return cveID, hasUSN
+}
+
+// downloadImmutableCVEData handles downloading CVE data for immutable OS types.
+func downloadImmutableCVEData(ctx context.Context, rsProxyAddress, cveURL, cveType string) ([]byte, error) {
+	url := "http://" + rsProxyAddress + cveURL
+	zlog.InfraSec().Info().Msgf("Downloading %s CVEs list from URL: %s", cveType, url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
+		return nil, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		zlog.InfraSec().Error().Err(err).
+			Msgf("Failed to read the %s CVEs list content: %v", cveType, err)
+		return nil, err
+	}
 	return respBody, nil
 }
 
@@ -282,8 +484,7 @@ func validateCVEData(respBody []byte, cveType string) error {
 	}
 
 	// validate OS CVEs list content
-	if len(cves) == 0 || cves[0].CveID == nil || cves[0].Priority == nil ||
-		len(cves[0].AffectedPackages) == 0 || cves[0].AffectedPackages[0] == nil {
+	if len(cves) == 0 || cves[0].CveID == nil || cves[0].Priority == nil {
 		invErr := inv_errors.Errorf("missing mandatory fields in %s CVEs list content returned from Release Service", cveType)
 		zlog.InfraSec().Error().Err(invErr).Msgf("OS %s CVEs list sanity failed", cveType)
 		return invErr
@@ -292,12 +493,12 @@ func validateCVEData(respBody []byte, cveType string) error {
 	return nil
 }
 
-func GetExistingCVEs(ctx context.Context, existingCVEsURL string) (string, error) {
-	return getCVEsFromURL(ctx, existingCVEsURL, "existing")
+func GetExistingCVEs(ctx context.Context, osType, existingCVEsURL string) (string, error) {
+	return getCVEsFromURL(ctx, osType, existingCVEsURL, cveTypeExisting)
 }
 
-func GetFixedCVEs(ctx context.Context, fixedCVEsURL string) (string, error) {
-	return getCVEsFromURL(ctx, fixedCVEsURL, "fixed")
+func GetFixedCVEs(ctx context.Context, osType, fixedCVEsURL string) (string, error) {
+	return getCVEsFromURL(ctx, osType, fixedCVEsURL, cveTypeFixed)
 }
 
 // ParseSemver parses a semver version string (e.g., "1.2.3") and returns major, minor, and patch as integers.

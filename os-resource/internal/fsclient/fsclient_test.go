@@ -341,9 +341,9 @@ func Test_GetCVEs_Success(t *testing.T) {
 			var err error
 
 			if tt.cveType == "existing" {
-				cves, err = GetExistingCVEs(context.Background(), tt.args.url)
+				cves, err = GetExistingCVEs(context.Background(), "OS_TYPE_IMMUTABLE", tt.args.url)
 			} else {
-				cves, err = GetFixedCVEs(context.Background(), tt.args.url)
+				cves, err = GetFixedCVEs(context.Background(), "OS_TYPE_IMMUTABLE", tt.args.url)
 			}
 
 			assert.NoError(t, err)
@@ -431,9 +431,9 @@ func Test_GetCVEs_Failure(t *testing.T) {
 			var err error
 
 			if tt.cveType == "existing" {
-				_, err = GetExistingCVEs(context.Background(), tt.args.url)
+				_, err = GetExistingCVEs(context.Background(), "OS_TYPE_IMMUTABLE", tt.args.url)
 			} else {
-				_, err = GetFixedCVEs(context.Background(), tt.args.url)
+				_, err = GetFixedCVEs(context.Background(), "OS_TYPE_IMMUTABLE", tt.args.url)
 			}
 
 			assert.Error(t, err)
@@ -445,11 +445,11 @@ func Test_GetCVEs_MissingEnvVar(t *testing.T) {
 	// Unset the environment variable to test error handling
 	t.Setenv(EnvNameRsFilesProxyAddress, "")
 
-	_, err := GetExistingCVEs(context.Background(), "/somepath")
+	_, err := GetExistingCVEs(context.Background(), "OS_TYPE_IMMUTABLE", "/somepath")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "env variable is not set")
 
-	_, err = GetFixedCVEs(context.Background(), "/somepath")
+	_, err = GetFixedCVEs(context.Background(), "OS_TYPE_IMMUTABLE", "/somepath")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "env variable is not set")
 }
