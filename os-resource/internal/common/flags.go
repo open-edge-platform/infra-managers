@@ -5,8 +5,6 @@ package common
 import "flag"
 
 const (
-	ManualMode                         = "manualMode"
-	ManualModeDescription              = "Flag to enable manual mode"
 	OsProfileRevision                  = "osProfileRevision"
 	OsProfileRevisionDescription       = "Specifies the release version of OS profiles in the Release Service"
 	EnabledProfiles                    = "enabledProfiles"
