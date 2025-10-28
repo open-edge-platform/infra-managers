@@ -186,7 +186,6 @@ func populateImmutableUpdateDetails(
 	// If KernelCommand is set in the OSUpdatePolicy, skip fetching the OS resource.
 	// As we will not update the OS in this case.
 	if resp.UpdateSource.KernelCommand == "" {
-
 		osRes, err := getUpdateOS(ctx, invMgrCli.InvClient, tenantID, profileName, policy)
 		if err != nil {
 			zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
