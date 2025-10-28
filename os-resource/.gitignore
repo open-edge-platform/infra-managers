@@ -22,5 +22,8 @@
 # Go workspace file
 go.work
 
-# Binary built with `go build ./cmd/osrm.go`
+# Build output directory
+out/
+
+# Binary built directly with `go build ./cmd/osrm.go` (creates in current dir)
 osrm
