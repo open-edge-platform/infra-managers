@@ -22,5 +22,8 @@
 # Go workspace file
 go.work
 
+# Binary built with Makefile (go build -o out/netmgr)
+netmgr
+
 # Binary built with `go build ./cmd/main.go`
 main
