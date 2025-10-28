@@ -20,9 +20,9 @@ The repository comprises the following components and services:
   Nodes within a site.
 - [**OS Resource manager**](os-resource/):  manages OS Resources and plan Edge Node updates, based on new OS version
   releases .
-- [**Telemetry Manager**](telemetry-manager/): manages Telemetry configuration on the different Edge Nodes.
+- [**Telemetry Manager**](telemetry/): manages Telemetry configuration on the different Edge Nodes.
 
-Read more about Edge Orchestrator in the [User Guide](https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/index.html$0).
+Read more about Edge Orchestrator in the [User Guide](https://docs.openedgeplatform.intel.com/edge-manage-docs/main/user_guide/index.html).
 
 ## Develop
 
