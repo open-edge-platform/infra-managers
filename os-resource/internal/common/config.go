@@ -14,7 +14,6 @@ type OsConfig struct {
 	OsProfileRevision       string
 	DefaultProfile          string
 	AutoProvision           bool
-	ManualMode              bool
 	OSSecurityFeatureEnable bool
 }
 
