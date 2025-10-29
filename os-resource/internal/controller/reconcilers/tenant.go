@@ -110,6 +110,7 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 	if err != nil {
 		return err
 	}
+	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
 	// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
 	if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
