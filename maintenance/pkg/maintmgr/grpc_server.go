@@ -203,6 +203,5 @@ func populateImmutableUpdateDetails(
 		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
 		return err
 	}
-
 	return nil
 }
