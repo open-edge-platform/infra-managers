@@ -43,10 +43,19 @@ const (
 )
 
 var (
-	zlog = logging.GetLogger("InvClient")
-
+	zlog             = logging.GetLogger("InvClient")
 	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
 )
+
+// InstanceUpdatePlan contains all the fields that may need updating in an Instance resource.
+type InstanceUpdatePlan struct {
+	Status            *inv_status.ResourceStatus
+	Detail            string
+	OsResID           string
+	ExistingCVEs      string
+	OsUpdateAvailable string
+	Needed            bool
+}
 
 type InvGrpcClient struct {
 	InvClient            inv_client.TenantAwareInventoryClient
@@ -222,15 +231,10 @@ func UpdateInstance(
 	c inv_client.TenantAwareInventoryClient,
 	tenantID string,
 	instanceID string,
-	updateStatus inv_status.ResourceStatus,
-	updateStatusDetail string,
-	newOSResID string,
-	newExistingCves string,
-	availableOSVersion string,
-	statusUpdateNeeded bool,
+	updatePlan InstanceUpdatePlan,
 ) error {
 	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
-		tenantID, instanceID, updateStatus, updateStatusDetail)
+		tenantID, instanceID, updatePlan.Status, updatePlan.Detail)
 
 	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
 	if err != nil {
@@ -239,34 +243,34 @@ func UpdateInstance(
 	}
 
 	instRes := &computev1.InstanceResource{
-		OsUpdateAvailable: availableOSVersion,
+		OsUpdateAvailable: updatePlan.OsUpdateAvailable,
 	}
 
 	fields := []string{
 		computev1.InstanceResourceFieldOsUpdateAvailable,
 	}
 
-	if statusUpdateNeeded {
-		instRes.UpdateStatus = updateStatus.Status
-		instRes.UpdateStatusIndicator = updateStatus.StatusIndicator
+	if updatePlan.Status != nil {
+		instRes.UpdateStatus = updatePlan.Status.Status
+		instRes.UpdateStatusIndicator = updatePlan.Status.StatusIndicator
 		instRes.UpdateStatusTimestamp = timeNow
 		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus,
 			computev1.InstanceResourceFieldUpdateStatusIndicator,
 			computev1.InstanceResourceFieldUpdateStatusTimestamp)
 	}
 
-	if updateStatusDetail != "" {
-		instRes.UpdateStatusDetail = updateStatusDetail
+	if updatePlan.Detail != "" {
+		instRes.UpdateStatusDetail = updatePlan.Detail
 		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusDetail)
 	}
 
-	if newOSResID != "" {
-		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: newOSResID}
+	if updatePlan.OsResID != "" {
+		instRes.Os = &os_v1.OperatingSystemResource{ResourceId: updatePlan.OsResID}
 		fields = append(fields, computev1.InstanceResourceEdgeOs)
 	}
 
-	if newExistingCves != "" {
-		instRes.ExistingCves = newExistingCves
+	if updatePlan.ExistingCVEs != "" {
+		instRes.ExistingCves = updatePlan.ExistingCVEs
 		fields = append(fields, computev1.InstanceResourceFieldExistingCves)
 	}
 

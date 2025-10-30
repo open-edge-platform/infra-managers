@@ -21,8 +21,9 @@ var (
 	HostStatusInvalidated  = inv_status.New("Invalidated", statusv1.StatusIndication_STATUS_INDICATION_IDLE)
 	HostStatusDeleting     = inv_status.New("Deleting", statusv1.StatusIndication_STATUS_INDICATION_IN_PROGRESS)
 
-	InstanceStatusEmpty   = inv_status.New("", statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED)
-	InstanceStatusUnknown = inv_status.New("Unknown", statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED)
-	InstanceStatusRunning = inv_status.New("Running", statusv1.StatusIndication_STATUS_INDICATION_IDLE)
-	InstanceStatusError   = inv_status.New("Error", statusv1.StatusIndication_STATUS_INDICATION_ERROR)
+	InstanceStatusEmpty        = inv_status.New("", statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED)
+	InstanceStatusUnknown      = inv_status.New("Unknown", statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED)
+	InstanceStatusRunning      = inv_status.New("Running", statusv1.StatusIndication_STATUS_INDICATION_IDLE)
+	InstanceStatusError        = inv_status.New("Error", statusv1.StatusIndication_STATUS_INDICATION_ERROR)
+	InstanceStatusInitializing = inv_status.New("Initializing", statusv1.StatusIndication_STATUS_INDICATION_IN_PROGRESS)
 )
