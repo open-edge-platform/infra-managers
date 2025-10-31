@@ -187,7 +187,7 @@ func populateImmutableUpdateDetails(
 	// If KernelCommand is set in the OSUpdatePolicy, skip fetching the OS resource
 	// as we will not update the OS in this case.
 	if resp.UpdateSource.KernelCommand != "" {
-		zlog.Debug().Msgf("Skipping fetching OS resource as KernelCommand is set in OSUpdatePolicy: tenantID=%s", tenantID)
+		zlog.Debug().Msgf("Skipping OS resource fetch as KernelCommand is set in OSUpdatePolicy: tenantID=%s", tenantID)
 		return nil
 	}
 
@@ -203,6 +203,5 @@ func populateImmutableUpdateDetails(
 		zlog.InfraSec().InfraErr(err).Msgf("PlatformUpdateStatus: tenantID=%s, UUID=%s", tenantID, guid)
 		return err
 	}
-
 	return nil
 }
