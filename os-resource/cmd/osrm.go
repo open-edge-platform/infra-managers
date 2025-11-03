@@ -38,7 +38,6 @@ var (
 	tlsCertPath = flag.String(client.TLSCertPath, "", client.TLSCertPathDescription)
 	tlsKeyPath  = flag.String(client.TLSKeyPath, "", client.TLSKeyPathDescription)
 
-	manualMode        = flag.Bool(common.ManualMode, true, common.ManualModeDescription)
 	osProfileRevision = flag.String(common.OsProfileRevision, "", common.OsProfileRevisionDescription)
 	enabledProfiles   = flag.String(common.EnabledProfiles, "", common.EnabledProfilesDescription)
 	defaultProfile    = flag.String(common.DefaultProfile, "", common.DefaultProfileDescription)
@@ -112,13 +111,6 @@ func main() {
 	// Parse flags
 	flag.Parse()
 
-	// Temporary check for testing
-	if *manualMode {
-		zlog.Info().Msg("Starting mode MANUAL")
-	} else {
-		zlog.Info().Msg("Starting mode AUTOMATIC")
-	}
-
 	// Tracing, if enabled
 	if *enableTracing {
 		cleanup := SetupTracing(*traceURL)
@@ -148,7 +140,6 @@ func main() {
 		OsProfileRevision:       *osProfileRevision,
 		DefaultProfile:          *defaultProfile,
 		AutoProvision:           *autoProvision,
-		ManualMode:              *manualMode,
 		OSSecurityFeatureEnable: *osSecurityFeatureEnable,
 	}
 
