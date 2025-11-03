@@ -48,6 +48,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -60,6 +61,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature: "SECURITY_FEATURE_SECURE_BOOT_AND_FULL_DISK_ENCRYPTION",
 						PlatformBundle:  nil,
 						Description:     "test-description",
+						TLSCaCert:       "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==",
 					},
 				},
 			},
@@ -76,6 +78,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "",
 				Description:     "test-description",
+				TlsCaCert:       "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==",
 			},
 			wantErr: false,
 		},
@@ -101,6 +104,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -115,6 +119,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 							"artifactName": "artifact",
 						},
 						Description: "test-description",
+						TLSCaCert:   "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==",
 					},
 				},
 			},
@@ -130,6 +135,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 				OsProvider:      osv1.OsProviderKind_OS_PROVIDER_KIND_INFRA,
 				PlatformBundle:  "{\"artifactName\":\"artifact\"}",
 				Description:     "test-description",
+				TlsCaCert:       "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==",
 			},
 			wantErr: false,
 		},
@@ -155,6 +161,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -207,6 +214,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_INVALID",
@@ -246,6 +254,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_UNSPECIFIED",
@@ -285,6 +294,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_IMMUTABLE",
@@ -324,6 +334,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_IMMUTABLE",
@@ -363,6 +374,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
@@ -402,6 +414,7 @@ func TestConvertOSProfileToOSResource(t *testing.T) {
 						SecurityFeature      string                 `yaml:"securityFeature"`
 						PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 						Description          string                 `yaml:"description"`
+						TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 					}{
 						Name:            "test",
 						Type:            "OS_TYPE_MUTABLE",
