@@ -101,9 +101,6 @@ func buildInstanceUpdatePlan(
 
 	// Only set update detail, OS and CVEs when status update is needed.
 	if update.Needed {
-		update.Detail = maintgmr_util.GetUpdateStatusDetailIfNeeded(
-			update.Status, mmUpStatus, instRes.GetCurrentOs().GetOsType(),
-		)
 		update.OsResID, update.ExistingCVEs, err = resolveOsResAndCVEsIfNeeded(
 			ctx, client, tenantID, mmUpStatus, instRes, update.Status, update.Needed,
 		)
@@ -141,15 +138,15 @@ func updateInventory(
 
 	if !update.Needed {
 		zlog.Debug().Msgf(
-			"No Instance update needed: status=%v detail=%s newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
-			update.Status, update.Detail, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
+			"No Instance update needed: status=%v newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
+			update.Status, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
 		)
 		return
 	}
 
 	zlog.Debug().Msgf(
-		"Updating Instance UpdateStatus=%s,  UpdateStatusDetail=%s, osUpdateAvailable=%s, newOSResID=%s, existingCVEs=%s",
-		update.Status.Status, update.Detail, update.OsUpdateAvailable, update.OsResID, update.ExistingCVEs,
+		"Updating Instance UpdateStatus=%s, osUpdateAvailable=%s, newOSResID=%s, existingCVEs=%s",
+		update.Status.Status, update.OsUpdateAvailable, update.OsResID, update.ExistingCVEs,
 	)
 
 	err = invclient.UpdateInstance(
@@ -166,8 +163,8 @@ func updateInventory(
 	}
 
 	zlog.Debug().Msgf(
-		"Updated Instance: status=%v detail=%s newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
-		update.Status, update.Detail, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
+		"Updated Instance: status=%v newOSResID=%s existingCVEs=%s osUpdateAvailable=%s",
+		update.Status, update.OsResID, update.ExistingCVEs, update.OsUpdateAvailable,
 	)
 
 	// Create or update OSUpdateRun resource
@@ -381,9 +378,10 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	}
 	runRes := &computev1.OSUpdateRunResource{
 		Name:            "OS Update Run for " + instanceID, // TODO Generate unique name
-		Description:     "OS Update Run for " + instanceID,
+		Description:     "OS Update History",
 		Instance:        &computev1.InstanceResource{ResourceId: instanceID},
 		Status:          newUpdateStatus.Status,
+		StatusDetails:   upStatus.StatusDetail,
 		StatusIndicator: newUpdateStatus.StatusIndicator,
 		StatusTimestamp: timeNow,
 		StartTime:       timeNow,
