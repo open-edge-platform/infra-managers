@@ -6,6 +6,7 @@ package reconcilers
 import (
 	"context"
 	"strings"
+	"time"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	tenant_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/tenant/v1"
@@ -18,7 +19,11 @@ import (
 	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 
-const loggerName = "TenantReconciler"
+const (
+	loggerName                = "TenantReconciler"
+	osResourceCreationTimeout = time.Minute // Timeout for creating OS resources including CVE downloads
+	osResourceUpdateTimeout   = time.Minute // Timeout for updating OS resources including CVE downloads
+)
 
 var zlogTenant = logging.GetLogger(loggerName)
 
@@ -69,6 +74,11 @@ func (tr *TenantReconciler) ackOsWatcherIfNeeded(
 func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 	ctx context.Context, tenantID string, osProfile *fsclient.OSProfileManifest,
 ) (string, error) {
+	// Create a new context with extended timeout for OS resource creation
+	// This allows sufficient time for CVE downloads and resource creation
+	createCtx, cancel := context.WithTimeout(context.Background(), osResourceCreationTimeout)
+	defer cancel()
+
 	osRes, err := util.ConvertOSProfileToOSResource(osProfile)
 	if err != nil {
 		return "", err
@@ -79,33 +89,38 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 	// FIXME: ITEP-22977 remove this check when enforcing JSON-encoded string for `installedPackages`
 	// retrieve package manifest and existing CVEs JSON contnet only for IMMUTABLE OS
 	if osProfile.Spec.Type == "OS_TYPE_IMMUTABLE" {
-		osRes.InstalledPackages, err = fsclient.GetPackageManifest(ctx, osProfile.Spec.OsPackageManifestURL)
+		osRes.InstalledPackages, err = fsclient.GetPackageManifest(createCtx, osProfile.Spec.OsPackageManifestURL)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
+	osRes.ExistingCves, err = fsclient.GetExistingCVEs(createCtx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
 	if err != nil {
 		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
 	}
 	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
-	osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
+	osRes.FixedCves, err = fsclient.GetFixedCVEs(createCtx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
 	if err != nil {
 		zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
 	}
 	osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 
-	return tr.invClient.CreateOSResource(ctx, tenantID, osRes)
+	return tr.invClient.CreateOSResource(createCtx, tenantID, osRes)
 }
 
 func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
 ) error {
+	// Create a new context with extended timeout for OS resource updates
+	// This allows sufficient time for CVE downloads and resource updates
+	updateCtx, cancel := context.WithTimeout(context.Background(), osResourceUpdateTimeout)
+	defer cancel()
+
 	var err error
 	var existingCVEs string
 
-	existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
+	existingCVEs, err = fsclient.GetExistingCVEs(updateCtx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
 	if err != nil {
 		return err
 	}
@@ -117,7 +132,7 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 			tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
 		osRes.ExistingCves = existingCVEs
 
-		err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
+		err = tr.invClient.UpdateOSResourceExistingCves(updateCtx, tenantID, osRes)
 		if err != nil {
 			return err
 		}

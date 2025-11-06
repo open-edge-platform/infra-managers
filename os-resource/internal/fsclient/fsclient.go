@@ -13,7 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -29,7 +28,6 @@ const (
 	ovalDefDescriptionParts = 2
 	cveTypeExisting         = "existing"
 	cveTypeFixed            = "fixed"
-	cveDownloadTimeout      = time.Minute // 1 minute timeout for CVE downloads
 )
 
 var (
@@ -285,11 +283,8 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 
 // getCVEsFromURL is a helper function to download and validate CVE data.
 func getCVEsFromURL(ctx context.Context, osType, cveURL, cveType string) (string, error) {
-	// Create a new context with extended timeout for CVE downloads
-	cveCtx, cancel := context.WithTimeout(ctx, cveDownloadTimeout)
-	defer cancel()
 
-	respBody, err := downloadCVEData(cveCtx, osType, cveURL, cveType)
+	respBody, err := downloadCVEData(ctx, osType, cveURL, cveType)
 	if err != nil {
 		return "", err
 	}
