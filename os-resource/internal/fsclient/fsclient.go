@@ -175,14 +175,14 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
+		zlog.InfraSec().Error().Err(err).Msg("Failed to create GET request to release server")
 		return "", err
 	}
 
 	// Perform the HTTP GET request
 	resp, err := client.Do(req)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download package manifest: %v", err)
+		zlog.InfraSec().Error().Err(err).Msg("Failed to connect to release server to download package manifest")
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -190,14 +190,14 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the package manifest content: %v", err)
+		zlog.InfraSec().Error().Err(err).Msg("Failed to read the package manifest content")
 		return "", err
 	}
 
 	// verify that the returned response from RS is valid JSON
 	var osPackages OSPackage
 	if err := json.Unmarshal(respBody, &osPackages); err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Invalid package manifest content returned from Release Service: %v", err)
+		zlog.InfraSec().Error().Err(err).Msg("Invalid package manifest content returned from Release Service")
 		return "", err
 	}
 
@@ -247,14 +247,14 @@ func downloadCVEData(ctx context.Context, rsProxyAddress, cveURL, cveType string
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to create GET request to release server: %v", err)
+		zlog.InfraSec().Error().Err(err).Msg("Failed to create GET request to release server")
 		return nil, err
 	}
 
 	// Perform the HTTP GET request
 	resp, err := client.Do(req)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list", cveType)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -262,7 +262,7 @@ func downloadCVEData(ctx context.Context, rsProxyAddress, cveURL, cveType string
 	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the %s CVEs list content: %v", cveType, err)
+		zlog.InfraSec().Error().Err(err).Msgf("Failed to read the %s CVEs list content", cveType)
 		return nil, err
 	}
 
@@ -278,7 +278,7 @@ func validateCVEData(respBody []byte, cveType string) error {
 		AffectedPackages []*string `json:"affected_packages"`
 	}
 	if err := json.Unmarshal(respBody, &cves); err != nil {
-		zlog.InfraSec().Error().Err(err).Msgf("Invalid %s CVEs list content returned from Release Service: %v", cveType, err)
+		zlog.InfraSec().Error().Err(err).Msgf("Invalid %s CVEs list content returned from Release Service", cveType)
 		return err
 	}
 

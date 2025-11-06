@@ -25,5 +25,5 @@ go.work
 # Build output directory
 out/
 
-# Binary built directly with `go build ./cmd/main.go` (creates in current dir)
-main
+# Binary built directly with `go build ./cmd/osrm.go` (creates in current dir)
+osrm

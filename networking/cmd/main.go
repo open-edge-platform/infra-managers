@@ -133,5 +133,5 @@ func main() {
 	nbHandler.Stop()
 	netClient.Stop()
 
-	wg.Done()
+	wg.Wait()
 }
