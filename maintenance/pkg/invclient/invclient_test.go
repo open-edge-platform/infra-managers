@@ -270,8 +270,6 @@ func TestInvClient_GetInstanceResourceByHostGUID(t *testing.T) {
 		osRes := dao.CreateOs(t, mm_testing.Tenant1)
 		host := dao.CreateHost(t, mm_testing.Tenant1)
 		inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
-		inst.DesiredOs = osRes // TODO: Remove in future when DesiredOs is removed from inventory testing_utils.go
-		inst.CurrentOs = osRes // TODO: Remove in future when DesiredOs is removed from inventory testing_utils.go
 		inst.Os = osRes
 		inst.Host = host
 
@@ -289,9 +287,9 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 	ctx := context.TODO()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
 	osRes := dao.CreateOs(t, mm_testing.Tenant1)
+	newOSRes := dao.CreateOs(t, mm_testing.Tenant1)
 	host := dao.CreateHost(t, mm_testing.Tenant1)
 	inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
-	newOSRes := dao.CreateOs(t, mm_testing.Tenant1)
 
 	// Error - non-existent Instance
 	t.Run("ErrorNoInst", func(t *testing.T) {
@@ -320,8 +318,6 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		assert.Equal(t, mm_status.UpdateStatusInProgress.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
 		assert.Equal(t, mm_status.UpdateStatusInProgress.StatusIndicator,
 			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
-
 		timeBefore, err := inv_utils.SafeInt64ToUint64(timeBeforeUpdate)
 		require.NoError(t, err)
 		assert.LessOrEqual(t, timeBefore, updatedInst.GetResource().GetInstance().GetUpdateStatusTimestamp())
@@ -333,7 +329,6 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		assert.NotEqual(t, newOSRes.GetSha256(), beforeUpdateInst.GetResource().GetInstance().GetOs().GetSha256())
 		plan := invclient.InstanceUpdatePlan{
 			Status:  &mm_status.UpdateStatusDone,
-			Detail:  "some update status detail",
 			OsResID: newOSRes.GetResourceId(),
 		}
 		err = invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
@@ -343,7 +338,6 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		assert.Equal(t, mm_status.UpdateStatusDone.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
 		assert.Equal(t, mm_status.UpdateStatusDone.StatusIndicator,
 			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "some update status detail", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
 		assert.Equal(t, newOSRes.GetSha256(), updatedInst.GetResource().GetInstance().GetOs().GetSha256())
 	})
 
@@ -351,7 +345,6 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		// initial setup of instance status to running and update status to unknown
 		plan := invclient.InstanceUpdatePlan{
 			Status:  &mm_status.UpdateStatusUnknown,
-			Detail:  "some update status detail",
 			OsResID: newOSRes.GetResourceId(),
 		}
 		err := invclient.UpdateInstance(ctx, client, mm_testing.Tenant1, inst.ResourceId, plan)
@@ -365,7 +358,6 @@ func TestInvClient_UpdateInstance(t *testing.T) {
 		assert.Equal(t, mm_status.UpdateStatusDone.Status, updatedInst.GetResource().GetInstance().GetUpdateStatus())
 		assert.Equal(t, mm_status.UpdateStatusDone.StatusIndicator,
 			updatedInst.GetResource().GetInstance().GetUpdateStatusIndicator())
-		assert.Equal(t, "some update status detail", updatedInst.GetResource().GetInstance().GetUpdateStatusDetail())
 	})
 }
 

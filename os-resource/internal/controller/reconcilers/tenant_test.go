@@ -347,6 +347,7 @@ func setupCVEHandlingTest(t *testing.T) fsclient.OSProfileManifest {
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Name:                 "test-immutable-profile",
 			Type:                 "OS_TYPE_IMMUTABLE",
@@ -509,6 +510,7 @@ func setupCVEUpdateTest(t *testing.T) (fsclient.OSProfileManifest, *tenantv1.Ten
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Name:                 "test-update-profile",
 			Type:                 "OS_TYPE_IMMUTABLE",
@@ -673,6 +675,7 @@ func setupMutableOSSkipTest(t *testing.T) (fsclient.OSProfileManifest, *tenantv1
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Name:                 "test-mutable-profile",
 			Type:                 "OS_TYPE_MUTABLE",
@@ -857,6 +860,7 @@ func createMixedOSProfiles() (fsclient.OSProfileManifest, fsclient.OSProfileMani
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Name:                 "test-mutable",
 			Type:                 "OS_TYPE_MUTABLE",
@@ -885,6 +889,7 @@ func createMixedOSProfiles() (fsclient.OSProfileManifest, fsclient.OSProfileMani
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Name:                 "test-immutable",
 			Type:                 "OS_TYPE_IMMUTABLE",
@@ -1024,6 +1029,7 @@ func TestTenantReconciler_CVEFunctionality_Unit(t *testing.T) {
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Type:              "OS_TYPE_IMMUTABLE",
 			ProfileName:       "test-immutable",
@@ -1050,6 +1056,7 @@ func TestTenantReconciler_CVEFunctionality_Unit(t *testing.T) {
 			SecurityFeature      string                 `yaml:"securityFeature"`
 			PlatformBundle       map[string]interface{} `yaml:"platformBundle"`
 			Description          string                 `yaml:"description"`
+			TLSCaCert            string                 `yaml:"tlsCaCertificate"`
 		}{
 			Type:           "OS_TYPE_MUTABLE",
 			ProfileName:    "test-mutable",

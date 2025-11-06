@@ -127,20 +127,6 @@ func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) (*pb.OSPro
 	return osProfileUpdateSource, nil
 }
 
-func PopulateInstalledPackages(os *os_v1.OperatingSystemResource) string {
-	if os == nil {
-		err := inv_errors.Errorfc(codes.Internal, "missing OS resource")
-		zlog.InfraSec().InfraErr(err).Msg("")
-		return ""
-	}
-
-	if os.GetOsType() == os_v1.OsType_OS_TYPE_MUTABLE {
-		return os.InstalledPackages
-	}
-
-	return ""
-}
-
 // GetClosestSingleSchedule Returns the closest single schedule from time.Now.
 func GetClosestSingleSchedule(sScheds []*schedule_v1.SingleScheduleResource) *schedule_v1.SingleScheduleResource {
 	var ssRet *schedule_v1.SingleScheduleResource
