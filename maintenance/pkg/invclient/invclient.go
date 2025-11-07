@@ -50,7 +50,6 @@ var (
 // InstanceUpdatePlan contains all the fields that may need updating in an Instance resource.
 type InstanceUpdatePlan struct {
 	Status            *inv_status.ResourceStatus
-	Detail            string
 	OsResID           string
 	ExistingCVEs      string
 	OsUpdateAvailable string
@@ -233,8 +232,8 @@ func UpdateInstance(
 	instanceID string,
 	updatePlan InstanceUpdatePlan,
 ) error {
-	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v, LastUpdateDetail=%s",
-		tenantID, instanceID, updatePlan.Status, updatePlan.Detail)
+	zlog.Debug().Msgf("UpdateInstanceStatus: tenantID=%s, InstanceID=%s, NewUpdateStatus=%v",
+		tenantID, instanceID, updatePlan.Status)
 
 	timeNow, err := utils.SafeInt64ToUint64(time.Now().Unix())
 	if err != nil {
@@ -257,11 +256,6 @@ func UpdateInstance(
 		fields = append(fields, computev1.InstanceResourceFieldUpdateStatus,
 			computev1.InstanceResourceFieldUpdateStatusIndicator,
 			computev1.InstanceResourceFieldUpdateStatusTimestamp)
-	}
-
-	if updatePlan.Detail != "" {
-		instRes.UpdateStatusDetail = updatePlan.Detail
-		fields = append(fields, computev1.InstanceResourceFieldUpdateStatusDetail)
 	}
 
 	if updatePlan.OsResID != "" {
