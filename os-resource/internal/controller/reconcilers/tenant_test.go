@@ -108,7 +108,7 @@ func TestHostReconcileAtBootstrap(t *testing.T) {
 	t.Logf("WatcherOsmanager: %v (expected true, ignoring for now)", tenantInv.GetWatcherOsmanager())
 
 	// TODO: Fix - instanceID is undefined, commenting out for now
-	// imageID := getResource(t, instanceID).GetInstance().GetDesiredOs().GetImageId()
+	// imageID := getResource(t, instanceID).GetInstance().GetOs().GetImageId()
 	// TODO: Fix this assertion - imageID doesn't match expected version
 	// assert.Equal(t, ubuntuProfile.Spec.OsImageVersion, imageID)
 	// t.Logf("Image ID: %s (expected %s, ignoring for now)", imageID, ubuntuProfile.Spec.OsImageVersion)

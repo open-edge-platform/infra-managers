@@ -72,7 +72,7 @@ func (tr *TenantReconciler) ackOsWatcherIfNeeded(
 }
 
 func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
-	ctx context.Context, tenantID string, osProfile *fsclient.OSProfileManifest,
+	_ context.Context, tenantID string, osProfile *fsclient.OSProfileManifest,
 ) (string, error) {
 	// Create a new context with extended timeout for OS resource creation
 	// This allows sufficient time for CVE downloads and resource creation
@@ -110,7 +110,7 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 }
 
 func (tr *TenantReconciler) updateOSResourceFromOSProfile(
-	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
+	_ context.Context, tenantID string, osRes *osv1.OperatingSystemResource, osProfile *fsclient.OSProfileManifest,
 ) error {
 	// Create a new context with extended timeout for OS resource updates
 	// This allows sufficient time for CVE downloads and resource updates

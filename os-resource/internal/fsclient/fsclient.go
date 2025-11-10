@@ -284,7 +284,6 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 
 // getCVEsFromURL is a helper function to download and validate CVE data.
 func getCVEsFromURL(ctx context.Context, osType, cveURL, cveType string) (string, error) {
-
 	respBody, err := downloadCVEData(ctx, osType, cveURL, cveType)
 	if err != nil {
 		return "", err
