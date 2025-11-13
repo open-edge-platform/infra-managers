@@ -20,6 +20,9 @@ import (
 
 const (
 	parallelism = 1
+	// Reconciliation timeout must be longer than CVE download operations.
+	// which can take 1+ minutes for large CVE datasets.
+	reconciliationTimeout = 90 * time.Second
 )
 
 var (
@@ -44,7 +47,9 @@ func New(
 ) (*OSResourceController, error) {
 	tenantRcnl := reconcilers.NewTenantReconciler(invClient, osConfig)
 	tenantCtrl := rec_v2.NewController[reconcilers.ReconcilerID](
-		tenantRcnl.Reconcile, rec_v2.WithParallelism(parallelism))
+		tenantRcnl.Reconcile,
+		rec_v2.WithParallelism(parallelism),
+		rec_v2.WithTimeout(reconciliationTimeout))
 
 	return &OSResourceController{
 		invClient:        invClient,
