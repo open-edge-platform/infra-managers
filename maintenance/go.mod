@@ -5,14 +5,12 @@ module github.com/open-edge-platform/infra-managers/maintenance
 
 go 1.24.9
 
-toolchain go1.24.10
-
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/google/uuid v1.6.0
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.33.2
-	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.7
+	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.13
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.76.0
