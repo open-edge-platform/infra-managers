@@ -173,7 +173,7 @@ func Test_GetInstanceResourceByHostUUID(t *testing.T) {
 		osRes := dao.CreateOs(t, tenant1)
 		host := dao.CreateHost(t, tenant1)
 		inst := dao.CreateInstance(t, tenant1, host, osRes)
-		inst.DesiredOs = osRes
+		inst.Os = osRes
 		inst.Host = host
 
 		hostID, instID, err := telClient.GetHostAndInstanceIDResourceByHostUUID(ctx, tenant1, host.Uuid)
