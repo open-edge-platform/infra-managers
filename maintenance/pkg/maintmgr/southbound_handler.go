@@ -377,8 +377,8 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 		endTime = invclient.SentinelEndTimeUnset // Not completed yet
 	}
 	runRes := &computev1.OSUpdateRunResource{
-		Name:            "OS Update Run for " + instanceID, // TODO Generate unique name
-		Description:     "OS Update History",
+		Name:            "Update", // TODO Generate unique name
+		Description:     "OS Update Run",
 		Instance:        &computev1.InstanceResource{ResourceId: instanceID},
 		Status:          newUpdateStatus.Status,
 		StatusDetails:   upStatus.StatusDetail,
