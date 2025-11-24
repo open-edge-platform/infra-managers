@@ -12,7 +12,8 @@ on:
     paths:
       - "maintenance/**"
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   post-merge-pipeline:
