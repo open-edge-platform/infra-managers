@@ -715,6 +715,7 @@ func TestInvClient_GetOSResourceByID_ErrorCases(t *testing.T) {
 	})
 }
 
+//nolint:funlen // long test function due to table driven tests
 func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := context.TODO()
@@ -734,7 +735,8 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 	t.Cleanup(func() {
 		for _, run := range createdRuns {
 			if run != nil && run.GetResourceId() != "" {
-				_, _ = client.Delete(context.Background(), mm_testing.Tenant1, run.GetResourceId())
+				_, err := client.Delete(context.Background(), mm_testing.Tenant1, run.GetResourceId())
+				require.NoError(t, err)
 			}
 		}
 	})
@@ -744,7 +746,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405"),
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
 			Description:     "Test OS Update Run",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -779,7 +781,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		policy2 := dao.CreateOSUpdatePolicy(t, mm_testing.Tenant1)
 
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405"),
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
 			Description:     "Test OS Update Run with Different Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy2.GetResourceId()},
@@ -809,8 +811,8 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 		require.NoError(t, err)
 
-		osUpdateRun3 := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405") + "-3",
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
 			Description:     "Completed OS Update Run",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -822,7 +824,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 			TenantId:        mm_testing.Tenant1,
 		}
 
-		createdRun, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun3)
+		createdRun, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
 		require.NoError(t, err)
 		require.NotNil(t, createdRun)
 		createdRuns = append(createdRuns, createdRun)
@@ -838,7 +840,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 
 		// Test creating OSUpdateRun without applied_policy (verifies it's optional)
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:        "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405"),
+			Name:        "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
 			Description: "OS Update Run without Policy",
 			Instance:    &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			// AppliedPolicy is intentionally not set to verify it's optional
@@ -867,9 +869,9 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 		require.NoError(t, err)
 
-		// Create first OSUpdateRun with the policy
+		// Create first OSUpdateRun with the shared policy
 		osUpdateRun1 := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405") + "-1",
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405") + "-1",
 			Description:     "First OS Update Run with Shared Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -889,7 +891,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 
 		// Create second OSUpdateRun with the same policy
 		osUpdateRun2 := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetResourceId() + "-" + time.Now().Format("20060102-150405") + "-2",
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405") + "-2",
 			Description:     "Second OS Update Run with Shared Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
