@@ -9,7 +9,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/envoyproxy/protoc-gen-validate v1.2.1
 	github.com/google/uuid v1.6.0
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.33.2
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.33.3-0.20251127155847-8bc86b4d4256
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.13
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
