@@ -24,7 +24,7 @@ import (
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
-const MAXLEN_HOSTNAME = 13
+const maxLenHostName = 13
 
 func resolveOsResAndCVEsIfNeeded(
 	ctx context.Context,
@@ -386,8 +386,8 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	timestamp := t.Format("20060102-150405")
 	hostName := instRes.GetHost().GetName()
 
-	if len(hostName) > MAXLEN_HOSTNAME {
-		hostName = hostName[:MAXLEN_HOSTNAME] // Truncate to max 13 characters
+	if len(hostName) > maxLenHostName {
+		hostName = hostName[:maxLenHostName] // Truncate to max 13 characters
 	}
 	runName := "update-" + hostName + "-" + timestamp
 
