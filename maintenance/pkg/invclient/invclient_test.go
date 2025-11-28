@@ -717,6 +717,16 @@ func TestInvClient_GetOSResourceByID_ErrorCases(t *testing.T) {
 
 //nolint:funlen // long test function due to table driven tests
 func TestInvClient_CreateOSUpdateRun(t *testing.T) {
+	// Helper function to generate OSUpdateRun name with truncated host name
+	// to ensure the total name length doesn't exceed 40 bytes
+	generateOSUpdateRunName := func(hostName string, timestamp time.Time) string {
+		const maxLenHostName = 13
+		if len(hostName) > maxLenHostName {
+			hostName = hostName[:maxLenHostName] // Truncate to max 13 characters
+		}
+		return "update-" + hostName + "-" + timestamp.Format("20060102-150405")
+	}
+
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	ctx := context.TODO()
 	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
@@ -745,8 +755,9 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 		require.NoError(t, err)
 
+		timestamp := time.Now()
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
 			Description:     "Test OS Update Run",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -777,11 +788,12 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 		require.NoError(t, err)
 
-		// Create a different OS update policy
+		// Create a different policy for this test
 		policy2 := dao.CreateOSUpdatePolicy(t, mm_testing.Tenant1)
 
+		timestamp := time.Now()
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
 			Description:     "Test OS Update Run with Different Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy2.GetResourceId()},
@@ -797,6 +809,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, createdRun)
 		createdRuns = append(createdRuns, createdRun)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
 		assert.NotEmpty(t, createdRun.GetResourceId())
 		assert.Equal(t, policy2.GetResourceId(), createdRun.GetAppliedPolicy().GetResourceId())
 
@@ -811,8 +824,9 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
 		require.NoError(t, err)
 
+		timestamp := time.Now()
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
 			Description:     "Completed OS Update Run",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -828,6 +842,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, createdRun)
 		createdRuns = append(createdRuns, createdRun)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
 		assert.Equal(t, mm_status.StatusCompleted, createdRun.GetStatus())
 		assert.Equal(t, policy.GetResourceId(), createdRun.GetAppliedPolicy().GetResourceId())
 		assert.Equal(t, timeNow, createdRun.GetEndTime())
@@ -839,8 +854,9 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test creating OSUpdateRun without applied_policy (verifies it's optional)
+		timestamp := time.Now()
 		osUpdateRun := &computev1.OSUpdateRunResource{
-			Name:        "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
+			Name:        generateOSUpdateRunName(host.GetName(), timestamp),
 			Description: "OS Update Run without Policy",
 			Instance:    &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			// AppliedPolicy is intentionally not set to verify it's optional
@@ -856,6 +872,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run)
 		createdRuns = append(createdRuns, run)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
 
 		// Verify the run was created without a policy
 		assert.Equal(t, osUpdateRun.GetName(), run.GetName())
@@ -870,8 +887,9 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create first OSUpdateRun with the shared policy
+		timestamp1 := time.Now()
 		osUpdateRun1 := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405") + "-1",
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp1) + "-1",
 			Description:     "First OS Update Run with Shared Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -887,11 +905,13 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run1)
 		createdRuns = append(createdRuns, run1)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
 		assert.Equal(t, policy.GetResourceId(), run1.GetAppliedPolicy().GetResourceId())
 
-		// Create second OSUpdateRun with the same policy
+		// Create second OSUpdateRun with the same shared policy
+		timestamp2 := time.Now()
 		osUpdateRun2 := &computev1.OSUpdateRunResource{
-			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405") + "-2",
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp2) + "-2",
 			Description:     "Second OS Update Run with Shared Policy",
 			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
 			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
@@ -907,6 +927,7 @@ func TestInvClient_CreateOSUpdateRun(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, run2)
 		createdRuns = append(createdRuns, run2)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
 
 		// Verify both runs share the same policy
 		assert.Equal(t, policy.GetResourceId(), run2.GetAppliedPolicy().GetResourceId())

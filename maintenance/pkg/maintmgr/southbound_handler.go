@@ -24,8 +24,6 @@ import (
 	maintgmr_util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
 )
 
-const maxLenHostName = 13
-
 func resolveOsResAndCVEsIfNeeded(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,
@@ -361,6 +359,11 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	tenantID string, upStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
 ) (*computev1.OSUpdateRunResource, error) {
+	// maxLenHostName is set to 13 to ensure that the generated OS update run name
+	// (which includes the hostname and other components) does not exceed 40 bytes.
+	// Format: "update-" (7) + hostName (max 13) + "-" (1) + timestamp (15) + optional suffix (3) = max 39 bytes
+	const maxLenHostName = 13
+
 	newUpdateStatus := maintgmr_util.GetUpdatedUpdateStatus(upStatus)
 	instanceID := instRes.GetResourceId()
 	policy := instRes.GetOsUpdatePolicy()
@@ -389,7 +392,7 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	if len(hostName) > maxLenHostName {
 		hostName = hostName[:maxLenHostName] // Truncate to max 13 characters
 	}
-	runName := "update-" + hostName + "-" + timestamp
+	runName := hostName + " update " + timestamp
 
 	runRes := &computev1.OSUpdateRunResource{
 		Name:            runName,
