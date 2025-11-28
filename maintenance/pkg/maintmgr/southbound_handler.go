@@ -360,8 +360,7 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	instRes *computev1.InstanceResource,
 ) (*computev1.OSUpdateRunResource, error) {
 	// maxLenHostName is set to 13 to ensure that the generated OS update run name
-	// (which includes the hostname and other components) does not exceed 40 bytes.
-	// Format: "update-" (7) + hostName (max 13) + "-" (1) + timestamp (15) + optional suffix (3) = max 39 bytes
+	// (which includes the hostname and timestamp) does not exceed 40 bytes.
 	const maxLenHostName = 13
 
 	newUpdateStatus := maintgmr_util.GetUpdatedUpdateStatus(upStatus)
@@ -383,9 +382,8 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 		endTime = invclient.SentinelEndTimeUnset
 	}
 
-	// Generate unique name: update-<host-name>-<timestamp>
+	// Generate unique name: <host-name> update <timestamp>
 	// Truncate host name to ensure total name length stays within 40 bytes limit
-	// Format: "update-" (7) + hostName (max 13) + "-" (1) + timestamp (15) + optional suffix (3) = max 39 bytes
 	timestamp := t.Format("20060102-150405")
 	hostName := instRes.GetHost().GetName()
 
