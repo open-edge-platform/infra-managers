@@ -109,7 +109,8 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 
 	existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
 	if err != nil {
-		return err
+		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
+		return nil
 	}
 	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
