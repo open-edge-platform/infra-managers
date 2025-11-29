@@ -60,12 +60,26 @@ func (tr *TenantReconciler) ackOsWatcherIfNeeded(
 	ctx context.Context,
 	tenant *tenant_v1.Tenant,
 ) error {
+	zlogTenant.Info().Msgf("[ACK] ackOsWatcherIfNeeded called for tenant=%s resourceID=%s (current WatcherOsmanager=%v)",
+		tenant.GetTenantId(), tenant.GetResourceId(), tenant.GetWatcherOsmanager())
+	
 	if tenant.GetWatcherOsmanager() {
-		zlogTenant.Debug().Msgf("Skipping acknowledging the OS watcher as it's already set")
+		zlogTenant.Info().Msgf("[ACK] WatcherOsmanager already set for tenant=%s, skipping", tenant.GetTenantId())
 		return nil
 	}
 
-	return tr.invClient.UpdateTenantOSWatcher(ctx, tenant.GetTenantId(), tenant.GetResourceId(), true)
+	zlogTenant.Info().Msgf("[ACK] Setting WatcherOsmanager flag for tenant=%s resourceID=%s",
+		tenant.GetTenantId(), tenant.GetResourceId())
+	
+	err := tr.invClient.UpdateTenantOSWatcher(ctx, tenant.GetTenantId(), tenant.GetResourceId(), true)
+	if err != nil {
+		zlogTenant.Error().Err(err).Msgf("[ACK] FAILED to set WatcherOsmanager for tenant=%s (UpdateTenantOSWatcher returned error)",
+			tenant.GetTenantId())
+		return err
+	}
+	
+	zlogTenant.Info().Msgf("[ACK] Successfully set WatcherOsmanager flag for tenant=%s", tenant.GetTenantId())
+	return nil
 }
 
 func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
@@ -196,8 +210,8 @@ func (tr *TenantReconciler) reconcileTenant(
 	ctx context.Context,
 	tenant *tenant_v1.Tenant,
 ) error {
-	zlogTenant.Debug().Msgf("Reconciling tenant with resource ID %s, with Current state: %v, Desired state: %v.",
-		tenant.GetResourceId(), tenant.GetCurrentState(), tenant.GetDesiredState())
+	zlogTenant.Info().Msgf("[RECONCILE-START] reconcileTenant for tenant=%s resourceID=%s (CurrentState=%v, DesiredState=%v, WatcherOsmanager=%v)",
+		tenant.GetTenantId(), tenant.GetResourceId(), tenant.GetCurrentState(), tenant.GetDesiredState(), tenant.GetWatcherOsmanager())
 
 	if tenant.GetDesiredState() == tenant_v1.TenantState_TENANT_STATE_CREATED {
 		osProfiles, err := fsclient.GetLatestOsProfiles(ctx, tr.osConfig.EnabledProfiles, tr.osConfig.OsProfileRevision)
@@ -258,10 +272,14 @@ func (tr *TenantReconciler) reconcileTenant(
 			return err
 		}
 
+		zlogTenant.Info().Msgf("[RECONCILE] Calling ackOsWatcherIfNeeded for tenant=%s", tenant.GetTenantId())
 		err = tr.ackOsWatcherIfNeeded(ctx, tenant)
 		if err != nil {
+			zlogTenant.Error().Err(err).Msgf("[RECONCILE] ackOsWatcherIfNeeded FAILED for tenant=%s, returning error",
+				tenant.GetTenantId())
 			return err
 		}
+		zlogTenant.Info().Msgf("[RECONCILE] ackOsWatcherIfNeeded succeeded for tenant=%s", tenant.GetTenantId())
 	}
 
 	if tenant.GetDesiredState() == tenant_v1.TenantState_TENANT_STATE_DELETED {
@@ -272,5 +290,6 @@ func (tr *TenantReconciler) reconcileTenant(
 		}
 	}
 
+	zlogTenant.Info().Msgf("[RECONCILE-END] reconcileTenant completed successfully for tenant=%s", tenant.GetTenantId())
 	return nil
 }
