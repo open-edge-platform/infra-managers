@@ -112,7 +112,6 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
 		return nil
 	}
-	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
 
 	// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
 	if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
