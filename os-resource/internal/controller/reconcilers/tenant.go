@@ -62,7 +62,7 @@ func (tr *TenantReconciler) ackOsWatcherIfNeeded(
 ) error {
 	zlogTenant.Info().Msgf("[ACK] ackOsWatcherIfNeeded called for tenant=%s resourceID=%s (current WatcherOsmanager=%v)",
 		tenant.GetTenantId(), tenant.GetResourceId(), tenant.GetWatcherOsmanager())
-	
+
 	if tenant.GetWatcherOsmanager() {
 		zlogTenant.Info().Msgf("[ACK] WatcherOsmanager already set for tenant=%s, skipping", tenant.GetTenantId())
 		return nil
@@ -70,14 +70,15 @@ func (tr *TenantReconciler) ackOsWatcherIfNeeded(
 
 	zlogTenant.Info().Msgf("[ACK] Setting WatcherOsmanager flag for tenant=%s resourceID=%s",
 		tenant.GetTenantId(), tenant.GetResourceId())
-	
+
 	err := tr.invClient.UpdateTenantOSWatcher(ctx, tenant.GetTenantId(), tenant.GetResourceId(), true)
 	if err != nil {
-		zlogTenant.Error().Err(err).Msgf("[ACK] FAILED to set WatcherOsmanager for tenant=%s (UpdateTenantOSWatcher returned error)",
+		zlogTenant.Error().Err(err).Msgf(
+			"[ACK] FAILED to set WatcherOsmanager for tenant=%s (UpdateTenantOSWatcher returned error)",
 			tenant.GetTenantId())
 		return err
 	}
-	
+
 	zlogTenant.Info().Msgf("[ACK] Successfully set WatcherOsmanager flag for tenant=%s", tenant.GetTenantId())
 	return nil
 }
@@ -210,8 +211,10 @@ func (tr *TenantReconciler) reconcileTenant(
 	ctx context.Context,
 	tenant *tenant_v1.Tenant,
 ) error {
-	zlogTenant.Info().Msgf("[RECONCILE-START] reconcileTenant for tenant=%s resourceID=%s (CurrentState=%v, DesiredState=%v, WatcherOsmanager=%v)",
-		tenant.GetTenantId(), tenant.GetResourceId(), tenant.GetCurrentState(), tenant.GetDesiredState(), tenant.GetWatcherOsmanager())
+	zlogTenant.Info().Msgf(
+		"[RECONCILE-START] reconcileTenant for tenant=%s resourceID=%s (CurrentState=%v, DesiredState=%v, WatcherOsmanager=%v)",
+		tenant.GetTenantId(), tenant.GetResourceId(), tenant.GetCurrentState(), tenant.GetDesiredState(),
+		tenant.GetWatcherOsmanager())
 
 	if tenant.GetDesiredState() == tenant_v1.TenantState_TENANT_STATE_CREATED {
 		osProfiles, err := fsclient.GetLatestOsProfiles(ctx, tr.osConfig.EnabledProfiles, tr.osConfig.OsProfileRevision)
