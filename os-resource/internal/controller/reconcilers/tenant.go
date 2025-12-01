@@ -161,22 +161,41 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 	existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
 	if err != nil {
 		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
-		return nil
+	} else {
+		// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
+		if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
+			zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
+				tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
+			osRes.ExistingCves = existingCVEs
+
+			err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
+			if err != nil {
+				return err
+			}
+		} else {
+			zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
+				tenantID, osProfile.Spec.ProfileName)
+		}
 	}
 
-	// Compare existing CVEs and if they match doesn't match, update the OS resource with new existing CVEs.
-	if strings.Compare(existingCVEs, osRes.ExistingCves) != 0 {
-		zlogTenant.Info().Msgf("Existing CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
-			tenantID, osProfile.Spec.ProfileName, len(osRes.ExistingCves), len(existingCVEs))
-		osRes.ExistingCves = existingCVEs
-
-		err = tr.invClient.UpdateOSResourceExistingCves(ctx, tenantID, osRes)
-		if err != nil {
-			return err
-		}
+	fixedCVEs, err := fsclient.GetFixedCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
+	if err != nil {
+		zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
 	} else {
-		zlogTenant.Info().Msgf("Existing CVEs match for tenant %s, profile %s - no update needed",
-			tenantID, osProfile.Spec.ProfileName)
+		// Compare fixed CVEs and if they match doesn't match, update the OS resource with new fixed CVEs.
+		if strings.Compare(fixedCVEs, osRes.FixedCves) != 0 {
+			zlogTenant.Info().Msgf("Fixed CVEs differ for tenant %s, profile %s - updating from %d to %d characters",
+				tenantID, osProfile.Spec.ProfileName, len(osRes.FixedCves), len(fixedCVEs))
+			osRes.FixedCves = fixedCVEs
+
+			err = tr.invClient.UpdateOSResourceFixedCves(ctx, tenantID, osRes)
+			if err != nil {
+				return err
+			}
+		} else {
+			zlogTenant.Info().Msgf("Fixed CVEs match for tenant %s, profile %s - no update needed",
+				tenantID, osProfile.Spec.ProfileName)
+		}
 	}
 
 	return nil
