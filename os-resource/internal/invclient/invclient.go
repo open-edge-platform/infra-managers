@@ -333,7 +333,6 @@ func (c *InventoryClient) UpdateOSResourceExistingCves(ctx context.Context,
 	fm := &fieldmaskpb.FieldMask{
 		Paths: []string{
 			osv1.OperatingSystemResourceFieldExistingCves,
-			osv1.OperatingSystemResourceFieldExistingCvesUrl,
 		},
 	}
 
