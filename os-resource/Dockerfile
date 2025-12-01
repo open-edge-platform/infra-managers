@@ -44,6 +44,9 @@ LABEL org.opencontainers.image.version=${VERSION} \
       org.opencontainers.image.revision=${REVISION} \
       org.opencontainers.image.created=${BUILD_DATE}
 
+# Set default inventory ticker period (can be overridden via environment variable)
+ENV INVENTORY_TICKER_PERIOD=12h
+
 COPY --from=build --chown=nobody:nobody /go/src/github.com/open-edge-platform/infra-managers/os-resource/out/osrm /usr/local/bin/osrm
 
 ENTRYPOINT ["osrm"]
