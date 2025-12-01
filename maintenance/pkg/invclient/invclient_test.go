@@ -714,3 +714,269 @@ func TestInvClient_GetOSResourceByID_ErrorCases(t *testing.T) {
 		assert.Equal(t, codes.DeadlineExceeded, sts.Code())
 	})
 }
+
+//nolint:funlen // long test function due to table driven tests
+func TestInvClient_CreateOSUpdateRun(t *testing.T) {
+	// Helper function to generate OSUpdateRun name with truncated host name
+	// to ensure the total name length doesn't exceed 40 bytes
+	generateOSUpdateRunName := func(hostName string, timestamp time.Time) string {
+		const maxLenHostName = 13
+		if len(hostName) > maxLenHostName {
+			hostName = hostName[:maxLenHostName] // Truncate to max 13 characters
+		}
+		return "update-" + hostName + "-" + timestamp.Format("20060102-150405")
+	}
+
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+	ctx := context.TODO()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+
+	// Create resources needed for OSUpdateRun
+	osRes := dao.CreateOs(t, mm_testing.Tenant1)
+	host := dao.CreateHost(t, mm_testing.Tenant1)
+	inst := dao.CreateInstance(t, mm_testing.Tenant1, host, osRes)
+	policy := dao.CreateOSUpdatePolicy(t, mm_testing.Tenant1)
+
+	// Keep track of created OSUpdateRun resources for cleanup
+	var createdRuns []*computev1.OSUpdateRunResource
+
+	// Cleanup: Delete OSUpdateRun resources before policy/instance/host/os
+	// This cleanup is registered after all resource creation, so it runs first (LIFO order)
+	t.Cleanup(func() {
+		for _, run := range createdRuns {
+			if run != nil && run.GetResourceId() != "" {
+				_, err := client.Delete(context.Background(), mm_testing.Tenant1, run.GetResourceId())
+				require.NoError(t, err)
+			}
+		}
+	})
+
+	t.Run("SuccessCreateOSUpdateRun", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		timestamp := time.Now()
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
+			Description:     "Test OS Update Run",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusDownloading,
+			StatusDetails:   "Downloading OS update",
+			StatusIndicator: mm_status.UpdateStatusDownloading.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		createdRun, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
+		require.NoError(t, err)
+		require.NotNil(t, createdRun)
+		createdRuns = append(createdRuns, createdRun)
+		assert.NotEmpty(t, createdRun.GetResourceId())
+		assert.Equal(t, osUpdateRun.Name, createdRun.GetName())
+		assert.Equal(t, osUpdateRun.Description, createdRun.GetDescription())
+		assert.Equal(t, osUpdateRun.Status, createdRun.GetStatus())
+		assert.Equal(t, osUpdateRun.StatusDetails, createdRun.GetStatusDetails())
+		assert.Equal(t, inst.GetResourceId(), createdRun.GetInstance().GetResourceId())
+		assert.Equal(t, policy.GetResourceId(), createdRun.GetAppliedPolicy().GetResourceId())
+		assert.Equal(t, invclient.SentinelEndTimeUnset, createdRun.GetEndTime())
+	})
+
+	t.Run("SuccessCreateOSUpdateRunWithDifferentPolicy", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		// Create a different policy for this test
+		policy2 := dao.CreateOSUpdatePolicy(t, mm_testing.Tenant1)
+
+		timestamp := time.Now()
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
+			Description:     "Test OS Update Run with Different Policy",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy2.GetResourceId()},
+			Status:          mm_status.StatusUpdating,
+			StatusIndicator: mm_status.UpdateStatusInProgress.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		createdRun, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
+		require.NoError(t, err)
+		require.NotNil(t, createdRun)
+		createdRuns = append(createdRuns, createdRun)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
+		assert.NotEmpty(t, createdRun.GetResourceId())
+		assert.Equal(t, policy2.GetResourceId(), createdRun.GetAppliedPolicy().GetResourceId())
+
+		// Clean up this run immediately to avoid foreign key constraint with policy2
+		_, err = client.Delete(context.Background(), mm_testing.Tenant1, createdRun.GetResourceId())
+		require.NoError(t, err)
+		// Remove from createdRuns since we already deleted it
+		createdRuns = createdRuns[:len(createdRuns)-1]
+	})
+
+	t.Run("SuccessCreateCompletedOSUpdateRun", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		timestamp := time.Now()
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp),
+			Description:     "Completed OS Update Run",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusCompleted,
+			StatusIndicator: mm_status.UpdateStatusDone.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         timeNow,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		createdRun, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
+		require.NoError(t, err)
+		require.NotNil(t, createdRun)
+		createdRuns = append(createdRuns, createdRun)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
+		assert.Equal(t, mm_status.StatusCompleted, createdRun.GetStatus())
+		assert.Equal(t, policy.GetResourceId(), createdRun.GetAppliedPolicy().GetResourceId())
+		assert.Equal(t, timeNow, createdRun.GetEndTime())
+		assert.NotEqual(t, invclient.SentinelEndTimeUnset, createdRun.GetEndTime())
+	})
+
+	t.Run("SuccessCreateWithUnsetAppliedPolicy", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		// Test creating OSUpdateRun without applied_policy (verifies it's optional)
+		timestamp := time.Now()
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:        generateOSUpdateRunName(host.GetName(), timestamp),
+			Description: "OS Update Run without Policy",
+			Instance:    &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			// AppliedPolicy is intentionally not set to verify it's optional
+			Status:          mm_status.StatusUpdating,
+			StatusIndicator: mm_status.UpdateStatusInProgress.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		run, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
+		require.NoError(t, err)
+		require.NotNil(t, run)
+		createdRuns = append(createdRuns, run)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
+
+		// Verify the run was created without a policy
+		assert.Equal(t, osUpdateRun.GetName(), run.GetName())
+		assert.Equal(t, osUpdateRun.GetDescription(), run.GetDescription())
+		assert.Equal(t, osUpdateRun.GetStatus(), run.GetStatus())
+		assert.Nil(t, run.GetAppliedPolicy(), "AppliedPolicy should be nil when not set")
+		assert.Equal(t, inst.GetResourceId(), run.GetInstance().GetResourceId())
+	})
+
+	t.Run("SuccessCreateMultipleRunsWithSamePolicy", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		// Create first OSUpdateRun with the shared policy
+		timestamp1 := time.Now()
+		osUpdateRun1 := &computev1.OSUpdateRunResource{
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp1) + "-1",
+			Description:     "First OS Update Run with Shared Policy",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusDownloading,
+			StatusIndicator: mm_status.UpdateStatusDownloading.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		run1, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun1)
+		require.NoError(t, err)
+		require.NotNil(t, run1)
+		createdRuns = append(createdRuns, run1)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
+		assert.Equal(t, policy.GetResourceId(), run1.GetAppliedPolicy().GetResourceId())
+
+		// Create second OSUpdateRun with the same shared policy
+		timestamp2 := time.Now()
+		osUpdateRun2 := &computev1.OSUpdateRunResource{
+			Name:            generateOSUpdateRunName(host.GetName(), timestamp2) + "-2",
+			Description:     "Second OS Update Run with Shared Policy",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusUpdating,
+			StatusIndicator: mm_status.UpdateStatusInProgress.StatusIndicator,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		run2, err := invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun2)
+		require.NoError(t, err)
+		require.NotNil(t, run2)
+		createdRuns = append(createdRuns, run2)
+		time.Sleep(10 * time.Millisecond) // Allow event queue to process
+
+		// Verify both runs share the same policy
+		assert.Equal(t, policy.GetResourceId(), run2.GetAppliedPolicy().GetResourceId())
+		assert.Equal(t, run1.GetAppliedPolicy().GetResourceId(), run2.GetAppliedPolicy().GetResourceId())
+
+		// Verify they have different resource IDs and names
+		assert.NotEqual(t, run1.GetResourceId(), run2.GetResourceId())
+		assert.NotEqual(t, run1.GetName(), run2.GetName())
+	})
+
+	t.Run("ErrorCreateWithInvalidInstance", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            "update-invalid-" + time.Now().Format("20060102-150405"),
+			Description:     "Test OS Update Run",
+			Instance:        &computev1.InstanceResource{ResourceId: "inst-nonexistent"},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusDownloading,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		_, err = invclient.CreateOSUpdateRun(ctx, client, mm_testing.Tenant1, osUpdateRun)
+		require.Error(t, err)
+	})
+
+	t.Run("ErrorCreateWithWrongTenant", func(t *testing.T) {
+		timeNow, err := inv_utils.SafeInt64ToUint64(time.Now().Unix())
+		require.NoError(t, err)
+
+		osUpdateRun := &computev1.OSUpdateRunResource{
+			Name:            "update-" + host.GetName() + "-" + time.Now().Format("20060102-150405"),
+			Description:     "Test OS Update Run",
+			Instance:        &computev1.InstanceResource{ResourceId: inst.GetResourceId()},
+			AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+			Status:          mm_status.StatusDownloading,
+			StatusTimestamp: timeNow,
+			StartTime:       timeNow,
+			EndTime:         invclient.SentinelEndTimeUnset,
+			TenantId:        mm_testing.Tenant1,
+		}
+
+		_, err = invclient.CreateOSUpdateRun(ctx, client, "wrong-tenant-id", osUpdateRun)
+		require.Error(t, err)
+		sts, _ := status.FromError(err)
+		assert.Equal(t, codes.InvalidArgument, sts.Code())
+	})
+}

@@ -22,7 +22,7 @@ const (
 	parallelism = 1
 	// Reconciliation timeout must be longer than CVE download operations.
 	// which can take 1+ minutes for large CVE datasets.
-	reconciliationTimeout = 90 * time.Second
+	reconciliationTimeout = 180 * time.Second
 )
 
 var (

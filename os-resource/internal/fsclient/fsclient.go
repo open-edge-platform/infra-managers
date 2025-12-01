@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
@@ -28,6 +29,7 @@ const (
 	ovalDefDescriptionParts = 2
 	cveTypeExisting         = "existing"
 	cveTypeFixed            = "fixed"
+	httpRequestTimeout      = 60 * time.Second // Timeout for HTTP requests (CVE downloads can be large)
 )
 
 var (
@@ -35,6 +37,7 @@ var (
 	EnvNameRsFilesProxyAddress = "RSPROXY_FILES_ADDRESS"
 	EnvNameRsEnProfileRepo     = "RS_EN_PROFILE_REPO"
 	client                     = &http.Client{
+		Timeout: httpRequestTimeout,
 		Transport: &http.Transport{
 			Proxy:             http.ProxyFromEnvironment,
 			ForceAttemptHTTP2: false,
