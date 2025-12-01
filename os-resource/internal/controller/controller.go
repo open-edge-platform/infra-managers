@@ -29,7 +29,7 @@ var (
 	loggerName = "OSResourceController"
 	zlog       = logging.GetLogger(loggerName)
 
-	defaultInventoryTickerPeriod = 60 * time.Minute
+	defaultInventoryTickerPeriod = 12 * 60 * time.Minute // 12 hours
 )
 
 type OSResourceController struct {
@@ -60,7 +60,7 @@ func New(
 }
 
 func (c *OSResourceController) Start() error {
-	if err := c.reconcileAll(); err != nil {
+	if err := c.reconcileAll(false); err != nil {
 		return err
 	}
 
@@ -101,11 +101,13 @@ func (c *OSResourceController) controlLoop() {
 				continue
 			}
 
+			// Set flag for event-driven reconciliation (not periodic)
+			reconcilers.SetPeriodicReconciliationFlag(false)
 			if err := c.tenantReconciler.Reconcile(reconcilers.WrapReconcilerID(tenantID, resID)); err != nil {
 				zlog.InfraSec().InfraErr(err).Msgf("reconciliation resource failed")
 			}
 		case <-ticker.C:
-			if err := c.reconcileAll(); err != nil {
+			if err := c.reconcileAll(true); err != nil {
 				zlog.InfraSec().InfraErr(err).Msgf("full reconciliation failed")
 			}
 		case <-c.stop:
@@ -115,11 +117,15 @@ func (c *OSResourceController) controlLoop() {
 	}
 }
 
-func (c *OSResourceController) reconcileAll() error {
-	zlog.Debug().Msgf("Reconciling all resources")
+func (c *OSResourceController) reconcileAll(isPeriodicReconciliation bool) error {
+	zlog.Debug().Msgf("Reconciling all resources (isPeriodicReconciliation=%v)", isPeriodicReconciliation)
+
+	// Set the flag for periodic reconciliation
+	reconcilers.SetPeriodicReconciliationFlag(isPeriodicReconciliation)
 
 	// Use context.WithTimeout to set a timeout for the operation
-	ctx, cancel := context.WithTimeout(context.Background(), *invclient.InventoryTimeout)
+	// Note: We use reconciliationTimeout (180s) which accommodates CVE download operations
+	ctx, cancel := context.WithTimeout(context.Background(), reconciliationTimeout)
 	defer cancel()
 
 	resourceKinds := []inv_v1.ResourceKind{
