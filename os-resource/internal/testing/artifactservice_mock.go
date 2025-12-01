@@ -73,12 +73,14 @@ var ExampleUbuntuOSArtifact = as.Artifact{
 	Data:      []byte(UbuntuProfile),
 }
 
+const defaultTickerPeriodHours = 12
+
 var ExampleOsConfig = common.OsConfig{
 	EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
 	OsProfileRevision:       "main",
 	DefaultProfile:          "ubuntu-22.04-lts-generic",
 	AutoProvision:           true,
-	InventoryTickerPeriod:   12 * time.Hour,
+	InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
 	OSSecurityFeatureEnable: false,
 }
 
