@@ -4,17 +4,20 @@
 package common
 
 import (
+	"time"
+
 	"google.golang.org/grpc/codes"
 
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 )
 
 type OsConfig struct {
-	EnabledProfiles         []string
-	OsProfileRevision       string
-	DefaultProfile          string
-	AutoProvision           bool
-	OSSecurityFeatureEnable bool
+	EnabledProfiles           []string
+	OsProfileRevision         string
+	DefaultProfile            string
+	AutoProvision             bool
+	OSSecurityFeatureEnable   bool
+	InventoryTickerPeriod     time.Duration
 }
 
 func (c OsConfig) validateDefaultProfile() error {

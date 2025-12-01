@@ -28,14 +28,13 @@ const (
 var (
 	loggerName = "OSResourceController"
 	zlog       = logging.GetLogger(loggerName)
-
-	defaultInventoryTickerPeriod = 12 * 60 * time.Minute // 12 hours
 )
 
 type OSResourceController struct {
 	invClient *invclient.InventoryClient
 
 	tenantReconciler *rec_v2.Controller[reconcilers.ReconcilerID]
+	tickerPeriod     time.Duration
 
 	wg   *sync.WaitGroup
 	stop chan bool
@@ -54,6 +53,7 @@ func New(
 	return &OSResourceController{
 		invClient:        invClient,
 		tenantReconciler: tenantCtrl,
+		tickerPeriod:     osConfig.InventoryTickerPeriod,
 		wg:               &sync.WaitGroup{},
 		stop:             make(chan bool),
 	}, nil
@@ -79,7 +79,7 @@ func (c *OSResourceController) Stop() {
 
 func (c *OSResourceController) controlLoop() {
 	// TODO: to be decided if we need separate tickers (separate sync loops) for RS and Inv
-	ticker := time.NewTicker(defaultInventoryTickerPeriod)
+	ticker := time.NewTicker(c.tickerPeriod)
 	defer ticker.Stop()
 
 	for {
