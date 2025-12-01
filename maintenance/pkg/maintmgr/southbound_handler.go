@@ -6,6 +6,7 @@ package maintmgr
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -358,27 +359,42 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 	tenantID string, upStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
 ) (*computev1.OSUpdateRunResource, error) {
+	// maxLenHostName is set to 13 to ensure that the generated OS update run name
+	// (which includes the hostname and timestamp) does not exceed 40 bytes.
+	const maxLenHostName = 13
+
 	newUpdateStatus := maintgmr_util.GetUpdatedUpdateStatus(upStatus)
 	instanceID := instRes.GetResourceId()
 	policy := instRes.GetOsUpdatePolicy()
 
-	timeNow, err := maintgmr_util.SafeInt64ToUint64((time.Now().Unix()))
+	t := time.Now()
+	timeNow, err := maintgmr_util.SafeInt64ToUint64(t.Unix())
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msg("Conversion Overflow Error")
 		return nil, err
 	}
 
 	var endTime uint64
-
 	if newUpdateStatus.Status == status.StatusCompleted ||
 		newUpdateStatus.Status == status.StatusFailed {
 		endTime = timeNow
 	} else {
-		endTime = invclient.SentinelEndTimeUnset // Not completed yet
+		endTime = invclient.SentinelEndTimeUnset
 	}
+
+	// Generate unique name: <host-name> update <timestamp>
+	// Truncate host name to ensure total name length stays within 40 bytes limit
+	timestamp := t.Format("20060102-150405")
+	hostName := instRes.GetHost().GetName()
+
+	if len(hostName) > maxLenHostName {
+		hostName = hostName[:maxLenHostName] // Truncate to max 13 characters
+	}
+	runName := hostName + " update " + timestamp
+
 	runRes := &computev1.OSUpdateRunResource{
-		Name:            "Update", // TODO Generate unique name
-		Description:     "OS Update Run",
+		Name:            runName,
+		Description:     fmt.Sprintf("OS update for %s", instRes.GetOs().GetName()),
 		Instance:        &computev1.InstanceResource{ResourceId: instanceID},
 		Status:          newUpdateStatus.Status,
 		StatusDetails:   upStatus.StatusDetail,
@@ -387,7 +403,14 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 		StartTime:       timeNow,
 		EndTime:         endTime,
 		TenantId:        tenantID,
-		AppliedPolicy:   &computev1.OSUpdatePolicyResource{ResourceId: policy.GetResourceId()},
+	}
+
+	// Allow empty policy to support cases where no policy is required for updating mutable OS
+	if policy != nil {
+		policyID := policy.GetResourceId()
+		runRes.AppliedPolicy = &computev1.OSUpdatePolicyResource{ResourceId: policyID}
+	} else {
+		zlog.Debug().Msgf("Creating OSUpdateRun with no applied policy, instanceID: %s", instanceID)
 	}
 
 	run, err := invclient.CreateOSUpdateRun(ctx, client, tenantID, runRes)
