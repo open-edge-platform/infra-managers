@@ -12,12 +12,12 @@ import (
 )
 
 type OsConfig struct {
-	EnabledProfiles           []string
-	OsProfileRevision         string
-	DefaultProfile            string
-	AutoProvision             bool
-	OSSecurityFeatureEnable   bool
-	InventoryTickerPeriod     time.Duration
+	EnabledProfiles         []string
+	OsProfileRevision       string
+	DefaultProfile          string
+	AutoProvision           bool
+	OSSecurityFeatureEnable bool
+	InventoryTickerPeriod   time.Duration
 }
 
 func (c OsConfig) validateDefaultProfile() error {

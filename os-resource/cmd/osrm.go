@@ -106,6 +106,7 @@ func SetupOamServerAndSetReady(enableTracing *bool, oamServerAddress *string) {
 	}
 }
 
+//nolint:cyclop // main function complexity is acceptable
 func main() {
 	// Print a summary of build information
 	StartupSummary()
@@ -146,16 +147,18 @@ func main() {
 
 	tickerPeriod, parseErr := time.ParseDuration(tickerPeriodStr)
 	if parseErr != nil {
-		zlog.InfraSec().Fatal().Err(parseErr).Msgf("Invalid inventory-ticker-period format: %s (use Go duration format, e.g., 12h, 1h, 30m)", tickerPeriodStr)
+		zlog.InfraSec().Fatal().Err(parseErr).Msgf(
+			"Invalid inventory-ticker-period format: %s (use Go duration format, e.g., 12h, 1h, 30m)",
+			tickerPeriodStr)
 	}
 
 	osConfig := common.OsConfig{
-		EnabledProfiles:           strings.Split(*enabledProfiles, ","),
-		OsProfileRevision:         *osProfileRevision,
-		DefaultProfile:            *defaultProfile,
-		AutoProvision:             *autoProvision,
-		OSSecurityFeatureEnable:   *osSecurityFeatureEnable,
-		InventoryTickerPeriod:     tickerPeriod,
+		EnabledProfiles:         strings.Split(*enabledProfiles, ","),
+		OsProfileRevision:       *osProfileRevision,
+		DefaultProfile:          *defaultProfile,
+		AutoProvision:           *autoProvision,
+		OSSecurityFeatureEnable: *osSecurityFeatureEnable,
+		InventoryTickerPeriod:   tickerPeriod,
 	}
 
 	if validateErr := osConfig.Validate(); validateErr != nil {
