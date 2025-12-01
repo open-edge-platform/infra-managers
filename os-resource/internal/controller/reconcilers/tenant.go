@@ -63,14 +63,15 @@ func (tr *TenantReconciler) Reconcile(ctx context.Context,
 	return request.Ack()
 }
 
-// SetPeriodicReconciliationFlag sets the flag indicating whether reconciliation is periodic
-// This should be called by the controller before reconciliation begins
+// SetPeriodicReconciliationFlag sets the flag indicating whether reconciliation is periodic.
+// This should be called by the controller before reconciliation begins.
 func SetPeriodicReconciliationFlag(isPeriodic bool) {
 	periodicReconciliationFlag.Store(isPeriodic)
 }
 
-// isPeriodicReconciliation checks if this reconciliation is part of the periodic tick cycle
-// Returns true for periodic reconciliation (from ticker), false for event-driven reconciliation (initial startup or watcher events)
+// isPeriodicReconciliation checks if this reconciliation is part of the periodic tick cycle.
+// Returns true for periodic reconciliation (from ticker), false for event-driven reconciliation
+// (initial startup or watcher events).
 func isPeriodicReconciliation(_ context.Context) bool {
 	return periodicReconciliationFlag.Load()
 }
