@@ -6,6 +6,7 @@ package reconcilers
 import (
 	"context"
 	"strings"
+	"sync/atomic"
 
 	osv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/os/v1"
 	tenant_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/tenant/v1"
@@ -22,7 +23,13 @@ const (
 	loggerName = "TenantReconciler"
 )
 
-var zlogTenant = logging.GetLogger(loggerName)
+var (
+	zlogTenant = logging.GetLogger(loggerName)
+	// periodicReconciliationFlag indicates whether the current reconciliation is periodic (from ticker)
+	// or event-driven (from watcher or initial startup).
+	// Uses atomic.Bool for thread-safe access across goroutines.
+	periodicReconciliationFlag atomic.Bool
+)
 
 type TenantReconciler struct {
 	invClient *invclient.InventoryClient
@@ -54,6 +61,19 @@ func (tr *TenantReconciler) Reconcile(ctx context.Context,
 	}
 
 	return request.Ack()
+}
+
+// SetPeriodicReconciliationFlag sets the flag indicating whether reconciliation is periodic.
+// This should be called by the controller before reconciliation begins.
+func SetPeriodicReconciliationFlag(isPeriodic bool) {
+	periodicReconciliationFlag.Store(isPeriodic)
+}
+
+// isPeriodicReconciliation checks if this reconciliation is part of the periodic tick cycle.
+// Returns true for periodic reconciliation (from ticker), false for event-driven reconciliation
+// (initial startup or watcher events).
+func isPeriodicReconciliation(_ context.Context) bool {
+	return periodicReconciliationFlag.Load()
 }
 
 func (tr *TenantReconciler) ackOsWatcherIfNeeded(
@@ -102,16 +122,25 @@ func (tr *TenantReconciler) createNewOSResourceFromOSProfile(
 		}
 	}
 
-	osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
-	if err != nil {
-		zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
+	// Defer heavy CVE operations to periodic reconciliation to avoid blocking startup
+	if isPeriodicReconciliation(ctx) {
+		osRes.ExistingCves, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
+		if err != nil {
+			zlogTenant.Warn().Err(err).Msgf("Failed to fetch existing CVEs from URL: %s", osProfile.Spec.OsExistingCvesURL)
+		}
+		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+		osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
+		if err != nil {
+			zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
+		}
+		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
+	} else {
+		// During initial startup/event-driven reconciliation, set URLs but defer CVE content fetch
+		osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
+		osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
+		zlogTenant.Debug().Msgf("Deferring CVE fetch for new OS resource %s %s to periodic reconciliation",
+			osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
 	}
-	osRes.ExistingCvesUrl = osProfile.Spec.OsExistingCvesURL
-	osRes.FixedCves, err = fsclient.GetFixedCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsFixedCvesURL)
-	if err != nil {
-		zlogTenant.Warn().Err(err).Msgf("Failed to fetch fixed CVEs from URL: %s", osProfile.Spec.OsFixedCvesURL)
-	}
-	osRes.FixedCvesUrl = osProfile.Spec.OsFixedCvesURL
 
 	return tr.invClient.CreateOSResource(ctx, tenantID, osRes)
 }
@@ -121,6 +150,13 @@ func (tr *TenantReconciler) updateOSResourceFromOSProfile(
 ) error {
 	var err error
 	var existingCVEs string
+
+	// Only perform heavy CVE operations during periodic reconciliation
+	if !isPeriodicReconciliation(ctx) {
+		zlogTenant.Debug().Msgf("Deferring CVE update for OS resource %s %s to periodic reconciliation",
+			osProfile.Spec.ProfileName, osProfile.Spec.OsImageVersion)
+		return nil
+	}
 
 	existingCVEs, err = fsclient.GetExistingCVEs(ctx, osProfile.Spec.Type, osProfile.Spec.OsExistingCvesURL)
 	if err != nil {
