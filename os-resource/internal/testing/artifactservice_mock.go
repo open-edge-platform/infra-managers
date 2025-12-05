@@ -5,6 +5,7 @@ package testing
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 
@@ -72,11 +73,15 @@ var ExampleUbuntuOSArtifact = as.Artifact{
 	Data:      []byte(UbuntuProfile),
 }
 
+const defaultTickerPeriodHours = 12
+
 var ExampleOsConfig = common.OsConfig{
-	EnabledProfiles:   []string{"ubuntu-22.04-lts-generic"},
-	OsProfileRevision: "main",
-	DefaultProfile:    "ubuntu-22.04-lts-generic",
-	AutoProvision:     true,
+	EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
+	OsProfileRevision:       "main",
+	DefaultProfile:          "ubuntu-22.04-lts-generic",
+	AutoProvision:           true,
+	InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
+	OSSecurityFeatureEnable: false,
 }
 
 type MockArtifactService struct {

@@ -333,7 +333,25 @@ func (c *InventoryClient) UpdateOSResourceExistingCves(ctx context.Context,
 	fm := &fieldmaskpb.FieldMask{
 		Paths: []string{
 			osv1.OperatingSystemResourceFieldExistingCves,
-			osv1.OperatingSystemResourceFieldExistingCvesUrl,
+		},
+	}
+
+	res := &inv_v1.Resource{
+		Resource: &inv_v1.Resource_Os{
+			Os: osRes,
+		},
+	}
+
+	_, err := c.Client.Update(ctx, tenantID, osRes.GetResourceId(), fm, res)
+	return err
+}
+
+func (c *InventoryClient) UpdateOSResourceFixedCves(ctx context.Context,
+	tenantID string, osRes *osv1.OperatingSystemResource,
+) error {
+	fm := &fieldmaskpb.FieldMask{
+		Paths: []string{
+			osv1.OperatingSystemResourceFieldFixedCves,
 		},
 	}
 

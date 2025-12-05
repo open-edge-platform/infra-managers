@@ -22,20 +22,19 @@ const (
 	parallelism = 1
 	// Reconciliation timeout must be longer than CVE download operations.
 	// which can take 1+ minutes for large CVE datasets.
-	reconciliationTimeout = 90 * time.Second
+	reconciliationTimeout = 180 * time.Second
 )
 
 var (
 	loggerName = "OSResourceController"
 	zlog       = logging.GetLogger(loggerName)
-
-	defaultInventoryTickerPeriod = 60 * time.Minute
 )
 
 type OSResourceController struct {
 	invClient *invclient.InventoryClient
 
 	tenantReconciler *rec_v2.Controller[reconcilers.ReconcilerID]
+	tickerPeriod     time.Duration
 
 	wg   *sync.WaitGroup
 	stop chan bool
@@ -54,13 +53,14 @@ func New(
 	return &OSResourceController{
 		invClient:        invClient,
 		tenantReconciler: tenantCtrl,
+		tickerPeriod:     osConfig.InventoryTickerPeriod,
 		wg:               &sync.WaitGroup{},
 		stop:             make(chan bool),
 	}, nil
 }
 
 func (c *OSResourceController) Start() error {
-	if err := c.reconcileAll(); err != nil {
+	if err := c.reconcileAll(false); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func (c *OSResourceController) Stop() {
 
 func (c *OSResourceController) controlLoop() {
 	// TODO: to be decided if we need separate tickers (separate sync loops) for RS and Inv
-	ticker := time.NewTicker(defaultInventoryTickerPeriod)
+	ticker := time.NewTicker(c.tickerPeriod)
 	defer ticker.Stop()
 
 	for {
@@ -101,11 +101,13 @@ func (c *OSResourceController) controlLoop() {
 				continue
 			}
 
+			// Set flag for event-driven reconciliation (not periodic)
+			reconcilers.SetPeriodicReconciliationFlag(false)
 			if err := c.tenantReconciler.Reconcile(reconcilers.WrapReconcilerID(tenantID, resID)); err != nil {
 				zlog.InfraSec().InfraErr(err).Msgf("reconciliation resource failed")
 			}
 		case <-ticker.C:
-			if err := c.reconcileAll(); err != nil {
+			if err := c.reconcileAll(true); err != nil {
 				zlog.InfraSec().InfraErr(err).Msgf("full reconciliation failed")
 			}
 		case <-c.stop:
@@ -115,11 +117,15 @@ func (c *OSResourceController) controlLoop() {
 	}
 }
 
-func (c *OSResourceController) reconcileAll() error {
-	zlog.Debug().Msgf("Reconciling all resources")
+func (c *OSResourceController) reconcileAll(isPeriodicReconciliation bool) error {
+	zlog.Debug().Msgf("Reconciling all resources (isPeriodicReconciliation=%v)", isPeriodicReconciliation)
+
+	// Set the flag for periodic reconciliation
+	reconcilers.SetPeriodicReconciliationFlag(isPeriodicReconciliation)
 
 	// Use context.WithTimeout to set a timeout for the operation
-	ctx, cancel := context.WithTimeout(context.Background(), *invclient.InventoryTimeout)
+	// Note: We use reconciliationTimeout (180s) which accommodates CVE download operations
+	ctx, cancel := context.WithTimeout(context.Background(), reconciliationTimeout)
 	defer cancel()
 
 	resourceKinds := []inv_v1.ResourceKind{
