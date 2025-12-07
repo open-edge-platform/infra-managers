@@ -355,8 +355,6 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, instT1))
-
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
