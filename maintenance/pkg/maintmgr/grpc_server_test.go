@@ -355,8 +355,6 @@ func TestServer_PlatformUpdateStatus_Isolation(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, instT1))
-
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
@@ -608,8 +606,8 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 		expUpdateResponse,
 	)
 
-	// Delete the OsUpdateRun resources created in previous step
-	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
+	// Delete the OsUpdateRun resource created in the previous FAILED status
+	// Note: The second FAILED status above does not create a new OsUpdateRun
 	require.NoError(t, OSUpdateRunDeleteLatest(t, mm_testing.Tenant1, inst))
 
 	// should not handle untrusted

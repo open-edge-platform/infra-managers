@@ -299,7 +299,13 @@ func handleOSUpdateRun(
 ) {
 	instanceID := instRes.GetResourceId()
 	newStatus := mmUpStatus.StatusType.String()
-	zlog.Debug().Msgf("Handle OSUpdateRun")
+	zlog.Info().Msgf("[handleOSUpdateRun]: instanceID=%s, newStatus=%s", instanceID, newStatus)
+
+	// Log the policy info from the instance
+	if instRes.GetOsUpdatePolicy() != nil {
+		zlog.Info().Msgf("[handleOSUpdateRun]: Instance HAS OsUpdatePolicy - policyID=%s policyName=%s, ",
+			instRes.GetOsUpdatePolicy().GetResourceId(), instRes.GetOsUpdatePolicy().GetName())
+	}
 
 	// Map pb.UpdateStatus to local status
 	targetStatuses := map[pb.UpdateStatus_StatusType]string{
@@ -322,21 +328,26 @@ func handleOSUpdateRun(
 		runRes = nil
 	}
 
-	// If no uncompleted run exists, always create a new one
+	// If no uncompleted run exists, then create a new one only in case of Downloading or Started status otherwise ignore
 	if runRes == nil {
-		zlog.Debug().
-			Msgf("Creating new OSUpdateRun (no existing run found), instanceID: %s, update status: %s", instanceID, newStatus)
-		if _, err = createOSUpdateRun(ctx, client, tenantID, mmUpStatus, instRes); err != nil {
-			zlog.Error().Err(err).Msgf("Failed to create OSUpdateRun for instanceId: %s", instanceID)
+		if mmUpStatus.StatusType == pb.UpdateStatus_STATUS_TYPE_DOWNLOADING ||
+			mmUpStatus.StatusType == pb.UpdateStatus_STATUS_TYPE_STARTED {
+			zlog.Info().Msgf("Creating new OSUpdateRun (no existing run found)")
+			if _, err = createOSUpdateRun(ctx, client, tenantID, mmUpStatus, instRes); err != nil {
+				zlog.Error().Err(err).Msgf("Failed to create OSUpdateRun for instanceId: %s", instanceID)
+			}
+		} else {
+			zlog.Info().Msgf("Not creating OSUpdateRun and ignoring this event")
 		}
 		return
 	}
 
+	zlog.Info().Msgf("[handleOSUpdateRun]: runRes=%s, CurrentStatus=%s, NewStatus=%s",
+		runRes.GetName(), runRes.GetStatus(), targetStatus)
+
 	// Update only if new status differs
 	if runRes.GetStatus() != targetStatus {
-		zlog.Debug().
-			Msgf("Updating OSUpdateRun status, instanceID: %s, old status: %s, new status: %s",
-				instanceID, runRes.GetStatus(), targetStatus)
+		zlog.Info().Msgf("[handleOSUpdateRun]: Updating OSUpdateRun status")
 		if err := updateOSUpdateRun(ctx, client, tenantID, instRes, mmUpStatus, runRes); err != nil {
 			zlog.Error().Err(err).Msgf("Failed to update OSUpdateRun, instanceId: %s, OSUpdateRunId: %s",
 				instanceID, runRes.GetResourceId())
@@ -410,7 +421,7 @@ func createOSUpdateRun(ctx context.Context, client inv_client.TenantAwareInvento
 		policyID := policy.GetResourceId()
 		runRes.AppliedPolicy = &computev1.OSUpdatePolicyResource{ResourceId: policyID}
 	} else {
-		zlog.Debug().Msgf("Creating OSUpdateRun with no applied policy, instanceID: %s", instanceID)
+		zlog.Info().Msgf("Creating OSUpdateRun with no applied policy, instanceID: %s", instanceID)
 	}
 
 	run, err := invclient.CreateOSUpdateRun(ctx, client, tenantID, runRes)
@@ -435,9 +446,13 @@ func updateOSUpdateRun(
 	newUpdateStatus, needed := maintgmr_util.GetUpdatedUpdateStatusIfNeeded(upStatus,
 		runRes.GetStatusIndicator(), runRes.GetStatus())
 
+	zlog.Info().Msgf("[updateOSUpdateRun]: newStatus=%s, needed=%v", newUpdateStatus.Status, needed)
+
 	if needed {
 		newUpdateStatusDetail := maintgmr_util.GetUpdateStatusDetailIfNeeded(
 			newUpdateStatus, upStatus, instRes.GetOs().GetOsType())
+
+		zlog.Info().Msgf("[updateOSUpdateRun]: newUpdateStatusDetail=%s", newUpdateStatusDetail)
 
 		err := invclient.UpdateOSUpdateRun(
 			ctx, c, tenantID, instRes.GetResourceId(), newUpdateStatus, newUpdateStatusDetail, runRes.GetResourceId())
