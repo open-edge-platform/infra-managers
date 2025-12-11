@@ -618,7 +618,7 @@ func (m *BiosInfo) validate(all bool) error {
 		if !_BiosInfo_ReleaseDate_Pattern.MatchString(m.GetReleaseDate()) {
 			err := BiosInfoValidationError{
 				field:  "ReleaseDate",
-				reason: "value does not match regex pattern \"^(0[1-9]|1[012])[/](0[1-9]|[12][0-9]|3[01])[/](19|20)\\\\d\\\\d$\"",
+				reason: "value does not match regex pattern \"`^((\\\\d{4})/(0[1-9]|1[0-2])/(0[1-9]|[12]\\\\d|3[01])|(0[1-9]|1[0-2])/(0[1-9]|[12]\\\\d|3[01])/\\\\d{4}|(\\\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\\\d|3[01])|(0[1-9]|1[0-2])-(0[1-9]|[12]\\\\d|3[01])-\\\\d{4})$`\"",
 			}
 			if !all {
 				return err
@@ -719,9 +719,8 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = BiosInfoValidationError{}
-//validate mm/dd/yyyy and yyyy-mm-dd format
-var _BiosInfo_ReleaseDate_Pattern = regexp.MustCompile(
-    `^((\d{4})/(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])|(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/\d{4}|(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])|(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])-\d{4})$`)
+
+var _BiosInfo_ReleaseDate_Pattern = regexp.MustCompile("`^((\\d{4})/(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])|(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{4}|(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])|(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])-\\d{4})$`")
 
 // Validate checks the field values on OsInfo with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
