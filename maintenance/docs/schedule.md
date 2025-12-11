@@ -20,4 +20,4 @@ Mutable OS Update flow: Day 2 update of mutable Ubuntu OS using apt package mana
 Immutable OS Update flow: Day 2 update of immutable Edge Microvisor Toolkit via A/B partition swap and
 install of new OS image.
 
-This repository contains the Maintenance Manager implementation and the southbound API exposed to Edge Nodes.
+This repository contains the Maintenance Manager implementation and the southbound API exposed to the Edge Nodes.

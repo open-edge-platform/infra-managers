@@ -550,6 +550,8 @@ func GetLatestOSUpdateRunByInstanceID(
 		return nil, errors.Errorfc(codes.InvalidArgument, "Unknown completion filter: %d", completionFilter)
 	}
 
+	zlog.Info().Msgf("[GetLatestOSUpdateRunByInstanceID]: filter=%s", filter)
+
 	resp, err := c.List(childCtx, &inv_v1.ResourceFilter{
 		Resource: &inv_v1.Resource{Resource: &inv_v1.Resource_OsUpdateRun{}},
 		Filter:   filter,

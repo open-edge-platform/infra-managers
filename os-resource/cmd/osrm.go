@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -47,6 +48,7 @@ var (
 	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault,
 		metrics.MetricsAddressDescription)
 	osSecurityFeatureEnable = flag.Bool(common.OSSecurityFeatureEnable, false, common.OSSecurityFeatureEnableDescription)
+	inventoryTickerPeriod   = flag.String("inventory-ticker-period", "12h", "Inventory ticker period (e.g., 12h, 1h, 30m)")
 )
 
 var (
@@ -104,6 +106,7 @@ func SetupOamServerAndSetReady(enableTracing *bool, oamServerAddress *string) {
 	}
 }
 
+//nolint:cyclop // main function complexity is acceptable
 func main() {
 	// Print a summary of build information
 	StartupSummary()
@@ -135,12 +138,27 @@ func main() {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Cannot create a new InventoryClient")
 	}
 
+	// Parse inventory ticker period from environment variable or flag
+	tickerPeriodStr := *inventoryTickerPeriod
+	if envTickerPeriod := os.Getenv("INVENTORY_TICKER_PERIOD"); envTickerPeriod != "" {
+		tickerPeriodStr = envTickerPeriod
+		zlog.Debug().Msgf("Using INVENTORY_TICKER_PERIOD from environment: %s", tickerPeriodStr)
+	}
+
+	tickerPeriod, parseErr := time.ParseDuration(tickerPeriodStr)
+	if parseErr != nil {
+		zlog.InfraSec().Fatal().Err(parseErr).Msgf(
+			"Invalid inventory-ticker-period format: %s (use Go duration format, e.g., 12h, 1h, 30m)",
+			tickerPeriodStr)
+	}
+
 	osConfig := common.OsConfig{
 		EnabledProfiles:         strings.Split(*enabledProfiles, ","),
 		OsProfileRevision:       *osProfileRevision,
 		DefaultProfile:          *defaultProfile,
 		AutoProvision:           *autoProvision,
 		OSSecurityFeatureEnable: *osSecurityFeatureEnable,
+		InventoryTickerPeriod:   tickerPeriod,
 	}
 
 	if validateErr := osConfig.Validate(); validateErr != nil {
