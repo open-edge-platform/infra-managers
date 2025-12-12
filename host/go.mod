@@ -7,14 +7,14 @@ go 1.24.9
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/envoyproxy/protoc-gen-validate v1.2.1
+	github.com/envoyproxy/protoc-gen-validate v1.3.0
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.33.2
 	github.com/open-edge-platform/infra-managers/maintenance v1.24.1
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.15
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.77.0
-	google.golang.org/protobuf v1.36.10
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
