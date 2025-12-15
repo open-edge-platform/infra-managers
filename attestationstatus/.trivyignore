@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Needs upgrade of golang to 1.24.11
+CVE-2025-61729
