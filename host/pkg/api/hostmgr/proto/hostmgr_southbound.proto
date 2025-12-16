@@ -105,7 +105,8 @@ message BiosInfo {
   string release_date = 2 [(validate.rules).string = {
     max_len: 128
     ignore_empty: true
-    pattern: "^(0[1-9]|1[012])[/](0[1-9]|[12][0-9]|3[01])[/](19|20)\\d\\d$" // MM/DD/YYYY format
+    pattern: "`^((\\d{4})/(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])|(0[1-9]|1[0-2])/(0[1-9]|[12]\\d|3[01])/\\d{4}|(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])|(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])-\\d{4})$`"
+
   }];
 
   string vendor = 3 [(validate.rules).string = {
