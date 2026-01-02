@@ -1,0 +1,74 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+package reconcilers
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	grpc_status "google.golang.org/grpc/status"
+
+	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
+	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
+)
+
+// Constants used for the exp retries.
+const (
+	minDelay = 1 * time.Second
+	maxDelay = 30 * time.Second
+)
+
+func FormatTenantResourceID(tenantID, resourceID string) string {
+	return fmt.Sprintf("[tenantID=%s, resourceID=%s]", tenantID, resourceID)
+}
+
+// Inventory resource IDs + tenant IDs are used to feed reconciler functions.
+type ReconcilerID string
+
+func (id ReconcilerID) String() string {
+	return FormatTenantResourceID(id.GetTenantID(), id.GetResourceID())
+}
+
+func (id ReconcilerID) GetTenantID() string {
+	return strings.Split(string(id), "_")[0]
+}
+
+func (id ReconcilerID) GetResourceID() string {
+	return strings.Split(string(id), "_")[1]
+}
+
+func NewReconcilerID(tenantID, resourceID string) ReconcilerID {
+	return ReconcilerID(fmt.Sprintf("%s_%s", tenantID, resourceID))
+}
+
+// HandleInventoryError is a generic handler for inventory errors. It should only be used by reconciliation logic.
+func HandleInventoryError(err error, request rec_v2.Request[ReconcilerID]) rec_v2.Directive[ReconcilerID] {
+	if _, ok := grpc_status.FromError(err); !ok {
+		// not a gRPC error, might be some internal error, no retry
+		zlog.InfraErr(err).Msgf("Received non-gRPC error for request ID %s, no retry", request.ID)
+		return request.Ack()
+	}
+
+	// Not found, already_exists, unauthenticated and permission_denied are fine or non-recoverable. No retries
+	switch {
+	case inv_errors.IsNotFound(err) || inv_errors.IsAlreadyExists(err):
+		zlog.InfraErr(err).Msgf("Received non-transient, but safe error for request ID %s, "+
+			"stopping reconciliation", request.ID)
+		return request.Ack()
+	case inv_errors.IsUnauthenticated(err) || inv_errors.IsPermissionDenied(err):
+		// unrecoverable errors
+		zlog.InfraErr(err).Msgf(
+			"Received non-transient, unrecoverable inventory error for request ID %s, "+
+				"stopping reconciliation", request.ID)
+		return request.Ack()
+	}
+
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Retry reconciliation %s after exp. backoff", request.ID)
+		return request.Retry(err).With(rec_v2.ExponentialBackoff(minDelay, maxDelay))
+	}
+
+	return nil
+}

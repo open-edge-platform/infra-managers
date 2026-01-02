@@ -1,0 +1,13 @@
+---
+# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+version: v1
+deps:
+  - buf.build/envoyproxy/protoc-gen-validate
+breaking:
+  use:
+    - FILE  # use most stringent breaking policy
+lint:
+  use:
+    - STANDARD

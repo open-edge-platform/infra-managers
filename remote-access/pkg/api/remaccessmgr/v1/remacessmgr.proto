@@ -1,0 +1,54 @@
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package remaccessmgr.v1;
+
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/open-edge-platform/infra-managers/remote-access/pkg/api/remaccessmgr/v1;remaccessmgrv1";
+
+message GetRemoteAccessConfigByGuidRequest {
+  string uuid = 1 [(validate.rules).string = {uuid: true max_bytes: 36}];
+  string tenantID = 2 [(validate.rules).string = {uuid: true max_bytes: 36}];
+}
+
+message AgentRemoteAccessSpec {
+  string remote_access_proxy_endpoint = 1;
+  string session_token = 2;
+  uint32 reverse_bind_port = 3;
+  string target_host = 4;
+  uint32 target_port = 5;
+  string ssh_user = 6;
+  uint64 expiration_timestamp = 7;
+  string uuid = 8;
+}
+
+enum ConfigStatus {
+  CONFIG_STATUS_UNSPECIFIED = 0;
+  CONFIG_STATUS_NONE = 1;
+  CONFIG_STATUS_PENDING = 2;
+  CONFIG_STATUS_ACTIVE = 3;
+  CONFIG_STATUS_DISABLED = 4;
+  CONFIG_STATUS_ERROR = 5;
+}
+
+message ConfigError {
+  string code = 2;
+}
+
+message GetResourceAccessConfigResponse {
+  uint64 seq = 1;
+  google.protobuf.Timestamp observed_at = 2;
+  ConfigStatus status = 3;
+  AgentRemoteAccessSpec spec = 4;
+  ConfigError error = 5;
+}
+
+service RemaccessmgrService {
+  rpc GetRemoteAccessConfigByGuid(GetRemoteAccessConfigByGuidRequest)
+      returns (GetResourceAccessConfigResponse) {}
+}
