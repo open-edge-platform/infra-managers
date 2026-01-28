@@ -99,7 +99,6 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
-		inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
 	)
 
 	// Host3 has no instance associated

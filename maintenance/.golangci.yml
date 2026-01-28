@@ -2,7 +2,10 @@
 # SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+version: "2"
+
 linters:
+  disable-all: true
   enable:
     - asasalint
     - asciicheck
@@ -13,52 +16,124 @@ linters:
     - depguard
     - dogsled
     - durationcheck
-    - errcheck
     - errname
     - errorlint
     - exhaustive
     - funlen
-    - gci
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
     - gomoddirectives
     - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
     - mnd
     - nakedret
     - nilerr
     - nilnil
-    - noctx
-    - nolintlint
-    - prealloc
     - predeclared
-    - revive
-    - staticcheck
-    - stylecheck
     - tagliatelle
     - testpackage
-    - tenv
     - testableexamples
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
-    - unused
     - usestdlibvars
     - whitespace
-    - dupl
+  disable:
+    - errcheck
+    - staticcheck
+    - revive
+    - gosec
+    - noctx
+    - nolintlint
+    - prealloc
+  formatters:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    cyclop:
+      # SDL requirements dictate a maximum cyclomatic complexity of 10
+      max-complexity: 10
+    misspell:
+      locale: US
+    lll:
+      line-length: 130
+      tab-width: 4
+    funlen:
+      lines: 100
+      statements: 50
+    exhaustive:
+      default-signifies-exhaustive: true
+    gci:
+      sections:
+        # Standard section: captures all standard packages.
+        - standard
+        # Default section: contains all imports that could not be matched to another section type.
+        - default
+        # Custom section: groups all imports with the specified Prefix.
+        - prefix(github.com/open-edge-platform)
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        # These 3 will detect many cases, but they do sense
+        # if it's performance oriented code
+        - hugeParam
+        - rangeExprCopy
+        - rangeValCopy
+        - unnamedResult
+    nakedret:
+      # No naked returns, ever.
+      max-func-lines: 1
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+          xml: camel
+          bson: camel
+          avro: snake
+          mapstructure: kebab
+    depguard:
+      rules:
+        main:
+          files:
+            - $all
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/open-edge-platform
+            - github.com/stretchr/testify/require
+            - github.com/grpc-ecosystem/go-grpc-middleware
+            - github.com/prometheus/client_golang/prometheus
+            - github.com/Masterminds/semver/v3
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+          deny: []
+        test:
+          files:
+            - $test
+          allow:
+            - $gostd
+            - github.com/open-edge-platform
+            - github.com/stretchr/testify/assert
+            - github.com/stretchr/testify/require
+            - github.com/google/uuid
+            - github.com/Masterminds/semver/v3
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+          deny: []
 
 run:
   timeout: 10m
@@ -76,89 +151,6 @@ run:
 
   # Keep this empty to use the Go version from the go.mod file.
   go: ""
-
-linters-settings:
-  cyclop:
-    # SDL requirements dictate a maximum cyclomatic complexity of 10
-    max-complexity: 10
-  dupl:
-    # Tokens count to trigger issue.
-    threshold: 100
-  govet:
-    enable:
-      - shadow
-  misspell:
-    locale: US
-  lll:
-    line-length: 130
-    tab-width: 4
-  funlen:
-    lines: 100
-    statements: 50
-  exhaustive:
-    default-signifies-exhaustive: true
-  gci:
-    sections:
-      # Standard section: captures all standard packages.
-      - standard
-      # Default section: contains all imports that could not be matched to another section type.
-      - default
-      # Custom section: groups all imports with the specified Prefix.
-      - prefix(github.com/open-edge-platform)
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      # These 3 will detect many cases, but they do sense
-      # if it's performance oriented code
-      - hugeParam
-      - rangeExprCopy
-      - rangeValCopy
-      - unnamedResult
-  errcheck:
-    # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
-    check-type-assertions: true   # Default: false
-    # Report skipped checks:`num, _ := strconv.Atoi(numStr)`.
-    check-blank: true   # Default: false
-  nakedret:
-    # No naked returns, ever.
-    max-func-lines: 1   # Default: 30
-  tagliatelle:
-    case:
-      rules:
-        json: snake
-        yaml: snake
-        xml: camel
-        bson: camel
-        avro: snake
-        mapstructure: kebab
-  depguard:
-    rules:
-      Main:
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/open-edge-platform
-          - github.com/stretchr/testify/require
-          - github.com/grpc-ecosystem/go-grpc-middleware
-          - github.com/prometheus/client_golang/prometheus
-          - github.com/Masterminds/semver/v3
-      Test:
-        files:
-          - $test
-        allow:
-          - $gostd
-          - github.com/open-edge-platform
-          - github.com/stretchr/testify/assert
-          - github.com/stretchr/testify/require
-          - github.com/google/uuid
-          - github.com/Masterminds/semver/v3
 
 issues:
   max-issues-per-linter: 0
@@ -195,10 +187,12 @@ output:
   # Example: "checkstyle:report.json,colored-line-number"
   #
   # Default: colored-line-number
-  formats: colored-line-number:stdout,html:out/golangci-lint_report.html
-
-  print-linter-name: true
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+    html:
+      path: out/golangci-lint_report.html
 
   uniq-by-line: false
-
   sort-results: true

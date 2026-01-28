@@ -111,7 +111,6 @@ func createMaintenanceManagerServer() {
 			maintmgr.EnableSanitizeGrpcErr(true),
 			maintmgr.EnableAuth(true),
 			maintmgr.EnableMetrics(true),
-			maintmgr.EnableSanitizeGrpcErr(true),
 			maintmgr.EnableTracing(true),
 			maintmgr.WithRbacRulesPath(rulesDir),
 		)
