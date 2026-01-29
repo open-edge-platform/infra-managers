@@ -30,7 +30,7 @@ func resolveOsResAndCVEsIfNeeded(
 	tenantID string,
 	mmUpStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
-	status *inv_status.ResourceStatus,
+	resStatus *inv_status.ResourceStatus,
 	needed bool,
 ) (osResID, existingCVEs string, err error) {
 	if !needed {
@@ -40,7 +40,7 @@ func resolveOsResAndCVEsIfNeeded(
 	if err != nil {
 		return "", "", err
 	}
-	existingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, osResID, instRes, status)
+	existingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, osResID, instRes, resStatus)
 	if err != nil {
 		return "", "", err
 	}

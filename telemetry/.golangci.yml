@@ -2,7 +2,10 @@
 # SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+version: "2"
+
 linters:
+  disable-all: true
   enable:
     - asasalint
     - asciicheck
@@ -12,190 +15,143 @@ linters:
     - cyclop
     - depguard
     - dogsled
-    - dupl
     - durationcheck
-    - errcheck
     - errname
     - errorlint
     - exhaustive
     - funlen
-    - gci
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomoddirectives
     - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
     - mnd
     - nakedret
     - nilerr
     - nilnil
-    - noctx
-    - nolintlint
-    - prealloc
     - predeclared
-    - revive
-    - staticcheck
-    - stylecheck
     - tagliatelle
     - testpackage
-    - tenv
     - testableexamples
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
-    - unused
     - usestdlibvars
     - whitespace
-    - dupl
+  disable:
+    - errcheck
+    - staticcheck
+    - revive
+    - gosec
+    - noctx
+    - nolintlint
+    - prealloc
+  formatters:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    depguard:
+      rules:
+        main:
+          files:
+            - $all
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/open-edge-platform
+            - github.com/stretchr/testify/require
+            - github.com/prometheus/client_golang/prometheus
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+          deny: []
+        test:
+          files:
+            - $test
+          allow:
+            - $gostd
+            - github.com/open-edge-platform
+            - github.com/stretchr/testify/require
+            - github.com/stretchr/testify/assert
+            - github.com/mennanov/fmutils
+            - google.golang.org/grpc
+            - google.golang.org/protobuf
+          deny: []
+
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        # These 3 will detect many cases, but they do sense
+        # if it's performance oriented code
+        - hugeParam
+        - rangeExprCopy
+        - rangeValCopy
+        - unnamedResult
+
+    misspell:
+      locale: US
+
+    nakedret:
+      # No naked returns, ever.
+      max-func-lines: 1
+
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+          xml: camel
+          bson: camel
+          avro: snake
+          mapstructure: kebab
+
+    cyclop:
+      # SDL requirements dictate a maximum cyclomatic complexity of 10
+      max-complexity: 10
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    lll:
+      line-length: 130
+      tab-width: 4
+
+    funlen:
+      lines: 100
+      statements: 50
+
+    gci:
+      sections:
+        # Standard section: captures all standard packages.
+        - standard
+        # Default section: contains all imports that could not be matched to another section type.
+        - default
+        # Custom section: groups all imports with the specified Prefix.
+        - prefix(github.com/open-edge-platform)
 
 run:
   timeout: 10m
-
   issues-exit-code: 1
-
   tests: true
-
   modules-download-mode: readonly
-
   go: ""
-
-linters-settings:
-  depguard:
-    rules:
-      Main:
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/open-edge-platform
-          - github.com/stretchr/testify/require
-          - github.com/prometheus/client_golang/prometheus
-        deny:
-      Test:
-        files:
-          - $test
-        allow:
-          - $gostd
-          - github.com/open-edge-platform
-          - github.com/stretchr/testify/require
-          - github.com/stretchr/testify/assert
-          - github.com/mennanov/fmutils
-        deny:
-
-  dupl:
-    # tokens count to trigger issue, 150 by default
-    threshold: 100
-
-  govet:
-    enable:
-      - shadow
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      # These 3 will detect many cases, but they do sense
-      # if it's performance oriented code
-      - hugeParam
-      - rangeExprCopy
-      - rangeValCopy
-      - unnamedResult
-
-  misspell:
-    locale: US
-
-  nakedret:
-    # No naked returns, ever.
-    max-func-lines: 1
-
-  tagliatelle:
-    case:
-      rules:
-        json: snake
-        yaml: snake
-        xml: camel
-        bson: camel
-        avro: snake
-        mapstructure: kebab
-
-  cyclop:
-    # SDL requirements dictate a maximum cyclomatic complexity of 10
-    max-complexity: 10
-
-  errcheck:
-    # Report `a := b.(MyStruct)` when `a, ok := ...` should be.
-    check-type-assertions: true   # Default: false
-    # Report skipped checks:`num, _ := strconv.Atoi(numStr)`.
-    check-blank: true   # Default: false
-    # Function to skip.
-    exclude-functions:
-      - io/ioutil.ReadFile
-      - io.Copy(*bytes.Buffer)
-      - io.Copy(os.Stdout)
-
-  exhaustive:
-    default-signifies-exhaustive: true
-
-  gosec:
-    # To select a subset of rules to run.
-    # Available rules: https://github.com/securego/gosec#available-rules
-    includes:
-      - G401
-      - G306
-      - G101
-      - G102
-      - G103
-      - G104
-      - G106
-      - G107
-      - G108
-      - G109
-      - G110
-
-  lll:
-    line-length: 130
-    tab-width: 4
-
-  funlen:
-    lines: 100
-    statements: 50
-
-  gci:
-    sections:
-      # Standard section: captures all standard packages.
-      - standard
-      # Default section: contains all imports that could not be matched to another section type.
-      - default
-      # Custom section: groups all imports with the specified Prefix.
-      - prefix(github.com/open-edge-platform)
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  # When set to `true` linter will analyze only new code which are
-  # not committed or after some specific revision. This is a cool
-  # feature when you're going to introduce linter into a big project.
-  # But I prefer going gradually package by package.
-  # So, it's set to `false` to scan all code.
   new: false
   fix: false
   exclude:
@@ -205,19 +161,11 @@ issues:
     - Error return value of `.*Stop` is not checked
 
 output:
-  # Format:
-  # colored-line-number|line-number|json|tab|checkstyle|code-climate|junit-xml|github-actions
-  #
-  # Multiple can be specified by separating them by comma, output can be provided
-  # for each of them by separating format name and path by colon symbol.
-  # Output path can be either `stdout`, `stderr` or path to the file to write to.
-  # Example: "checkstyle:report.json,colored-line-number"
-  #
-  # Default: colored-line-number
-  formats: colored-line-number:stdout,html:out/golangci-lint_report.html
-
-  print-linter-name: true
-
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+    html:
+      path: out/golangci-lint_report.html
   uniq-by-line: false
-
   sort-results: true
