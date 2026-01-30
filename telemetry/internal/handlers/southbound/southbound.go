@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package southbound provides southbound handler for telemetry manager.
+// Package southbound provides southbound handler for telemetry manager.
 package southbound
 
 import (
+	"context"
 	"net"
 	"sync"
 
@@ -18,6 +21,8 @@ var (
 	zlog       = logging.GetLogger(loggerName)
 )
 
+// SBHandler handles southbound telemetry operations.
+// SBHandler handles southbound telemetry operations.
 type SBHandler struct {
 	servaddr              string
 	termChan              chan bool
@@ -33,6 +38,8 @@ type SBHandler struct {
 	metricsAddress        string
 }
 
+// NewSBHandler creates a new southbound handler.
+// NewSBHandler creates a new southbound handler.
 func NewSBHandler(
 	servaddr string,
 	readyChan chan bool,
@@ -62,10 +69,12 @@ func NewSBHandler(
 	return sbHandler, nil
 }
 
+// Start starts the southbound handler.
+// Start starts the southbound handler.
 func (sbh *SBHandler) Start() error {
 	// start gRPC server for southbound
 	go func() {
-		lis, err := net.Listen("tcp", sbh.servaddr)
+		lis, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", sbh.servaddr)
 		if err != nil {
 			zlog.InfraSec().Fatal().Err(err).Msgf("Error listening with TCP on address %s", sbh.servaddr)
 		}
@@ -84,6 +93,8 @@ func (sbh *SBHandler) Start() error {
 	return nil
 }
 
+// Stop stops the southbound handler.
+// Stop stops the southbound handler.
 func (sbh *SBHandler) Stop() {
 	// stop gRPC server
 	close(sbh.termChan)

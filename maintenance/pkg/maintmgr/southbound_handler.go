@@ -234,6 +234,8 @@ func getUpdateOS(
 	return os, nil
 }
 
+// GetNewOSResourceIDIfNeeded retrieves a new OS resource ID if needed for the update.
+// GetNewOSResourceIDIfNeeded retrieves a new OS resource ID if needed for the update.
 func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
@@ -469,6 +471,8 @@ func updateOSUpdateRun(
 	return nil
 }
 
+// GetNewExistingCVEs retrieves new and existing CVEs for comparison.
+// GetNewExistingCVEs retrieves new and existing CVEs for comparison.
 func GetNewExistingCVEs(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,

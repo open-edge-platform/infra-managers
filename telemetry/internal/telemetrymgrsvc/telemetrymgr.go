@@ -2,6 +2,8 @@
 * SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 * SPDX-License-Identifier: Apache-2.0
  */
+
+// Package telemetrymgr provides telemetry manager service implementation.
 package telemetrymgr
 
 import (
@@ -24,7 +26,7 @@ var (
 	expectedConfigSize = 100
 )
 
-// Service implements the TelemetryManager gRPC handlers.
+// RPCServer implements the TelemetryManager gRPC handlers.
 type RPCServer struct {
 	pb.UnimplementedTelemetryMgrServer
 	telemetryClient *invclient.TelemetryInventoryClient
@@ -32,6 +34,8 @@ type RPCServer struct {
 	enableAuth      bool
 }
 
+// NewTelemetrymgrServer creates a new telemetry manager server.
+// NewTelemetrymgrServer creates a new telemetry manager server.
 func NewTelemetrymgrServer(
 	telCli *invclient.TelemetryInventoryClient,
 	enableAuth bool,
@@ -128,7 +132,8 @@ func (s *RPCServer) convertProfileToConfig(
 	profileList []*telemetryv1.TelemetryProfile,
 ) []*pb.GetTelemetryConfigResponse_TelemetryCfg {
 	// var to store all telemetry resource
-	var cfgLists []TelemetryResources
+	//nolint:mnd // Estimated capacity: each profile typically has ~4 metric groups
+	cfgLists := make([]TelemetryResources, 0, len(profileList)*4)
 
 	// convert telemetry profile into telemetry resources
 	for _, profileRow := range profileList {
@@ -141,7 +146,7 @@ func (s *RPCServer) convertProfileToConfig(
 				MetricInterval: profileRow.GetMetricsInterval(),
 				MetricKind:     metricGroup.GetCollectorKind().String(),
 				MetricType:     profileRow.GetKind().String(),
-				LogSeverity:    uint32(profileRow.GetLogLevel().Number()),
+				LogSeverity:    uint32(profileRow.GetLogLevel().Number()), //nolint:gosec // Safe conversion: enum value
 			}
 			cfgLists = append(cfgLists, metricResource)
 		}
@@ -160,7 +165,8 @@ func (s *RPCServer) convertProfileToConfig(
 			Type:     AssignTelemetryResourceKind(telemetryv1.TelemetryResourceKind_value[cfgRow.MetricType]),
 			Kind:     AssignTelemetryCollectorKind(telemetryv1.CollectorKind_value[cfgRow.MetricKind]),
 			Interval: int64(cfgRow.MetricInterval),
-			Level:    AssignTelemetryResourceSeverity(int32(cfgRow.LogSeverity)),
+			//nolint:gosec // Safe conversion: uint32 to int32
+			Level: AssignTelemetryResourceSeverity(int32(cfgRow.LogSeverity)),
 		}
 
 		telemetryCfgArray = append(telemetryCfgArray, cfg)

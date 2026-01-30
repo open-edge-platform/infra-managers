@@ -209,7 +209,6 @@ func cleanupProvider(t *testing.T, tenantID string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	//nolint:errcheck // no need to check for errors
 	provRes, _ := osrm_testing.InvClient.GetProviderSingularByName(ctx, tenantID, util2.InfraOnboardingProviderName)
 
 	if provRes != nil {

@@ -6,9 +6,6 @@ version: "2"
 
 linters:
   disable-all: true
-  disable:
-    - errcheck
-    - staticcheck
   enable:
     - asasalint
     - asciicheck
@@ -19,32 +16,32 @@ linters:
     - depguard
     - dogsled
     - durationcheck
+    - errcheck
     - errname
     - errorlint
     - exhaustive
-    # - funlen  # Some functions are long
+    - funlen
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
-    # - godot
-    # - goheader
+    - godot
     - gomoddirectives
     - goprintffuncname
-    # - gosec
+    - gosec
     - lll
     - misspell
     - mnd
     - nakedret
     - nilnil
-    # - noctx
-    # - nolintlint
-    # - prealloc
+    - noctx
+    - nolintlint
+    - prealloc
     - predeclared
-    # - revive
-    # - stylecheck
-    # - tagliatelle
-    # - testpackage
+    - revive
+    - staticcheck
+    - tagliatelle
+    - testpackage
     - testableexamples
     - thelper
     - tparallel
@@ -99,7 +96,7 @@ linters:
       - rangeValCopy
       - unnamedResult
 
-  misspell:
+    misspell:
     # Correct spellings using locale preferences for US or UK.
     # Default is to use a neutral variety of English.
     # Setting locale to US will correct the British spelling of 'colour' to 'color'.
@@ -107,26 +104,26 @@ linters:
     ignore-words:
       - someword
 
-  nakedret:
-    # No naked returns, ever.
-    max-func-lines: 1
-  tagliatelle:
-    case:
-      rules:
-        json: snake
-        yaml: snake
-        xml: camel
-        bson: camel
-        avro: snake
-        mapstructure: kebab
+    nakedret:
+      # No naked returns, ever.
+      max-func-lines: 1
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+          xml: camel
+          bson: camel
+          avro: snake
+          mapstructure: kebab
 
-  unparam:
-    # Inspect exported functions, default is false. Set to true if no external
-    # program/library imports your code. XXX: if you enable this setting, unparam
-    # will report a lot of false-positives in text editors: if it's called for
-    # subdir of a project it can't find external interfaces. All text editor
-    # integrations with golangci-lint call it on a directory with the changed file.
-    check-exported: false
+    unparam:
+      # Inspect exported functions, default is false. Set to true if no external
+      # program/library imports your code. XXX: if you enable this setting, unparam
+      # will report a lot of false-positives in text editors: if it's called for
+      # subdir of a project it can't find external interfaces. All text editor
+      # integrations with golangci-lint call it on a directory with the changed file.
+      check-exported: false
     cyclop:
       max-complexity: 10
     exhaustive:
@@ -135,8 +132,8 @@ linters:
       line-length: 130
       tab-width: 4
     funlen:
-      lines: 100
-      statements: 50
+      lines: 80
+      statements: 60
   exclusions:
     generated: lax
     paths:

@@ -2,6 +2,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package errors provides error wrapping utilities for the Host Manager.
+// Package hostmgrerrors provides error handling utilities for the host manager
+//
+//nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
 package errors
 
 import (
@@ -13,6 +17,7 @@ import (
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
 )
 
+// Wrap wraps an error with additional context and status code.
 func Wrap(err error) error {
 	if err == nil {
 		return nil

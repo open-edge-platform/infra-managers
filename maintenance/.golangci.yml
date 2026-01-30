@@ -44,7 +44,6 @@ linters:
     - unparam
     - usestdlibvars
     - whitespace
-  disable:
     - errcheck
     - staticcheck
     - revive

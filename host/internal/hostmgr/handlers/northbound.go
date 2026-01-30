@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package handlers implements northbound handlers for the Host Manager.
 package handlers
 
 import (
@@ -36,18 +37,27 @@ const (
 )
 
 var (
-	zlog         = logging.GetLogger(loggerName)
+	// TickerPeriod is the period for the ticker in the northbound handler.
+	zlog = logging.GetLogger(loggerName)
+	// TickerPeriod is the interval between host status updates
 	TickerPeriod = defaultTickerPeriod
 )
 
+// HostManagerNBHandler is the northbound handler for the Host Manager.
+
+// HostManagerNBHandler handles northbound communication for host manager..
 type HostManagerNBHandler struct {
 	invClient inv_client.TenantAwareInventoryClient
 	invEvents chan *inv_client.WatchEvents
 	filters   map[inv_v1.ResourceKind]Filter
 	wg        *sync.WaitGroup
 	sigTerm   chan bool
+	// NewNBHandler creates a new northbound handler for the Host Manager.
 }
 
+// NewNBHandler creates a new northbound handler for host management
+
+// NewNBHandler creates a new northbound handler for host management.
 func NewNBHandler(
 	invClient inv_client.TenantAwareInventoryClient,
 	invEvents chan *inv_client.WatchEvents,
@@ -64,8 +74,10 @@ func NewNBHandler(
 		wg:        &sync.WaitGroup{},
 		sigTerm:   make(chan bool),
 	}, nil
+	// Start starts the northbound handler and begins processing events.
 }
 
+// Start begins the periodic host status update loop..
 func (nbh *HostManagerNBHandler) Start() error {
 	zlog.Info().Msgf("HRM northbound handler started")
 	if err := nbh.initializeAliveMgrWithHosts(); err != nil {
@@ -111,7 +123,9 @@ func (nbh *HostManagerNBHandler) controlLoop(ticker *time.Ticker) {
 	}
 }
 
+// Stop stops the northbound handler and cleans up resources.
 func (nbh *HostManagerNBHandler) Stop() {
+	// Stop terminates the host status update loop
 	close(nbh.sigTerm)
 	nbh.wg.Wait()
 	zlog.Info().Msg("HRM northbound handler stopped")

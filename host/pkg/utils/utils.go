@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package util provides utility functions for host management.
+//
+//nolint:revive // Package name util is intentional
+//nolint:revive // Package name util is intentional
 package util
 
 import (
@@ -76,6 +80,8 @@ var instanceStatusToHostStatus = map[pb.InstanceStatus]pb.HostStatus_HostStatus{
 
 var zlog = logging.GetLogger("HostMgrUtils")
 
+// MarshalHostCPUTopology marshals the host CPU topology to JSON.
+// MarshalHostCPUTopology marshals the host CPU topology to JSON.
 func MarshalHostCPUTopology(hostCPUTopology *pb.CPUTopology) (string, error) {
 	if hostCPUTopology == nil {
 		return "", nil
@@ -107,13 +113,18 @@ func MarshalHostCPUTopology(hostCPUTopology *pb.CPUTopology) (string, error) {
 	return invHostCPUTopology, nil
 }
 
+// GetHostStatus returns the host status from a status resource.
+
+// GetHostStatus returns the host status from a status resource.
 func GetHostStatus(status pb.HostStatus_HostStatus) inv_status.ResourceStatus {
 	if s, ok := mapNodeStatusToHostStatus[status]; ok {
 		return s
 	}
 	return hrm_status.HostStatusUnknown
+	// GetInstanceStatus returns the instance status from a status resource.
 }
 
+// GetInstanceStatus returns the instance status from a status resource.
 func GetInstanceStatus(status pb.InstanceStatus) inv_status.ResourceStatus {
 	if s, ok := mapNodeStatusToInstanceStatus[status]; ok {
 		return s
@@ -146,6 +157,9 @@ func PopulateHostusbWithUsbInfo(usb *pb.SystemUSB, hostres *computev1.HostResour
 	return &usbres, nil
 }
 
+// PopulateHostgpuWithGpuInfo populates host GPU resource with GPU information.
+// PopulateHostgpuWithGpuInfo populates host GPU resource with GPU information.
+// PopulateHostgpuWithGpuInfo populates host GPU resource with GPU information.
 func PopulateHostgpuWithGpuInfo(gpu *pb.SystemGPU, host *computev1.HostResource) (*computev1.HostgpuResource, error) {
 	if gpu == nil {
 		err := errors.Errorfc(codes.InvalidArgument, "SystemGPU cannot be nil")
@@ -196,7 +210,7 @@ func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 	}
 
 	hr := &computev1.HostResource{}
-	fieldmask := make([]string, 0)
+	fieldmask := make([]string, 0, 13) //nolint:mnd // Max number of host resource fields that can be updated
 
 	if systemInfo.HwInfo != nil {
 		if systemInfo.HwInfo.SerialNum != "" {
@@ -356,6 +370,9 @@ func PopulateIPAddressWithIPAddressInfo(ip *pb.IPAddress, hostNic *computev1.Hos
 	return ipres, nil
 }
 
+// UpdateInstanceResourceStateStatusDetails updates instance resource state status details.
+// UpdateInstanceResourceStateStatusDetails updates instance resource state status details.
+// UpdateInstanceResourceStateStatusDetails updates instance resource state status details.
 func UpdateInstanceResourceStateStatusDetails(
 	in *computev1.InstanceResource,
 	state pb.InstanceState,
@@ -374,6 +391,8 @@ func UpdateInstanceResourceStateStatusDetails(
 	return in
 }
 
+// IsHostNotProvisioned checks if a host is not provisioned.
+// IsHostNotProvisioned checks if a host is not provisioned.
 func IsHostNotProvisioned(hostres *computev1.HostResource) bool {
 	hostInstance := hostres.GetInstance()
 	if hostInstance == nil {
@@ -384,6 +403,8 @@ func IsHostNotProvisioned(hostres *computev1.HostResource) bool {
 		hostInstance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
 }
 
+// IsHostUntrusted checks if a host is untrusted.
+// IsHostUntrusted checks if a host is untrusted.
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
 	// this can mean a state inconsistency if desired state != current state, but for safety we check both.
 	// eventually we should only check the desired state,
@@ -392,6 +413,8 @@ func IsHostUntrusted(hostres *computev1.HostResource) bool {
 		hostres.GetDesiredState() == computev1.HostState_HOST_STATE_UNTRUSTED
 }
 
+// IsHostUnderMaintain checks if a host is under maintenance.
+// IsHostUnderMaintain checks if a host is under maintenance.
 func IsHostUnderMaintain(hostres *computev1.HostResource) bool {
 	hostInstance := hostres.GetInstance()
 	// If the host has no instance, maintenance is not applicable
@@ -402,6 +425,8 @@ func IsHostUnderMaintain(hostres *computev1.HostResource) bool {
 		hostInstance.UpdateStatus == mm_status.UpdateStatusInProgress.Status
 }
 
+// IsSameHost checks if two hosts are the same.
+// IsSameHost checks if two hosts are the same.
 func IsSameHost(
 	originalHostres *computev1.HostResource,
 	updatedHostres *computev1.HostResource,
@@ -418,10 +443,14 @@ func IsSameHost(
 	return proto.Equal(clonedHostres, updatedHostres), nil
 }
 
+// IsSameHostStatus checks if two host statuses are the same.
+// IsSameHostStatus checks if two host statuses are the same.
 func IsSameHostStatus(hostres *computev1.HostResource, status *pb.HostStatus) bool {
 	return hostres.GetHostStatus() == GetHostStatus(status.GetHostStatus()).Status
 }
 
+// IsSameInstanceStateStatusDetail checks if two instance state status details are the same.
+// IsSameInstanceStateStatusDetail checks if two instance state status details are the same.
 func IsSameInstanceStateStatusDetail(
 	in *pb.UpdateInstanceStateStatusByHostGUIDRequest,
 	instanceInv *computev1.InstanceResource,
@@ -431,6 +460,8 @@ func IsSameInstanceStateStatusDetail(
 		in.GetProviderStatusDetail() == instanceInv.InstanceStatusDetail
 }
 
+// InstanceStatusToHostStatusMsg converts instance status to host status message.
+// InstanceStatusToHostStatusMsg converts instance status to host status message.
 func InstanceStatusToHostStatusMsg(in *pb.UpdateInstanceStateStatusByHostGUIDRequest) *pb.HostStatus {
 	hostStatusEnum, ok := instanceStatusToHostStatus[in.InstanceStatus]
 	if !ok {
@@ -444,6 +475,8 @@ func InstanceStatusToHostStatusMsg(in *pb.UpdateInstanceStateStatusByHostGUIDReq
 	}
 }
 
+// UpdateInstanceStateStatusToUpdateHostStatus converts update instance state status to update host status.
+// UpdateInstanceStateStatusToUpdateHostStatus converts update instance state status to update host status.
 func UpdateInstanceStateStatusToUpdateHostStatus(in *pb.UpdateInstanceStateStatusByHostGUIDRequest) *pb.UpdateHostStatusByHostGuidRequest { //nolint:lll // function signature
 	return &pb.UpdateHostStatusByHostGuidRequest{
 		HostGuid:   in.HostGuid,
@@ -451,19 +484,25 @@ func UpdateInstanceStateStatusToUpdateHostStatus(in *pb.UpdateInstanceStateStatu
 	}
 }
 
+// TenantIDResourceIDTuple represents a tuple of tenant ID and resource ID.
+// TenantIDResourceIDTuple represents a tuple of tenant ID and resource ID.
 type TenantIDResourceIDTuple struct {
 	TenantID   string
 	ResourceID string
 }
 
 func (hbk TenantIDResourceIDTuple) String() string {
+	// IsEmpty checks if the TenantIDResourceIDTuple is empty.
 	return fmt.Sprintf("[tenantID=%s, resourceID=%s]", hbk.TenantID, hbk.ResourceID)
 }
 
+// IsEmpty checks if the TenantIDResourceIDTuple is empty.
 func (hbk TenantIDResourceIDTuple) IsEmpty() bool {
 	return hbk.TenantID == "" && hbk.ResourceID == ""
 }
 
+// NewTenantIDResourceIDTupleFromHost creates a new TenantIDResourceIDTuple from a host resource.
+// NewTenantIDResourceIDTupleFromHost creates a new TenantIDResourceIDTuple from a host resource.
 func NewTenantIDResourceIDTupleFromHost(host *computev1.HostResource) TenantIDResourceIDTuple {
 	return TenantIDResourceIDTuple{
 		TenantID:   host.GetTenantId(),

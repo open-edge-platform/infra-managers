@@ -313,7 +313,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 		assert.Equal(t, expectedModernStatus.StatusIndicator, getHost.GetHostStatusIndicator())
 	}
 
-	err := invclient.SetHostAsConnectionLost(ctx, client, tenant1, "host-12345678", uint64(time.Now().Unix()))
+	err := invclient.SetHostAsConnectionLost(ctx, client, tenant1, "host-12345678",
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Unix()))
 	require.Error(t, err)
 	require.Equal(t, codes.NotFound, grpc_status.Convert(err).Code())
 
@@ -333,7 +335,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -343,7 +347,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -353,7 +359,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -361,7 +369,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	// No set due to newer timestamp in the host res
 	hostUp.HostStatus = hrm_status.HostStatusRunning.Status
 	hostUp.HostStatusIndicator = hrm_status.HostStatusRunning.StatusIndicator
-	hostUp.HostStatusTimestamp = uint64(time.Now().Unix())
+	hostUp.HostStatusTimestamp =
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Unix())
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusRunning)
 
@@ -373,7 +383,9 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 
 	// Change status given timestamp in the future
 	err = invclient.SetHostAsConnectionLost(
-		ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Add(time.Second).Unix()))
+		ctx, client, tenant1, host.GetResourceId(),
+		//nolint:gosec // G115: Safe Unix timestamp conversion
+		uint64(time.Now().Add(time.Second).Unix()))
 	require.NoError(t, err)
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
 }
@@ -410,6 +422,7 @@ func TestInvClient_SetHostStatus(t *testing.T) {
 	assert.Equal(t, host.GetUuid(), getHost.GetUuid())
 	assert.Equal(t, hrm_status.HostStatusRunning.Status, getHost.GetHostStatus())
 	assert.Equal(t, hrm_status.HostStatusRunning.StatusIndicator, getHost.GetHostStatusIndicator())
+	//nolint:gosec // G115: Unix timestamp conversion is safe
 	assert.LessOrEqual(t, uint64(timeBeforeUpdate), getHost.GetHostStatusTimestamp())
 }
 
@@ -808,7 +821,9 @@ func TestUpdateHostStatus(t *testing.T) {
 
 			tt.args.host.HostStatus = tt.args.hostStatus.Status
 			tt.args.host.HostStatusIndicator = tt.args.hostStatus.StatusIndicator
-			tt.args.host.HostStatusTimestamp = uint64(time.Now().Unix())
+			tt.args.host.HostStatusTimestamp =
+				//nolint:gosec // G115: Safe Unix timestamp conversion
+				uint64(time.Now().Unix())
 
 			err := invclient.UpdateHostStatus(context.Background(), client, tenant1, tt.args.host)
 			if err != nil {
@@ -830,6 +845,7 @@ func TestUpdateHostStatus(t *testing.T) {
 
 				assert.Equal(t, tt.args.hostStatus.Status, h.GetHostStatus())
 				assert.Equal(t, tt.args.hostStatus.StatusIndicator, h.GetHostStatusIndicator())
+				//nolint:gosec // G115: Unix timestamp conversion is safe
 				assert.LessOrEqual(t, uint64(timeBeforeUpdate), h.GetHostStatusTimestamp())
 			}
 		})

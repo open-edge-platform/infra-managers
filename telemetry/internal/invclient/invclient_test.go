@@ -66,7 +66,7 @@ func TestListTelemetryProfilesByHostAndInstanceID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var profilesInstWithSite []*telemetryv1.TelemetryProfile
+	profilesInstWithSite := make([]*telemetryv1.TelemetryProfile, 0, 2)
 
 	telClient := telemetry_testing.TelemetryClient
 	group := dao.CreateTelemetryGroupLogs(t, tenant1, true)

@@ -85,7 +85,10 @@ func TestAttestationStatusMgrClient_UpdateInstanceAttestationStatusByHostGuid(t 
 	inst1 := GetInstanceByResourceID(t, instInv1.GetResourceId())
 	assert.Equal(t, inst1.TrustedAttestationStatusIndicator, statusv1.StatusIndication_STATUS_INDICATION_IDLE)
 	assert.Equal(t, inst1.TrustedAttestationStatus, "Verified")
-	assert.GreaterOrEqual(t, uint64(time.Now().Unix()), inst1.TrustedAttestationStatusTimestamp)
+	// Unix timestamps are always positive, so conversion from int64 to uint64 is safe
+	now := time.Now().Unix()
+	//nolint:gosec // G115: Unix timestamp conversion is safe
+	assert.GreaterOrEqual(t, uint64(now), inst1.TrustedAttestationStatusTimestamp)
 
 	// create another host and instance in Inventory
 	hostInv2 := dao.CreateHost(t, tenant1)
