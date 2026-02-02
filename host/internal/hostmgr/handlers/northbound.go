@@ -39,7 +39,7 @@ const (
 var (
 	// TickerPeriod is the period for the ticker in the northbound handler.
 	zlog = logging.GetLogger(loggerName)
-	// TickerPeriod is the interval between host status updates
+	// TickerPeriod is the interval between host status updates.
 	TickerPeriod = defaultTickerPeriod
 )
 
