@@ -645,7 +645,6 @@ func TestHostManagerClient_UpdateInstanceStateStatusByHostGUID(t *testing.T) {
 				assert.Equal(t, hmgr_util.GetInstanceStatus(tc.in.GetInstanceStatus()).Status, instInv.GetInstanceStatus())
 				assert.Equal(t, hmgr_util.GetInstanceStatus(tc.in.GetInstanceStatus()).StatusIndicator,
 					instInv.GetInstanceStatusIndicator())
-
 				assert.LessOrEqual(t, uint64(timeBeforeUpdate), instInv.GetInstanceStatusTimestamp())
 				assert.Equal(t, tc.in.GetProviderStatusDetail(), instInv.GetInstanceStatusDetail())
 
@@ -657,7 +656,6 @@ func TestHostManagerClient_UpdateInstanceStateStatusByHostGUID(t *testing.T) {
 				assert.Equal(t, hmgr_util.GetHostStatus(tc.in2.GetHostStatus()).Status, updHostInv.GetHostStatus())
 				assert.Equal(t, hmgr_util.GetHostStatus(tc.in2.GetHostStatus()).StatusIndicator,
 					updHostInv.GetHostStatusIndicator())
-
 				assert.LessOrEqual(t, uint64(timeBeforeUpdate), updHostInv.GetHostStatusTimestamp())
 			}
 		})

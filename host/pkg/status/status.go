@@ -10,8 +10,6 @@ import (
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 )
 
-// HostStatusUnknown represents an unknown host status.
-
 var (
 	// HostStatusEmpty indicates not yet initialized host status. Should be only used for testing.
 	HostStatusEmpty = inv_status.New("", statusv1.StatusIndication_STATUS_INDICATION_UNSPECIFIED)

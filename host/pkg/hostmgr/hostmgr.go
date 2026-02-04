@@ -243,11 +243,9 @@ func StartGrpcSrv(
 	}()
 
 	// handle termination signals
-	// StartAvailableManager starts the availability manager
 	termSig := <-termChan
 	if termSig {
 		s.Stop()
-		// StartAvailableManager starts the availability manager for host connection tracking.
 		zlog.Info().Msg("stopping server")
 	}
 
