@@ -25,9 +25,9 @@ const (
 
 var zlogUtil = logging.GetLogger(loggerName)
 
+// ConvertOSProfileToOSResource converts an OS profile to an OS resource.
+//
 //nolint:cyclop // complexity is 11 due to extensive validation
-// ConvertOSProfileToOSResource converts an OS profile to an OS resource.
-// ConvertOSProfileToOSResource converts an OS profile to an OS resource.
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
 	platformBundle := ""
 	metadata := ""

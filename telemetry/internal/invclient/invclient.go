@@ -145,7 +145,6 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 		ClientCache: client.InvClientCacheConfig{
 			EnableUUIDCache: options.EnableUUIDCache,
 			StaleTime:       options.UUIDCacheTTL,
-			//nolint:gosec // Safe conversion: UUIDCacheTTLOffset is config value
 			StateTimeOffset: int(options.UUIDCacheTTLOffset),
 		},
 		DialOptions: options.DialOptions,

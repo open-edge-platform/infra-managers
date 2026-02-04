@@ -10,9 +10,9 @@ import "flag"
 
 const (
 	// OsProfileRevision is the OS profile revision flag name.
-	OsProfileRevision                  = "osProfileRevision"
+	OsProfileRevision = "osProfileRevision"
 	// OsProfileRevisionDescription describes the OsProfileRevision flag.
-	OsProfileRevisionDescription       = "Specifies the release version of OS profiles in the Release Service"
+	OsProfileRevisionDescription = "Specifies the release version of OS profiles in the Release Service"
 	// EnabledProfiles is the enabled profiles flag name.
 	EnabledProfiles                    = "enabledProfiles"
 	EnabledProfilesDescription         = "Specifies a list of profile names"

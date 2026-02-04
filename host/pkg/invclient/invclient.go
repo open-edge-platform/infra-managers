@@ -625,7 +625,6 @@ func SetHostStatus(
 		HostStatus:          hostStatus.Status,
 		HostStatusIndicator: hostStatus.StatusIndicator,
 	}
-	//nolint:gosec // G115: Unix timestamp conversion is safe
 	updateHost.HostStatusTimestamp = uint64(time.Now().Unix())
 	return UpdateHostStatus(ctx, c, tenantID, updateHost)
 }
@@ -687,7 +686,6 @@ func UpdateInstanceStateStatusByHostGUID(
 ) error {
 	zlog.Debug().Msgf("Updating Instance (%s) for tenantID=%s state, status and status detail", instResID, tenantID)
 
-	//nolint:gosec // G115: Unix timestamp conversion is safe
 	instRes.InstanceStatusTimestamp = uint64(time.Now().Unix())
 	// Handcrafted PATCH update and validate before sending to Inventory
 	fieldMask := &fieldmaskpb.FieldMask{

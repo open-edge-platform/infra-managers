@@ -67,27 +67,27 @@ spec:
 var (
 	// ExampleEdgeMicrovisorToolkitArtifact is an example artifact for testing.
 	ExampleEdgeMicrovisorToolkitArtifact = as.Artifact{
-	Name:      "microvisor-nonrt.yaml",
-	MediaType: "application/vnd.oci.image.layer.v1.tar",
-	Digest:    "sha256:a2717eccf1539c02000e9329410cb23009191a8c25f47f31e815cb32ac91f6cb",
-	Data:      []byte(EdgeMicrovisorToolkitProfile),
-}
+		Name:      "microvisor-nonrt.yaml",
+		MediaType: "application/vnd.oci.image.layer.v1.tar",
+		Digest:    "sha256:a2717eccf1539c02000e9329410cb23009191a8c25f47f31e815cb32ac91f6cb",
+		Data:      []byte(EdgeMicrovisorToolkitProfile),
+	}
 	// ExampleUbuntuOSArtifact is an example Ubuntu OS artifact for testing.
 	ExampleUbuntuOSArtifact = as.Artifact{
-	Name:      "ubuntu-22.04-lts-generic.yaml",
-	MediaType: "application/vnd.oci.image.layer.v1.tar",
-	Digest:    "sha256:8d1a1f184624118cfeee5f31ff6df21ab7a8a4e2262ef66854a1731fa003b5c4",
-	Data:      []byte(UbuntuProfile),
-}
+		Name:      "ubuntu-22.04-lts-generic.yaml",
+		MediaType: "application/vnd.oci.image.layer.v1.tar",
+		Digest:    "sha256:8d1a1f184624118cfeee5f31ff6df21ab7a8a4e2262ef66854a1731fa003b5c4",
+		Data:      []byte(UbuntuProfile),
+	}
 	// ExampleOsConfig is an example OS configuration for testing.
 	ExampleOsConfig = common.OsConfig{
-	EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
-	OsProfileRevision:       "main",
-	DefaultProfile:          "ubuntu-22.04-lts-generic",
-	AutoProvision:           true,
-	InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
-	OSSecurityFeatureEnable: false,
-}
+		EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
+		OsProfileRevision:       "main",
+		DefaultProfile:          "ubuntu-22.04-lts-generic",
+		AutoProvision:           true,
+		InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
+		OSSecurityFeatureEnable: false,
+	}
 )
 
 const defaultTickerPeriodHours = 12

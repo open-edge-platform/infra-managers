@@ -43,8 +43,8 @@ func TestStartTelemetrymgrGrpcServer(t *testing.T) {
 		t.Fatalf("Failed to listen: %v", err)
 	}
 	defer func() {
-		if err := lis.Close(); err != nil {
-			t.Logf("Failed to close listener: %v", err)
+		if closeErr := lis.Close(); closeErr != nil {
+			t.Logf("Failed to close listener: %v", closeErr)
 		}
 	}()
 

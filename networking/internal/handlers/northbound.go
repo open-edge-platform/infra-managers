@@ -121,7 +121,7 @@ func (nbh *NBHandler) controlLoop(ticker *time.Ticker) {
 			nbh.reconcileResource(tID, resID)
 		case <-ticker.C:
 			// Full periodic reconcile action
-			_ = nbh.reconcileAll()
+			_ = nbh.reconcileAll() //nolint:errcheck // Errors logged within reconcileAll
 		case <-nbh.sigTerm:
 			// Stop the ticker and signal done
 			// No other events will be processed

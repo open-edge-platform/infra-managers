@@ -139,7 +139,6 @@ func UpdateInstanceAttestationStatus(
 
 	// Set Timestamp - Unix timestamps are always positive, so conversion from int64 to uint64 is safe
 	now := time.Now().Unix()
-	//nolint:gosec // G115: Unix timestamp conversion is safe
 	instRes.TrustedAttestationStatusTimestamp = uint64(now)
 
 	// only PATCH these fields per Fieldmaks

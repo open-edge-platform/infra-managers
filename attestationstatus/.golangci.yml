@@ -3,9 +3,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: "2"
-
+run:
+  go: ""
+  modules-download-mode: readonly
+  issues-exit-code: 1
+  tests: true
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+    html:
+      path: out/golangci-lint_report.html
 linters:
-  disable-all: true
   enable:
     - asasalint
     - asciicheck
@@ -15,8 +25,8 @@ linters:
     - cyclop
     - depguard
     - dogsled
+    - dupl
     - durationcheck
-    - errcheck
     - errname
     - errorlint
     - exhaustive
@@ -26,6 +36,7 @@ linters:
     - gocritic
     - gocyclo
     - godot
+    - goheader
     - gomoddirectives
     - goprintffuncname
     - gosec
@@ -33,6 +44,7 @@ linters:
     - misspell
     - mnd
     - nakedret
+    - nilerr
     - nilnil
     - noctx
     - nolintlint
@@ -41,8 +53,8 @@ linters:
     - revive
     - staticcheck
     - tagliatelle
-    - testpackage
     - testableexamples
+    - testpackage
     - thelper
     - tparallel
     - unconvert
@@ -51,14 +63,14 @@ linters:
     - usetesting
     - whitespace
   settings:
-    gomoddirectives:
-      replace-local: true
+    cyclop:
+      max-complexity: 10
     depguard:
       rules:
-        main:
+        Main:
           files:
             - $all
-            - "!$test"
+            - '!$test'
           allow:
             - $gostd
             - google.golang.org/grpc
@@ -66,8 +78,7 @@ linters:
             - github.com/open-edge-platform
             - github.com/cenkalti/backoff/v4
             - github.com/prometheus/client_golang/prometheus
-          deny: []
-        test:
+        Test:
           files:
             - $test
           allow:
@@ -80,97 +91,87 @@ linters:
             - github.com/stretchr/testify/assert
             - github.com/google/go-cmp/cmp
             - github.com/google/uuid
-          deny: []
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+    exhaustive:
+      default-signifies-exhaustive: true
+    funlen:
+      lines: 100
+      statements: 50
     gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      # These 3 will detect many cases, but they do sense
-      # if it's performance oriented code
-      - hugeParam
-      - rangeExprCopy
-      - rangeValCopy
-      - unnamedResult
-
+      disabled-checks:
+        - hugeParam
+        - rangeExprCopy
+        - rangeValCopy
+        - unnamedResult
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gomoddirectives:
+      replace-local: true
+    gosec:
+      includes:
+        - G401
+        - G306
+        - G101
+        - G102
+        - G103
+        - G104
+        - G106
+        - G107
+        - G108
+        - G109
+        - G110
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 130
+      tab-width: 4
     misspell:
-    # Correct spellings using locale preferences for US or UK.
-    # Default is to use a neutral variety of English.
-    # Setting locale to US will correct the British spelling of 'colour' to 'color'.
-    locale: US
-    ignore-words:
-      - someword
-
+      locale: US
+      ignore-rules:
+        - someword
     nakedret:
-      # No naked returns, ever.
       max-func-lines: 1
     tagliatelle:
       case:
         rules:
-          json: snake
-          yaml: snake
-          xml: camel
-          bson: camel
           avro: snake
+          bson: camel
+          json: snake
           mapstructure: kebab
-
+          xml: camel
+          yaml: snake
     unparam:
-      # Inspect exported functions, default is false. Set to true if no external
-      # program/library imports your code. XXX: if you enable this setting, unparam
-      # will report a lot of false-positives in text editors: if it's called for
-      # subdir of a project it can't find external interfaces. All text editor
-      # integrations with golangci-lint call it on a directory with the changed file.
       check-exported: false
-    cyclop:
-      max-complexity: 10
-    exhaustive:
-      default-signifies-exhaustive: true
-    lll:
-      line-length: 130
-      tab-width: 4
-    funlen:
-      lines: 80
-      statements: 60
   exclusions:
     generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     paths:
-      - pkg/api/
       - third_party$
       - builtin$
       - examples$
-
-run:
-  timeout: 10m
-  issues-exit-code: 1
-  tests: true
-  modules-download-mode: readonly
-  go: ""
-
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  # When set to `true` linter will analyze only new code which are
-  # not committed or after some specific revision. This is a cool
-  # feature when you're going to introduce linter into a big project.
-  # But I prefer going gradually package by package.
-  # So, it's set to `false` to scan all code.
+  uniq-by-line: false
   new: false
   fix: false
-
-  uniq-by-line: false
-
-output:
-  formats:
-    text:
-      path: stdout
-      print-linter-name: true
-    html:
-      path: out/golangci-lint_report.html
-  sort-results: true
-
 formatters:
   enable:
     - gci
@@ -183,10 +184,11 @@ formatters:
         - standard
         - default
         - prefix(github.com/open-edge-platform)
+    gofmt:
+      simplify: true
   exclusions:
     generated: lax
     paths:
-      - pkg/api/
       - third_party$
       - builtin$
       - examples$

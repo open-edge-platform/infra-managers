@@ -216,7 +216,10 @@ func SyncHosts(desiredHostsList []util.TenantIDResourceIDTuple) {
 	hbksToRemove := make([]util.TenantIDResourceIDTuple, 0)
 	alvMgr.hostHeartbeatMap.Range(func(key, _ any) bool {
 		zlog.Debug().Msgf("host %s", key)
-		hbk := key.(util.TenantIDResourceIDTuple)
+		hbk, ok := key.(util.TenantIDResourceIDTuple)
+		if !ok {
+			return true
+		}
 		if _, exists := hbksMap[hbk]; !exists {
 			zlog.Debug().Msgf("Host %s doesn't exist in desired host lists, removing from heartbeat map",
 				hbk)

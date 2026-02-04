@@ -115,7 +115,7 @@ func main() {
 		EnableHostDiscovery: *allowHostDiscovery,
 		EnableUUIDCache:     *invCacheUUIDEnable,
 		UUIDCacheTTL:        *invCacheStaleTimeout,
-		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset), //nolint:gosec // G115: uint to int conversion is safe
+		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset),
 	}
 	if err := conf.Validate(); err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Failed to start due to invalid configuration: %v", conf)

@@ -37,8 +37,8 @@ var (
 	// EnvNameRsFilesProxyAddress is the environment variable name for RS files proxy address.
 	EnvNameRsFilesProxyAddress = "RSPROXY_FILES_ADDRESS"
 	// EnvNameRsEnProfileRepo is the environment variable name for RS profile repository.
-	EnvNameRsEnProfileRepo     = "RS_EN_PROFILE_REPO"
-	client                     = &http.Client{
+	EnvNameRsEnProfileRepo = "RS_EN_PROFILE_REPO"
+	client                 = &http.Client{
 		Timeout: httpRequestTimeout,
 		Transport: &http.Transport{
 			Proxy:             http.ProxyFromEnvironment,
@@ -103,6 +103,7 @@ type OvalDefinitions struct {
 	XMLName     xml.Name     `xml:"oval_definitions"` //nolint:tagliatelle // OVAL XML standard
 	Definitions []Definition `xml:"definitions>definition"`
 }
+
 // Definition represents an OVAL definition.
 type Definition struct {
 	ID          string      `xml:"id,attr"`
@@ -117,17 +118,20 @@ type Definition struct {
 		} `xml:"issued"`
 	} `xml:"metadata>advisory"`
 }
+
 // Reference represents an OVAL reference.
 type Reference struct {
 	Source string `xml:"source,attr"`
 	RefID  string `xml:"ref_id,attr"`  //nolint:tagliatelle // OVAL XML standard
 	RefURL string `xml:"ref_url,attr"` //nolint:tagliatelle // OVAL XML standard
 }
+
 // Affected represents affected packages.
 type Affected struct {
 	Family   string `xml:"family,attr"`
 	Platform string `xml:"platform"`
 }
+
 // CVEInfo represents CVE information.
 type CVEInfo struct {
 	CVEID            string   `json:"cve_id"`
@@ -271,8 +275,8 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 		return "", err
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			zlog.Error().Err(err).Msg("Failed to close response body")
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			zlog.Error().Err(closeErr).Msg("Failed to close response body")
 		}
 	}()
 
@@ -482,8 +486,8 @@ func downloadImmutableCVEData(ctx context.Context, rsProxyAddress, cveURL, cveTy
 		return nil, err
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			zlog.Error().Err(err).Msg("Failed to close response body")
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			zlog.Error().Err(closeErr).Msg("Failed to close response body")
 		}
 	}()
 	respBody, err := io.ReadAll(resp.Body)

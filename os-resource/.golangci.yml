@@ -3,9 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: "2"
-
+run:
+  go: ""
+  modules-download-mode: readonly
+  issues-exit-code: 1
+  tests: true
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+    html:
+      path: out/golangci-lint_report.html
+    junit-xml:
+      path: out/golangci-lint_report.xml
 linters:
-  disable-all: true
   enable:
     - asasalint
     - asciicheck
@@ -15,6 +27,7 @@ linters:
     - cyclop
     - depguard
     - dogsled
+    - dupl
     - durationcheck
     - errname
     - errorlint
@@ -34,7 +47,12 @@ linters:
     - nakedret
     - nilerr
     - nilnil
+    - noctx
+    - nolintlint
+    - prealloc
     - predeclared
+    - revive
+    - staticcheck
     - tagliatelle
     - testableexamples
     - testpackage
@@ -44,70 +62,15 @@ linters:
     - unparam
     - usestdlibvars
     - whitespace
-    - errcheck
-    - staticcheck
-    - revive
-    - noctx
-    - nolintlint
-    - prealloc
-  formatters:
-    - gci
-    - gofmt
-    - gofumpt
   settings:
     cyclop:
-      # SDL requirements dictate a maximum cyclomatic complexity of 10
       max-complexity: 10
-    misspell:
-      locale: US
-    lll:
-      line-length: 130
-      tab-width: 4
-    funlen:
-      lines: 100
-      statements: 50
-    exhaustive:
-      default-signifies-exhaustive: true
-    gci:
-      sections:
-        # Standard section: captures all standard packages.
-        - standard
-        # Default section: contains all imports that could not be matched to another section type.
-        - default
-        # Custom section: groups all imports with the specified Prefix.
-        - prefix(github.com/open-edge-platform)
-    gocritic:
-      enabled-tags:
-        - diagnostic
-        - experimental
-        - opinionated
-        - performance
-        - style
-      disabled-checks:
-        # These 3 will detect many cases, but they do sense
-        # if it's performance oriented code
-        - hugeParam
-        - rangeExprCopy
-        - rangeValCopy
-        - unnamedResult
-    nakedret:
-      # No naked returns, ever.
-      max-func-lines: 1
-    tagliatelle:
-      case:
-        rules:
-          json: snake
-          yaml: snake
-          xml: camel
-          bson: camel
-          avro: snake
-          mapstructure: kebab
     depguard:
       rules:
-        main:
+        Main:
           files:
             - $all
-            - "!$test"
+            - '!$test'
           allow:
             - $gostd
             - github.com/open-edge-platform
@@ -130,8 +93,7 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - gopkg.in/yaml.v2
-          deny: []
-        test:
+        Test:
           files:
             - $test
           allow:
@@ -150,34 +112,88 @@ linters:
             - google.golang.org/grpc
             - google.golang.org/protobuf
             - gopkg.in/yaml.v2
-          deny: []
-
-run:
-  timeout: 10m
-  issues-exit-code: 1
-  tests: true
-  modules-download-mode: readonly
-  go: ""
-
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+    exhaustive:
+      default-signifies-exhaustive: true
+    funlen:
+      lines: 100
+      statements: 50
+    gocritic:
+      disabled-checks:
+        - hugeParam
+        - rangeExprCopy
+        - rangeValCopy
+        - unnamedResult
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 130
+      tab-width: 4
+    misspell:
+      locale: US
+    nakedret:
+      max-func-lines: 1
+    tagliatelle:
+      case:
+        rules:
+          avro: snake
+          bson: camel
+          json: snake
+          mapstructure: kebab
+          xml: camel
+          yaml: snake
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: (.+)\.go$
+        text: Error return value of `.*Close` is not checked
+      - path: (.+)\.go$
+        text: Error return value of `.*Flush` is not checked
+      - path: (.+)\.go$
+        text: Error return value of `.*Write` is not checked
+      - path: (.+)\.go$
+        text: Error return value of `.*Stop` is not checked
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
   new: false
   fix: false
-  exclude:
-    - Error return value of `.*Close` is not checked
-    - Error return value of `.*Flush` is not checked
-    - Error return value of `.*Write` is not checked
-    - Error return value of `.*Stop` is not checked
-
-output:
-  formats:
-    text:
-      path: stdout
-      print-linter-name: true
-    html:
-      path: out/golangci-lint.html
-    junit-xml:
-      path: out/golangci-lint.xml
-  uniq-by-line: false
-  sort-results: true
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/open-edge-platform)
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

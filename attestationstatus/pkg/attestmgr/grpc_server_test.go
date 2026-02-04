@@ -87,7 +87,6 @@ func TestAttestationStatusMgrClient_UpdateInstanceAttestationStatusByHostGuid(t 
 	assert.Equal(t, inst1.TrustedAttestationStatus, "Verified")
 	// Unix timestamps are always positive, so conversion from int64 to uint64 is safe
 	now := time.Now().Unix()
-	//nolint:gosec // G115: Unix timestamp conversion is safe
 	assert.GreaterOrEqual(t, uint64(now), inst1.TrustedAttestationStatusTimestamp)
 
 	// create another host and instance in Inventory

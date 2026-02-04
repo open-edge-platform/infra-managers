@@ -28,7 +28,7 @@ import (
 var (
 	zlog = logging.GetLogger("OSRMInvclient")
 	// InventoryTimeout is the timeout for inventory operations.
-	InventoryTimeout        = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	InventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
 	// ListAllInventoryTimeout is the timeout for listing all inventory resources.
 	ListAllInventoryTimeout = flag.Duration("timeoutInventoryListAll", ListAllDefaultTimeout,
 		"Timeout used when listing all resources for a given type from Inventory")
@@ -38,7 +38,7 @@ const (
 	// DefaultInventoryTimeout is the default timeout for inventory operations.
 	DefaultInventoryTimeout = 5 * time.Second
 	// ListAllDefaultTimeout is the default timeout for listing all resources.
-	ListAllDefaultTimeout   = time.Minute // Longer timeout for reconciling all resources
+	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
 	// eventsWatcherBufSize is the buffer size for the events channel.
 	eventsWatcherBufSize = 10
 )

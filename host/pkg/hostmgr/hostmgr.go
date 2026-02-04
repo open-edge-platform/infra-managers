@@ -285,7 +285,6 @@ func StartAvailableManager(termChan chan bool) {
 			go func() {
 				// Unix timestamps are always positive, so conversion from int64 to uint64 is safe
 				now := time.Now().Unix()
-				//nolint:gosec // G115: Unix timestamp conversion is safe
 				timestampConnLost := uint64(now)
 				if err := backoff.Retry(func() error {
 					childCtx, cancel := context.WithTimeout(ctx, connLostTimeout)

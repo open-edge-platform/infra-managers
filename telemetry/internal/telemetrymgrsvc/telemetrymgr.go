@@ -146,7 +146,7 @@ func (s *RPCServer) convertProfileToConfig(
 				MetricInterval: profileRow.GetMetricsInterval(),
 				MetricKind:     metricGroup.GetCollectorKind().String(),
 				MetricType:     profileRow.GetKind().String(),
-				LogSeverity:    uint32(profileRow.GetLogLevel().Number()), //nolint:gosec // Safe conversion: enum value
+				LogSeverity:    uint32(profileRow.GetLogLevel().Number()),
 			}
 			cfgLists = append(cfgLists, metricResource)
 		}
@@ -165,8 +165,7 @@ func (s *RPCServer) convertProfileToConfig(
 			Type:     AssignTelemetryResourceKind(telemetryv1.TelemetryResourceKind_value[cfgRow.MetricType]),
 			Kind:     AssignTelemetryCollectorKind(telemetryv1.CollectorKind_value[cfgRow.MetricKind]),
 			Interval: int64(cfgRow.MetricInterval),
-			//nolint:gosec // Safe conversion: uint32 to int32
-			Level: AssignTelemetryResourceSeverity(int32(cfgRow.LogSeverity)),
+			Level:    AssignTelemetryResourceSeverity(int32(cfgRow.LogSeverity)),
 		}
 
 		telemetryCfgArray = append(telemetryCfgArray, cfg)
