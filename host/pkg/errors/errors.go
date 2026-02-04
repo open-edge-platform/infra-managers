@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package errors provides error wrapping utilities for the Host Manager.
-// Package hostmgrerrors provides error handling utilities for the host manager
 //
 //nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
 package errors

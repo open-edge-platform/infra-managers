@@ -54,7 +54,6 @@ const (
 
 // EnableAuth enables authentication for the host manager.
 func EnableAuth(enable bool) Option {
-	// EnableAuth returns an Option that enables or disables authentication.
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
@@ -67,24 +66,17 @@ func EnableTracing(enable bool) Option {
 	}
 }
 
-// WithRbacRulesPath sets the path to RBAC rules configuration
-// WithRbacRulesPath returns an Option that sets the path to RBAC rules.
-
 // WithRbacRulesPath sets the path to RBAC rules configuration.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
 		o.rbacRulesPath = rbacPath
 	}
-	// EnableMetrics enables metrics collection for the host manager
-	// EnableMetrics returns an Option that enables or disables metrics collection.
 }
 
 // EnableMetrics enables metrics collection for the host manager.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
-		// WithMetricsAddress sets the address for metrics server
-		// WithMetricsAddress returns an Option that sets the metrics exporter address.
 	}
 }
 
@@ -99,21 +91,15 @@ func parseOptions(opts ...Option) *Options {
 	options := &Options{}
 	for _, o := range opts {
 		o(options)
-		// Options contains configuration options for the host manager
-		// Options contains configuration options for the Host Manager.
 	}
 	return options
 }
 
 // Options contains configuration options for the host manager.
 type Options struct {
-	enableAuth    bool
-	enableTracing bool
-	// Option is a function that configures Options.
-	// Option is a functional option for configuring the host manager
-	rbacRulesPath string
-	// StartInvGrpcCli starts the inventory gRPC client
-	// StartInvGrpcCli initializes and starts the Inventory gRPC client.
+	enableAuth     bool
+	enableTracing  bool
+	rbacRulesPath  string
 	enableMetrics  bool
 	metricsAddress string
 }
@@ -165,13 +151,9 @@ func StartInvGrpcCli(
 	}
 
 	SetInvGrpcCli(gcli)
-	// SetInvGrpcCli sets the inventory gRPC client
-	// SetInvGrpcCli sets the global inventory client.
 	zlog.InfraSec().Info().Msg("initial Grpc Client preparation is done.")
 	AllowHostDiscoveryValue = conf.EnableHostDiscovery
 
-	// CloseInvGrpcCli closes the inventory gRPC client connection
-	// CloseInvGrpcCli closes the global inventory client connection.
 	return gcli, events, nil
 }
 

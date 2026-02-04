@@ -43,8 +43,6 @@ var (
 	TickerPeriod = defaultTickerPeriod
 )
 
-// HostManagerNBHandler is the northbound handler for the Host Manager.
-
 // HostManagerNBHandler handles northbound communication for host manager..
 type HostManagerNBHandler struct {
 	invClient inv_client.TenantAwareInventoryClient

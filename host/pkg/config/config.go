@@ -16,7 +16,6 @@ import (
 
 // HostMgrConfig contains configuration for the host manager..
 type HostMgrConfig struct {
-	// HostMgrConfig contains configuration for the Host Manager.
 	EnableTracing       bool
 	EnableMetrics       bool
 	TraceURL            string
