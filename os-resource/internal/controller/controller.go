@@ -30,6 +30,7 @@ var (
 	zlog       = logging.GetLogger(loggerName)
 )
 
+// OSResourceController manages OS resource reconciliation.
 type OSResourceController struct {
 	invClient *invclient.InventoryClient
 
@@ -40,6 +41,7 @@ type OSResourceController struct {
 	stop chan bool
 }
 
+// New creates a new OS resource controller.
 func New(
 	invClient *invclient.InventoryClient,
 	osConfig common.OsConfig,
@@ -59,6 +61,7 @@ func New(
 	}, nil
 }
 
+// Start starts the OS resource controller.
 func (c *OSResourceController) Start() error {
 	if err := c.reconcileAll(false); err != nil {
 		return err
@@ -71,6 +74,7 @@ func (c *OSResourceController) Start() error {
 	return nil
 }
 
+// Stop stops the OS resource controller.
 func (c *OSResourceController) Stop() {
 	close(c.stop)
 	c.wg.Wait()

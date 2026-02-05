@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package northbound provides northbound handler for telemetry manager.
 package northbound
 
 import (
@@ -23,6 +24,7 @@ type NBHandler struct {
 	sigTerm         chan bool
 }
 
+// NewNBHandler creates a new northbound handler.
 func NewNBHandler(telCli *invclient.TelemetryInventoryClient) (*NBHandler, error) {
 	// Note that the resourceID from the events will provide the mapping
 	nbHandler := &NBHandler{
@@ -33,6 +35,7 @@ func NewNBHandler(telCli *invclient.TelemetryInventoryClient) (*NBHandler, error
 	return nbHandler, nil
 }
 
+// Start starts the northbound handler.
 func (nbh *NBHandler) Start() error {
 	// 1. Start controlLoop
 	// 2. start by watching events

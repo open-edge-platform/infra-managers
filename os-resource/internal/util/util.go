@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package util provides utility functions for OS resource management.
+//
+//nolint:revive // Package name 'util' is intentional for utility functions
 package util
 
 import (
@@ -16,12 +19,14 @@ import (
 
 const (
 	loggerName = "OSRM-Util"
-
+	// InfraOnboardingProviderName is the name of the infrastructure onboarding provider.
 	InfraOnboardingProviderName = "infra_onboarding"
 )
 
 var zlogUtil = logging.GetLogger(loggerName)
 
+// ConvertOSProfileToOSResource converts an OS profile to an OS resource.
+//
 //nolint:cyclop // complexity is 11 due to extensive validation
 func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.OperatingSystemResource, error) {
 	platformBundle := ""
@@ -107,6 +112,7 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 	}, nil
 }
 
+// GetOnboardingProviderResource retrieves the onboarding provider resource.
 func GetOnboardingProviderResource(
 	tenantID, defaultOSResourceID string, autoProvision bool, defaultSecurityFlag bool,
 ) (*providerv1.ProviderResource, error) {

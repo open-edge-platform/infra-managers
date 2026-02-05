@@ -37,7 +37,9 @@ var (
 )
 
 const (
-	AllowHostDiscovery            = "allowHostDiscovery"
+	// AllowHostDiscovery enables automatic host discovery.
+	AllowHostDiscovery = "allowHostDiscovery"
+	// AllowHostDiscoveryDescription provides description of the AllowHostDiscovery flag.
 	AllowHostDiscoveryDescription = "Flag to allow Host discovery automatically when it does not exist in the Inventory"
 	// Backoff config for retrying the SetHostConnectionLost.
 	backoffInterval = 5 * time.Second
@@ -48,30 +50,35 @@ const (
 	eventsWatcherBufSize = 10
 )
 
+// EnableAuth enables authentication for the host manager.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
 }
 
+// EnableTracing returns an Option that enables or disables distributed tracing.
 func EnableTracing(enable bool) Option {
 	return func(o *Options) {
 		o.enableTracing = enable
 	}
 }
 
+// WithRbacRulesPath sets the path to RBAC rules configuration.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
 		o.rbacRulesPath = rbacPath
 	}
 }
 
+// EnableMetrics enables metrics collection for the host manager.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
 	}
 }
 
+// WithMetricsAddress sets the address for metrics server.
 func WithMetricsAddress(metricsAddress string) Option {
 	return func(o *Options) {
 		o.metricsAddress = metricsAddress
@@ -86,6 +93,7 @@ func parseOptions(opts ...Option) *Options {
 	return options
 }
 
+// Options contains configuration options for the host manager.
 type Options struct {
 	enableAuth     bool
 	enableTracing  bool
@@ -94,8 +102,10 @@ type Options struct {
 	metricsAddress string
 }
 
+// Option is a functional option for configuring the host manager.
 type Option func(*Options)
 
+// StartInvGrpcCli starts the inventory gRPC client.
 func StartInvGrpcCli(
 	wg *sync.WaitGroup,
 	conf config.HostMgrConfig,
@@ -145,14 +155,19 @@ func StartInvGrpcCli(
 	return gcli, events, nil
 }
 
+// SetInvGrpcCli sets the inventory gRPC client.
 func SetInvGrpcCli(gcli inv_client.TenantAwareInventoryClient) {
 	invClientInstance = gcli
 }
 
+// CloseInvGrpcCli closes the inventory gRPC client connection.
 func CloseInvGrpcCli() {
-	invClientInstance.Close()
+	if err := invClientInstance.Close(); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to close inventory client")
+	}
 }
 
+// StartGrpcSrv starts the host manager gRPC server.
 func StartGrpcSrv(
 	lis net.Listener,
 	readyChan chan bool,
@@ -234,6 +249,7 @@ func StartGrpcSrv(
 	wg.Done()
 }
 
+// StartAvailableManager starts the availability manager.
 func StartAvailableManager(termChan chan bool) {
 	ctx := context.Background()
 	zlog.Info().Msg("Start AvailableManager!!!")
@@ -243,7 +259,9 @@ func StartAvailableManager(termChan chan bool) {
 	for {
 		if hbk := <-loseConnHosts; !hbk.IsEmpty() {
 			go func() {
-				timestampConnLost := uint64(time.Now().Unix())
+				// Unix timestamps are always positive, so conversion from int64 to uint64 is safe
+				now := time.Now().Unix()
+				timestampConnLost := uint64(now)
 				if err := backoff.Retry(func() error {
 					childCtx, cancel := context.WithTimeout(ctx, connLostTimeout)
 					defer cancel()

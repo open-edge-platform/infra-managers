@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	zlog      = logging.GetLogger("OS-Resource-Manager-Testing")
+	zlog = logging.GetLogger("OS-Resource-Manager-Testing")
+	// InvClient is the inventory client for testing.
 	InvClient *invclient.InventoryClient
 )
 
@@ -27,6 +28,7 @@ func CreateInventoryClientForTesting() {
 	}
 }
 
+// DeleteInventoryClientForTesting deletes the test inventory client.
 func DeleteInventoryClientForTesting() {
 	InvClient.Close()
 	time.Sleep(1 * time.Second)

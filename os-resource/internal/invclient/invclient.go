@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package invclient provides inventory client functionality.
 package invclient
 
 import (
@@ -26,25 +27,30 @@ import (
 
 var (
 	zlog = logging.GetLogger("OSRMInvclient")
-
-	InventoryTimeout        = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// InventoryTimeout is the timeout for inventory operations.
+	InventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// ListAllInventoryTimeout is the timeout for listing all inventory resources.
 	ListAllInventoryTimeout = flag.Duration("timeoutInventoryListAll", ListAllDefaultTimeout,
 		"Timeout used when listing all resources for a given type from Inventory")
 )
 
 const (
+	// DefaultInventoryTimeout is the default timeout for inventory operations.
 	DefaultInventoryTimeout = 5 * time.Second
-	ListAllDefaultTimeout   = time.Minute // Longer timeout for reconciling all resources
+	// ListAllDefaultTimeout is the default timeout for listing all resources.
+	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
 	// eventsWatcherBufSize is the buffer size for the events channel.
 	eventsWatcherBufSize = 10
 )
 
+// InventoryClient provides methods to interact with the inventory service.
 type InventoryClient struct {
 	Client   inv_client.TenantAwareInventoryClient
 	Watcher  chan *inv_client.WatchEvents
 	termChan chan bool
 }
 
+// NewInventoryClient creates a new inventory client.
 func NewInventoryClient(
 	termChan chan bool,
 	wg *sync.WaitGroup,
@@ -87,6 +93,7 @@ func NewInventoryClient(
 	return NewOSRMInventoryClient(invClient, events, termChan)
 }
 
+// NewOSRMInventoryClient creates a new OS resource manager inventory client.
 func NewOSRMInventoryClient(invClient inv_client.TenantAwareInventoryClient, watcher chan *inv_client.WatchEvents,
 	termChan chan bool,
 ) (*InventoryClient, error) {
@@ -98,6 +105,7 @@ func NewOSRMInventoryClient(invClient inv_client.TenantAwareInventoryClient, wat
 	return c, nil
 }
 
+// Close closes the inventory client connection.
 func (c *InventoryClient) Close() {
 	zlog.InfraSec().Info().Msg("Stopping Inventory client")
 	err := c.Client.Close()
@@ -137,6 +145,7 @@ func (c *InventoryClient) listAllResources(
 	return objs, nil
 }
 
+// GetTenantByResourceID retrieves a tenant by resource ID.
 func (c *InventoryClient) GetTenantByResourceID(ctx context.Context,
 	tenantID string,
 	resourceID string,
@@ -155,6 +164,7 @@ func (c *InventoryClient) GetTenantByResourceID(ctx context.Context,
 	return tenant, nil
 }
 
+// ListOSResourcesForTenant lists OS resources for a tenant.
 func (c *InventoryClient) ListOSResourcesForTenant(ctx context.Context,
 	tenantID string,
 ) ([]*osv1.OperatingSystemResource, error) {
@@ -171,6 +181,7 @@ func (c *InventoryClient) ListOSResourcesForTenant(ctx context.Context,
 	return util.GetSpecificResourceList[*osv1.OperatingSystemResource](resources)
 }
 
+// ListInstancesForTenant lists instances for a tenant.
 func (c *InventoryClient) ListInstancesForTenant(ctx context.Context,
 	tenantID string,
 ) ([]*computev1.InstanceResource, error) {
@@ -187,6 +198,7 @@ func (c *InventoryClient) ListInstancesForTenant(ctx context.Context,
 	return util.GetSpecificResourceList[*computev1.InstanceResource](resources)
 }
 
+// CreateOSResource creates a new OS resource.
 func (c *InventoryClient) CreateOSResource(
 	ctx context.Context, tenantID string, osRes *osv1.OperatingSystemResource,
 ) (string, error) {
@@ -204,6 +216,7 @@ func (c *InventoryClient) CreateOSResource(
 	return res.GetOs().GetResourceId(), err
 }
 
+// CreateProvider creates a new provider.
 func (c *InventoryClient) CreateProvider(ctx context.Context, tenantID string, providerRes *providerv1.ProviderResource) error {
 	res := &inv_v1.Resource{
 		Resource: &inv_v1.Resource_Provider{
@@ -215,6 +228,7 @@ func (c *InventoryClient) CreateProvider(ctx context.Context, tenantID string, p
 	return err
 }
 
+// GetProviderSingularByName retrieves a provider by name.
 func (c *InventoryClient) GetProviderSingularByName(
 	ctx context.Context, tenantID, providerName string,
 ) (*providerv1.ProviderResource, error) {
@@ -239,6 +253,7 @@ func (c *InventoryClient) GetProviderSingularByName(
 	return resources[0].GetProvider(), nil
 }
 
+// UpdateTenantOSWatcher updates the tenant OS watcher.
 func (c *InventoryClient) UpdateTenantOSWatcher(
 	ctx context.Context,
 	tenantID string,
@@ -263,6 +278,7 @@ func (c *InventoryClient) UpdateTenantOSWatcher(
 	return err
 }
 
+// FindAllResources finds all resources.
 func (c *InventoryClient) FindAllResources(ctx context.Context,
 	kinds []inv_v1.ResourceKind,
 ) ([]*inv_client.ResourceTenantIDCarrier, error) {
@@ -284,6 +300,7 @@ func (c *InventoryClient) FindAllResources(ctx context.Context,
 	return allResources, nil
 }
 
+// FindOSResourceID finds an OS resource by ID.
 func (c *InventoryClient) FindOSResourceID(ctx context.Context,
 	tenantID, profileName, osImageVersion string,
 ) (string, error) {
@@ -327,6 +344,7 @@ func (c *InventoryClient) FindOSResourceID(ctx context.Context,
 	return osResources[0].GetOs().GetResourceId(), nil
 }
 
+// UpdateOSResourceExistingCves updates existing CVEs for an OS resource.
 func (c *InventoryClient) UpdateOSResourceExistingCves(ctx context.Context,
 	tenantID string, osRes *osv1.OperatingSystemResource,
 ) error {
@@ -346,6 +364,7 @@ func (c *InventoryClient) UpdateOSResourceExistingCves(ctx context.Context,
 	return err
 }
 
+// UpdateOSResourceFixedCves updates fixed CVEs for an OS resource.
 func (c *InventoryClient) UpdateOSResourceFixedCves(ctx context.Context,
 	tenantID string, osRes *osv1.OperatingSystemResource,
 ) error {

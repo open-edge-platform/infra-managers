@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package maintmgr implements the core maintenance manager functionality.
 package maintmgr
 
 import (
@@ -35,36 +36,42 @@ var eventsWatcherBufSize = 10
 // TODO(max): remove global instances.
 var invMgrCli invclient.InvGrpcClient
 
+// EnableAuth enables authentication for the maintenance manager.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
 }
 
+// EnableSanitizeGrpcErr enables gRPC error sanitization.
 func EnableSanitizeGrpcErr(enable bool) Option {
 	return func(o *Options) {
 		o.enableSanitizeGrpcErr = enable
 	}
 }
 
+// EnableTracing enables tracing for the maintenance manager.
 func EnableTracing(enable bool) Option {
 	return func(o *Options) {
 		o.enableTracing = enable
 	}
 }
 
+// WithRbacRulesPath sets the RBAC rules path.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
 		o.rbacRulesPath = rbacPath
 	}
 }
 
+// EnableMetrics enables metrics collection.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
 	}
 }
 
+// WithMetricsAddress sets the metrics address.
 func WithMetricsAddress(metricsAddress string) Option {
 	return func(o *Options) {
 		o.metricsAddress = metricsAddress
@@ -79,6 +86,7 @@ func parseOptions(opts ...Option) *Options {
 	return options
 }
 
+// Options contains configuration options for the maintenance manager.
 type Options struct {
 	enableAuth            bool
 	enableSanitizeGrpcErr bool
@@ -88,8 +96,10 @@ type Options struct {
 	metricsAddress        string
 }
 
+// Option is a functional option for configuring the maintenance manager.
 type Option func(*Options)
 
+// StartInvGrpcCli starts the inventory gRPC client.
 func StartInvGrpcCli(
 	wg *sync.WaitGroup,
 	enableTracing bool,
@@ -164,10 +174,12 @@ func StartInvGrpcCli(
 	return nil
 }
 
+// SetInvGrpcCli sets the inventory gRPC client instance.
 func SetInvGrpcCli(cli invclient.InvGrpcClient) {
 	invMgrCli = cli
 }
 
+// CloseInvGrpcCli closes the inventory gRPC client connection.
 func CloseInvGrpcCli() {
 	zlog.InfraSec().Info().Msg("Stopping Inventory client")
 
@@ -187,6 +199,7 @@ func CloseInvGrpcCli() {
 	invMgrCli.HScheduleCacheClient = nil
 }
 
+// StartGrpcSrv starts the maintenance manager gRPC server.
 func StartGrpcSrv(
 	lis net.Listener,
 	readyChan chan bool,

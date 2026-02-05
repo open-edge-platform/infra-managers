@@ -417,7 +417,8 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 		assert.Equal(t, expectedModernStatus.StatusIndicator, getHost.GetHostStatusIndicator())
 	}
 
-	err := invclient.SetHostAsConnectionLost(ctx, client, tenant1, "host-12345678", uint64(time.Now().Unix()))
+	err := invclient.SetHostAsConnectionLost(ctx, client, tenant1, "host-12345678",
+		uint64(time.Now().Unix()))
 	require.Error(t, err)
 	require.Equal(t, codes.NotFound, grpc_status.Convert(err).Code())
 
@@ -437,7 +438,8 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -447,7 +449,8 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -457,7 +460,8 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	err = invclient.UpdateHostStatus(ctx, client, tenant1, hostUp)
 	require.NoError(t, err)
 
-	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Unix()))
+	err = invclient.SetHostAsConnectionLost(ctx, client, tenant1, host.GetResourceId(),
+		uint64(time.Now().Unix()))
 	require.NoError(t, err)
 
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
@@ -477,7 +481,8 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 
 	// Change status given timestamp in the future
 	err = invclient.SetHostAsConnectionLost(
-		ctx, client, tenant1, host.GetResourceId(), uint64(time.Now().Add(time.Second).Unix()))
+		ctx, client, tenant1, host.GetResourceId(),
+		uint64(time.Now().Add(time.Second).Unix()))
 	require.NoError(t, err)
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
 }

@@ -137,7 +137,9 @@ func TestMain(m *testing.M) {
 
 	run := m.Run() // run all tests
 
-	HostManagerTestClientConn.Close()
+	if err := HostManagerTestClientConn.Close(); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to close host manager test client")
+	}
 	os.Exit(run)
 }
 
