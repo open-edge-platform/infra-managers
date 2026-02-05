@@ -142,6 +142,10 @@ func (s *server) UpdateHostSystemInfoByGUID(ctx context.Context,
 		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
 	}
 
+	if err := updateHostdevice(ctx, tenantID, hostres, systemInfo.DeviceInfo); err != nil {
+		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
+	}
+
 	return &pb.UpdateHostSystemInfoByGUIDResponse{}, nil
 }
 

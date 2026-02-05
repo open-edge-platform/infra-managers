@@ -10,6 +10,7 @@
     - [CPUTopology](#hostmgr_southbound_proto-CPUTopology)
     - [Config](#hostmgr_southbound_proto-Config)
     - [CoreGroup](#hostmgr_southbound_proto-CoreGroup)
+    - [DeviceInfo](#hostmgr_southbound_proto-DeviceInfo)
     - [HWInfo](#hostmgr_southbound_proto-HWInfo)
     - [HostStatus](#hostmgr_southbound_proto-HostStatus)
     - [HostStatusResp](#hostmgr_southbound_proto-HostStatusResp)
@@ -19,6 +20,7 @@
     - [OsInfo](#hostmgr_southbound_proto-OsInfo)
     - [OsKernel](#hostmgr_southbound_proto-OsKernel)
     - [OsRelease](#hostmgr_southbound_proto-OsRelease)
+    - [RASInfo](#hostmgr_southbound_proto-RASInfo)
     - [Socket](#hostmgr_southbound_proto-Socket)
     - [Storage](#hostmgr_southbound_proto-Storage)
     - [SystemCPU](#hostmgr_southbound_proto-SystemCPU)
@@ -147,6 +149,30 @@ SPDX-License-Identifier: Apache-2.0
 | ----- | ---- | ----- | ----------- |
 | core_type | [string](#string) |  | type of CPU cores (e.g., P-Core or E-Core) |
 | core_list | [uint32](#uint32) | repeated | a list of CPU cores in the group |
+
+
+
+
+
+
+<a name="hostmgr_southbound_proto-DeviceInfo"></a>
+
+### DeviceInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [string](#string) |  |  |
+| hostname | [string](#string) |  |  |
+| operational_state | [string](#string) |  |  |
+| build_number | [string](#string) |  |  |
+| sku | [string](#string) |  |  |
+| features | [string](#string) |  |  |
+| device_guid | [string](#string) |  |  |
+| control_mode | [string](#string) |  |  |
+| dns_suffix | [string](#string) |  |  |
+| ras_info | [RASInfo](#hostmgr_southbound_proto-RASInfo) |  |  |
 
 
 
@@ -307,6 +333,24 @@ SPDX-License-Identifier: Apache-2.0
 
 
 
+<a name="hostmgr_southbound_proto-RASInfo"></a>
+
+### RASInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| network_status | [string](#string) |  |  |
+| remote_status | [string](#string) |  |  |
+| remote_trigger | [string](#string) |  |  |
+| mps_hostname | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="hostmgr_southbound_proto-Socket"></a>
 
 ### Socket
@@ -413,6 +457,7 @@ SPDX-License-Identifier: Apache-2.0
 | os_info | [OsInfo](#hostmgr_southbound_proto-OsInfo) |  |  |
 | bm_ctl_info | [BmInfo](#hostmgr_southbound_proto-BmInfo) |  |  |
 | bios_info | [BiosInfo](#hostmgr_southbound_proto-BiosInfo) |  |  |
+| device_info | [DeviceInfo](#hostmgr_southbound_proto-DeviceInfo) |  |  |
 
 
 

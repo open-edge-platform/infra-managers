@@ -279,6 +279,43 @@ func PopulateHoststorageWithDiskInfo(disk *pb.SystemDisk, hostres *computev1.Hos
 	return storageres, nil
 }
 
+// PopulateHostdeviceWithDeviceInfo translates a DeviceInfo into a host device resource.
+func PopulateHostdeviceWithDeviceInfo(device *pb.DeviceInfo, hostres *computev1.HostResource) (
+	*computev1.HostdeviceResource, error,
+) {
+	if device == nil {
+		zlog.InfraSec().InfraError("DeviceInfo cannot be nil").Msgf("")
+		return nil, errors.Errorfc(codes.InvalidArgument, "DeviceInfo cannot be nil")
+	}
+	if hostres == nil {
+		zlog.InfraSec().InfraError("HostResource cannot be nil").Msgf("")
+		return nil, errors.Errorfc(codes.InvalidArgument, "HostResource cannot be nil")
+	}
+	rasInfo := device.GetRasInfo()
+	if rasInfo == nil {
+		zlog.InfraSec().InfraError("RASInfo cannot be nil").Msgf("")
+		return nil, errors.Errorfc(codes.InvalidArgument, "RASInfo cannot be nil")
+	}
+	deviceres := &computev1.HostdeviceResource{
+		TenantId:         hostres.GetTenantId(),
+		Version:          device.GetVersion(),
+		Hostname:         device.GetHostname(),
+		OperationalState: device.GetOperationalState(),
+		BuildNumber:      device.GetHostname(),
+		Sku:              device.GetSku(),
+		Features:         device.GetFeatures(),
+		DeviceGuid:       device.GetDeviceGuid(),
+		ControlMode:      device.GetControlMode(),
+		DnsSuffix:        device.GetDnsSuffix(),
+		NetworkStatus:    rasInfo.GetNetworkStatus(),
+		RemoteStatus:     rasInfo.GetRemoteStatus(),
+		RemoteTrigger:    rasInfo.GetRemoteTrigger(),
+		MpsHostname:      rasInfo.GetMpsHostname(),
+		Host:             hostres,
+	}
+	return deviceres, nil
+}
+
 func linkStateToNetworkInterfaceLinkState(linkState bool) computev1.NetworkInterfaceLinkState {
 	if linkState {
 		return computev1.NetworkInterfaceLinkState_NETWORK_INTERFACE_LINK_STATE_UP

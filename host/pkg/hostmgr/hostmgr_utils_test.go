@@ -304,6 +304,17 @@ func ConvertSystemDiskIntoHostStorages(tb testing.TB, storage *pb.Storage,
 	return hostStorages
 }
 
+// ConvertDeviceInfoIntoHostDevice is a helper function to convert deviceInfo into hostdevice resource.
+func ConvertDeviceInfoIntoHostDevice(tb testing.TB, device *pb.DeviceInfo,
+	host *computev1.HostResource,
+) *computev1.HostdeviceResource {
+	tb.Helper()
+
+	hostDevice, err := hutils.PopulateHostdeviceWithDeviceInfo(device, host)
+	require.NoError(tb, err, "Unable to convert hostDevice")
+	return hostDevice
+}
+
 // HardDeleteHoststoragesWithUpdateHostSystemInfo deletes the storage by removing all SystemDisk objects
 // from the HwInfo of the SystemInfo. The SB does not support incremental updates - original systemInfo
 // is requested to avoid side effects.
@@ -316,6 +327,22 @@ func HardDeleteHoststoragesWithUpdateHostSystemInfo(
 	defer cancel()
 
 	systemInfo.SystemInfo.HwInfo.Storage = &pb.Storage{}
+	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo)
+	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
+}
+
+// HardDeleteHostdeviceWithUpdateHostSystemInfo deletes the device info by removing the DeviceInfo
+// objects from the SystemInfo. The SB does not support incremental update - original systemInfo
+// is requsted to avoid side effects.
+func HardDeleteHostdeviceWithUpdateHostSystemInfo(
+	tb testing.TB, tenantID string, systemInfo *pb.UpdateHostSystemInfoByGUIDRequest,
+) {
+	tb.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(tb, tenantID)
+	defer cancel()
+
+	systemInfo.SystemInfo.DeviceInfo = &pb.DeviceInfo{}
 	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo)
 	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
 }

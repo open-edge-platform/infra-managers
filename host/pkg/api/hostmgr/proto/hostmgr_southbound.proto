@@ -92,6 +92,8 @@ message SystemInfo {
   BmInfo bm_ctl_info = 3;
 
   BiosInfo bios_info = 4;
+
+  DeviceInfo device_info = 5;
 }
 
 message BiosInfo {
@@ -138,6 +140,42 @@ message OsRelease {
   string version = 2 [(validate.rules).string = {max_len: 128}];
 
   repeated Metadata metadata = 3;
+}
+
+message DeviceInfo {
+  string version = 1 [(validate.rules).string = {max_len: 128}];
+
+  string hostname = 2 [(validate.rules).string = {max_len: 128}];
+
+  string operational_state = 3 [(validate.rules).string = {max_len: 128}];
+
+  string build_number = 4 [(validate.rules).string = {max_len: 128}];
+
+  string sku = 5 [(validate.rules).string = {max_len: 128}];
+
+  string features = 6 [(validate.rules).string = {max_len: 128}];
+
+  string device_guid = 7 [(validate.rules).string = {
+    min_len: 1
+    uuid: true
+    max_bytes: 36
+  }];
+
+  string control_mode = 8 [(validate.rules).string = {max_len: 128}];
+
+  string dns_suffix = 9 [(validate.rules).string = {max_len: 128}];
+
+  RASInfo ras_info = 10;
+}
+
+message RASInfo {
+  string network_status = 1 [(validate.rules).string = {max_len: 128}];
+
+  string remote_status = 2 [(validate.rules).string = {max_len: 128}];
+
+  string remote_trigger = 3 [(validate.rules).string = {max_len: 128}];
+
+  string mps_hostname = 4 [(validate.rules).string = {max_len: 128}];
 }
 
 message Storage {

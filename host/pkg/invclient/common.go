@@ -50,6 +50,11 @@ func getInventoryResourceAndID(resource proto.Message) (*inv_v1.Resource, string
 			Hostgpu: res,
 		}
 		invResourceID = res.GetResourceId()
+	case *computev1.HostdeviceResource:
+		invResource.Resource = &inv_v1.Resource_Hostdevice{
+			Hostdevice: res,
+		}
+		invResourceID = res.GetResourceId()
 	case *network_v1.IPAddressResource:
 		invResource.Resource = &inv_v1.Resource_Ipaddress{
 			Ipaddress: res,

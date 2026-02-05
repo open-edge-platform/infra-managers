@@ -103,6 +103,21 @@ var (
 		computev1.HostgpuResourceFieldDeviceName,
 		computev1.HostgpuResourceFieldFeatures,
 	}
+	UpdateHostdeviceFieldMask = []string{
+		computev1.HostdeviceResourceFieldVersion,
+		computev1.HostdeviceResourceFieldHostname,
+		computev1.HostdeviceResourceFieldOperationalState,
+		computev1.HostdeviceResourceFieldBuildNumber,
+		computev1.HostdeviceResourceFieldSku,
+		computev1.HostdeviceResourceFieldFeatures,
+		computev1.HostdeviceResourceFieldDeviceGuid,
+		computev1.HostdeviceResourceFieldControlMode,
+		computev1.HostdeviceResourceFieldDnsSuffix,
+		computev1.HostdeviceResourceFieldNetworkStatus,
+		computev1.HostdeviceResourceFieldRemoteStatus,
+		computev1.HostdeviceResourceFieldRemoteTrigger,
+		computev1.HostdeviceResourceFieldMpsHostname,
+	}
 )
 
 // List resources by the provided filter. Filter is done only on fields that are set (not default values of the
@@ -408,6 +423,65 @@ func DeleteHoststorage(ctx context.Context, c inv_client.TenantAwareInventoryCli
 	}
 	if err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("Failed delete Hoststorage resource: %s", details)
+		return err
+	}
+
+	return err
+}
+
+// CreateHostdevice creates a new Hostdevice resource in Inventory.
+func CreateHostdevice(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostDevice *computev1.HostdeviceResource,
+) (string, error) {
+	details := fmt.Sprintf("tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+	zlog.Debug().Msgf("Create Hostdevice: %s", details)
+
+	ctx, cancel := context.WithTimeout(ctx, *InventoryTimeout)
+	defer cancel()
+	resource := &inv_v1.Resource{
+		Resource: &inv_v1.Resource_Hostdevice{
+			Hostdevice: hostDevice,
+		},
+	}
+	resp, err := c.Create(ctx, tenantID, resource)
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed create Hostdevic3e resource: %s", details)
+		return "", err
+	}
+	return inv_util.GetResourceIDFromResource(resp)
+}
+
+// UpdateHostdevice updates an existing Hostdevice resource info in Inventory,
+// except state and other fields are not allowed from RM.
+func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostDevice *computev1.HostdeviceResource,
+) error {
+	details := fmt.Sprintf("tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+	zlog.Debug().Msgf("Update Hostdevice: %s", hostDevice)
+
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostDevice, UpdateHostdeviceFieldMask)
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostdevice resource: %s", details)
+		return err
+	}
+	return nil
+}
+
+// DeleteHostdevice deletes an existing hostdevice resource in Inventory. If it gets a not found error while deleting the
+// resource, it doesn't return an error.
+func DeleteHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string) error {
+	details := fmt.Sprintf("tenantID=%s, resourceID=%s", tenantID, resourceID)
+	zlog.Debug().Msgf("Delete Hostdevice: %s", details)
+
+	ctx, cancel := context.WithTimeout(ctx, *InventoryTimeout)
+	defer cancel()
+
+	_, err := c.Delete(ctx, tenantID, resourceID)
+	if inv_errors.IsNotFound(err) {
+		zlog.Debug().Msgf("Not found while Hostdevice delete, dropping err: %s", details)
+		return nil
+	}
+	if err != nil {
+		zlog.InfraSec().InfraErr(err).Msgf("Failed delete Hostdevice resource: %s", details)
 		return err
 	}
 

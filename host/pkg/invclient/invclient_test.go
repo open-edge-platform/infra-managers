@@ -295,6 +295,110 @@ func TestInvClient_DeleteHoststorage(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestInvClient_CreateHostdevice(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	id, err := invclient.CreateHostdevice(ctx, client, tenant1, &computev1.HostdeviceResource{})
+	require.Error(t, err)
+	assert.Equal(t, codes.InvalidArgument, grpc_status.Code(err))
+	assert.Empty(t, id)
+
+	host := dao.CreateHost(t, tenant1)
+
+	// Create with resourceId is not allowed
+	device := &computev1.HostdeviceResource{
+		TenantId:    tenant1,
+		Version:     "1.2.34",
+		Hostname:    "testhost",
+		BuildNumber: "1234",
+		DeviceGuid:  "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:        host,
+		ResourceId:  "hostdevice-12345678",
+	}
+	id, err = invclient.CreateHostdevice(ctx, client, tenant1, device)
+	require.Error(t, err)
+	require.Equal(t, "", id)
+
+	// OK
+	device = &computev1.HostdeviceResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		Hostname:         "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err = invclient.CreateHostdevice(ctx, client, tenant1, device)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	t.Cleanup(func() { dao.DeleteResource(t, tenant1, id) })
+}
+
+func TestInvClient_UpdateHostdevice(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	// Error
+	err := invclient.UpdateHostdevice(ctx, client, tenant1, &computev1.HostdeviceResource{})
+	require.Error(t, err)
+
+	// OK
+	host := dao.CreateHost(t, tenant1)
+	device := &computev1.HostdeviceResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		Hostname:         "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err := invclient.CreateHostdevice(ctx, client, tenant1, device)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	t.Cleanup(func() { dao.DeleteResource(t, tenant1, id) })
+
+	device.Version = "1.3.45"
+	device.OperationState = "disabled"
+	device.ResourceId = id
+	err = invclient.UpdateHostdevice(ctx, client, tenant1, device)
+	require.NoError(t, err)
+}
+
+func TestInvClient_DeleteHostdevice(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	// Not found, does not return an error
+	err := invclient.DeleteHostdevice(ctx, client, tenant1, "hostdevice-12345678")
+	require.NoError(t, err)
+
+	// OK
+	host := dao.CreateHost(t, tenant1)
+	device := &computev1.HostdeviceResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		Hostname:         "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err := invclient.CreateHostdevice(ctx, client, tenant1, device)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	err = invclient.DeleteHostdevice(ctx, client, tenant1, id)
+	require.NoError(t, err)
+}
+
 func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
