@@ -263,7 +263,9 @@ func Test_GetPackageManifest(t *testing.T) {
 		// serve OS package manifest in httptest
 		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(tt.args.packageManifest))
+			if _, err := w.Write([]byte(tt.args.packageManifest)); err != nil {
+				t.Errorf("Failed to write response: %v", err)
+			}
 		})
 	}
 
@@ -325,7 +327,9 @@ func Test_GetCVEs_Success(t *testing.T) {
 		// serve CVEs list in httptest
 		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(tt.args.cvesList))
+			if _, err := w.Write([]byte(tt.args.cvesList)); err != nil {
+				t.Errorf("Failed to write response: %v", err)
+			}
 		})
 	}
 
@@ -416,7 +420,9 @@ func Test_GetCVEs_Failure(t *testing.T) {
 		// serve CVEs list in httptest
 		mux.HandleFunc(tt.args.url, func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(tt.args.cvesList))
+			if _, err := w.Write([]byte(tt.args.cvesList)); err != nil {
+				t.Errorf("Failed to write response: %v", err)
+			}
 		})
 	}
 

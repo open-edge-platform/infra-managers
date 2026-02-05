@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package config provides configuration structures and validation for the Host Manager.
 package config
 
 import (
@@ -13,6 +14,7 @@ import (
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 )
 
+// HostMgrConfig contains configuration for the host manager..
 type HostMgrConfig struct {
 	EnableTracing       bool
 	EnableMetrics       bool
@@ -28,6 +30,7 @@ type HostMgrConfig struct {
 	UUIDCacheTTLOffset  int
 }
 
+// Validate checks if the configuration is valid.
 func (c HostMgrConfig) Validate() error {
 	if c.InventoryAddr == "" {
 		return inv_errors.Errorfc(codes.InvalidArgument,

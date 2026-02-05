@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package main implements the Host Manager service.
 package main
 
 import (
@@ -170,9 +171,10 @@ func main() {
 	}()
 
 	// Create a listener on TCP port
-	lis, err := net.Listen("tcp", *servaddr)
-	if err != nil {
-		zlog.InfraSec().Fatal().Err(err).Msgf("Error listening with TCP: %s", lis.Addr().String())
+	lc := net.ListenConfig{}
+	lis, listenErr := lc.Listen(context.Background(), "tcp", *servaddr)
+	if listenErr != nil {
+		zlog.InfraSec().Fatal().Err(listenErr).Msgf("Error listening with TCP on %s", *servaddr)
 	}
 
 	// Add host manager grpc server - it sets readyCHan to true

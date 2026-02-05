@@ -93,9 +93,11 @@ func StartMaintenanceManagerTestingEnvironment(invClient client.TenantAwareInven
 
 // This function is used to stop the maintenance manager test environment.
 func StopMaintenanceManagerTestingEnvironment() {
-	MaintManagerTestClientConn.Close() // close maintenance manager test client
-	close(termChan)                    // stop the maintenance manager server after tests
-	wg.Wait()                          // wait until servers terminate
+	if err := MaintManagerTestClientConn.Close(); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to close maintenance manager test client connection")
+	}
+	close(termChan) // stop the maintenance manager server after tests
+	wg.Wait()       // wait until servers terminate
 }
 
 // Helper function to create a southbound gRPC server for maintenance manager.
@@ -111,7 +113,6 @@ func createMaintenanceManagerServer() {
 			maintmgr.EnableSanitizeGrpcErr(true),
 			maintmgr.EnableAuth(true),
 			maintmgr.EnableMetrics(true),
-			maintmgr.EnableSanitizeGrpcErr(true),
 			maintmgr.EnableTracing(true),
 			maintmgr.WithRbacRulesPath(rulesDir),
 		)
@@ -123,10 +124,11 @@ func createMaintenanceManagerServer() {
 //
 //nolint:staticcheck // Use deprecated functions.
 func createMaintenanceManagerClient() error {
-	opts := []grpc.DialOption{
+	opts := make([]grpc.DialOption, 0, 3)
+	opts = append(opts,
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return BufconnLis.Dial() }),
 		grpc.WithBlock(),
-	}
+	)
 	dialOpt := grpc.WithTransportCredentials(insecure.NewCredentials())
 	opts = append(opts, dialOpt)
 

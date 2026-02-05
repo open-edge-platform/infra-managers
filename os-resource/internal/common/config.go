@@ -11,6 +11,7 @@ import (
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 )
 
+// OsConfig holds configuration for OS resource manager.
 type OsConfig struct {
 	EnabledProfiles         []string
 	OsProfileRevision       string
@@ -37,6 +38,7 @@ func (c OsConfig) validateDefaultProfile() error {
 	return nil
 }
 
+// Validate validates the OS configuration.
 func (c OsConfig) Validate() error {
 	if c.OsProfileRevision == "" || len(c.EnabledProfiles) == 0 {
 		return inv_errors.Errorfc(codes.InvalidArgument, "Mandatory config values are not provided: %+v", c)

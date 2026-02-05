@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package hostmgr implements the Host Manager gRPC service.
 package hostmgr
 
 import (
@@ -202,8 +203,9 @@ func (s *server) updateHostStatusIfNeeded(
 ) error {
 	hostUUID := host.GetUuid()
 	// update host heartbeat
-	//nolint:errcheck // no need to throw an error, it is logged in the inner function
-	_ = alivemgr.UpdateHostHeartBeat(host)
+	if err := alivemgr.UpdateHostHeartBeat(host); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to update host heartbeat")
+	}
 
 	// If host under maintenance, skip everything else
 	if hmgr_util.IsHostUnderMaintain(host) {

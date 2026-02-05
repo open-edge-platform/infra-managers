@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package errors provides custom error types for the maintenance manager.
+//
+//nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
 package errors
 
 import (

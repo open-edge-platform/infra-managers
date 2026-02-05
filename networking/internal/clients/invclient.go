@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package clients provides gRPC client implementations for inventory services.
 package clients
 
 import (
@@ -25,10 +26,11 @@ import (
 )
 
 const (
+	// DefaultInventoryTimeout is the default timeout for inventory operations.
 	DefaultInventoryTimeout = 5 * time.Second
 	batchSize               = 20
 
-	// TODO: fine tune this longer timeout based on target scale and inventory client batch size.
+	// ListAllDefaultTimeout is the default timeout for list all operations.
 	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
 	// eventsWatcherBufSize is the buffer size for the events channel.
 	eventsWatcherBufSize = 10
@@ -38,7 +40,8 @@ var (
 	clientName = "NetInventoryClient"
 	zlog       = logging.GetLogger(clientName)
 
-	inventoryTimeout        = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// ListAllInventoryTimeout is the timeout used for list all inventory operations.
 	ListAllInventoryTimeout = flag.Duration(
 		"timeoutInventoryListAll",
 		ListAllDefaultTimeout,
@@ -46,6 +49,7 @@ var (
 	)
 )
 
+// NetInventoryClient implements the methods to interact with the inventory gRPC server for the networking manager.
 type NetInventoryClient struct {
 	Client  client.TenantAwareInventoryClient
 	Watcher chan *client.WatchEvents
@@ -75,6 +79,7 @@ func WithEnableTracing(enableTracing bool) Option {
 	}
 }
 
+// WithEnableMetrics returns an option to enable or disable metrics collection.
 func WithEnableMetrics(enableMetrics bool) Option {
 	return func(options *Options) {
 		options.EnableMetrics = enableMetrics

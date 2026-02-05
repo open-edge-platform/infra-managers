@@ -116,9 +116,11 @@ func StartHostManagerTestingEnvironment() {
 
 // This function is used to stop the host manager test environment.
 func StopHostManagerTestingEnvironment() {
-	HostManagerTestClientConn.Close() // close host manager test client
-	close(termChan)                   // stop the host manager server after tests
-	wg.Wait()                         // wait until servers terminate
+	if err := HostManagerTestClientConn.Close(); err != nil { // close host manager test client
+		zlog.Warn().Err(err).Msg("Failed to close host manager test client")
+	}
+	close(termChan) // stop the host manager server after tests
+	wg.Wait()       // wait until servers terminate
 }
 
 // Starts all Inventory and Host Manager requirements to test host manager southbound client.
@@ -215,7 +217,7 @@ func ConvertSystemNetworkIntoHostNics(tb testing.TB, networks []*pb.SystemNetwor
 ) []*computev1.HostnicResource {
 	tb.Helper()
 
-	hostNics := make([]*computev1.HostnicResource, 0)
+	hostNics := make([]*computev1.HostnicResource, 0, len(networks))
 	for _, network := range networks {
 		hostNic, err := hutils.PopulateHostnicWithNetworkInfo(network, host)
 		require.NoError(tb, err, "Unable to convert hostNic")
@@ -280,7 +282,7 @@ func ConvertSystemNetworkIntoHostIPs(
 ) []*network_v1.IPAddressResource {
 	tb.Helper()
 
-	hostIPs := make([]*network_v1.IPAddressResource, 0)
+	hostIPs := make([]*network_v1.IPAddressResource, 0, len(networks))
 	for _, network := range networks {
 		hostIP, err := hutils.PopulateIPAddressWithIPAddressInfo(network, hostNic)
 		require.NoError(tb, err, "Unable to convert hostIP")
@@ -295,7 +297,7 @@ func ConvertSystemDiskIntoHostStorages(tb testing.TB, storage *pb.Storage,
 ) []*computev1.HoststorageResource {
 	tb.Helper()
 
-	hostStorages := make([]*computev1.HoststorageResource, 0)
+	hostStorages := make([]*computev1.HoststorageResource, 0, len(storage.Disk))
 	for _, disk := range storage.Disk {
 		hostStorage, err := hutils.PopulateHoststorageWithDiskInfo(disk, host)
 		require.NoError(tb, err, "Unable to convert hostStorage")
@@ -336,7 +338,7 @@ func ConvertSystemUSBIntoHostUsbs(tb testing.TB, usbs []*pb.SystemUSB,
 ) []*computev1.HostusbResource {
 	tb.Helper()
 
-	hostUsbs := make([]*computev1.HostusbResource, 0)
+	hostUsbs := make([]*computev1.HostusbResource, 0, len(usbs))
 	for _, usb := range usbs {
 		hostUsb, err := hutils.PopulateHostusbWithUsbInfo(usb, host)
 		require.NoError(tb, err, "Unable to convert hostUsb")
@@ -350,7 +352,7 @@ func ConvertSystemGPUIntoHostGpus(tb testing.TB, gpus []*pb.SystemGPU,
 ) []*computev1.HostgpuResource {
 	tb.Helper()
 
-	hostGpus := make([]*computev1.HostgpuResource, 0)
+	hostGpus := make([]*computev1.HostgpuResource, 0, len(gpus))
 	for _, gpu := range gpus {
 		hostGpu, err := hutils.PopulateHostgpuWithGpuInfo(gpu, host)
 		require.NoError(tb, err, "Unable to convert hostGpu")
