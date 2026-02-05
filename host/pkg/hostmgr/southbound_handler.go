@@ -185,6 +185,8 @@ func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.H
 		return err
 	}
 	// Check if device info matches with info in invDevice, compare version
+	zlog.Debug().Msgf("host name. inventory=%s, deviceInfo=%s, hostDevice=%s",
+		invDevice.GetHostname(), deviceInfo.GetHostname(), hostDevice.GetHostname())
 	exists := invDevice.GetVersion() == hostDevice.GetVersion()
 	if exists {
 		// Perform an update of the info in inventory

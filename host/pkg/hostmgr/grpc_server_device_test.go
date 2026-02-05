@@ -16,7 +16,7 @@ import (
 )
 
 // Verify Add/Remove of DeviceInfo resources.
-func TestHostManagerClient_AddRemovDevice(t *testing.T) {
+func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
 	os := dao.CreateOs(t, tenant1)
@@ -61,7 +61,7 @@ func TestHostManagerClient_AddRemovDevice(t *testing.T) {
 			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
 			defer cancel()
 
-			// Modify the storage resources
+			// Modify the device resources
 			systemInfo1.HostGuid = hostInv.GetUuid()
 			systemInfo1.SystemInfo.DeviceInfo = tc.in
 			_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
