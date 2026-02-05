@@ -197,7 +197,7 @@ func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.H
 	} else {
 		// Check if received device info is empty
 		hostnameReceived := hostDevice.GetHostname() == ""
-		if hostnameReceived {
+		if !hostnameReceived {
 			// New device info to be added to the inventory
 			err = hostDeviceToAddOrUpdate(ctx, tenantID, hostnameReceived, hostDevice, invDevice)
 			if err != nil {
