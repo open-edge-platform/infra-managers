@@ -16,8 +16,6 @@ import (
 )
 
 // Verify Add/Remove of DeviceInfo resources.
-//
-//nolint:funlen // it's a test
 func TestHostManagerClient_AddRemovDevice(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
@@ -102,8 +100,6 @@ func TestHostManagerClient_AddRemovDevice(t *testing.T) {
 }
 
 // Verify update of the DeviceInfo resources.
-//
-//nolint:funlen // it's a test
 func TestHostManagerClient_UpdateDevice(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)

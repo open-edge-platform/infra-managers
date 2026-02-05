@@ -15,6 +15,7 @@ import (
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 )
 
+//nolint:cyclop // high cyclomatic complexity due to number of resource types
 func getInventoryResourceAndID(resource proto.Message) (*inv_v1.Resource, string, error) {
 	invResource := &inv_v1.Resource{}
 	var invResourceID string

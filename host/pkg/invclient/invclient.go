@@ -445,6 +445,8 @@ func DeleteHoststorage(ctx context.Context, c inv_client.TenantAwareInventoryCli
 }
 
 // CreateHostdevice creates a new Hostdevice resource in Inventory.
+//
+//nolint:dupl // Protobuf oneOf-driven separation
 func CreateHostdevice(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostDevice *computev1.HostdeviceResource,
 ) (string, error) {
@@ -468,7 +470,10 @@ func CreateHostdevice(
 
 // UpdateHostdevice updates an existing Hostdevice resource info in Inventory,
 // except state and other fields are not allowed from RM.
-func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostDevice *computev1.HostdeviceResource,
+//
+//nolint:dupl // Protobuf oneOf-driven separation
+func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string,
+	hostDevice *computev1.HostdeviceResource,
 ) error {
 	details := fmt.Sprintf("tenantID=%s, hostDevice=%v", tenantID, hostDevice)
 	zlog.Debug().Msgf("Update Hostdevice: %s", hostDevice)
@@ -483,6 +488,8 @@ func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClie
 
 // DeleteHostdevice deletes an existing hostdevice resource in Inventory. If it gets a not found error while deleting the
 // resource, it doesn't return an error.
+//
+//nolint:dupl // Protobuf oneOf-driven separation
 func DeleteHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string) error {
 	details := fmt.Sprintf("tenantID=%s, resourceID=%s", tenantID, resourceID)
 	zlog.Debug().Msgf("Delete Hostdevice: %s", details)
