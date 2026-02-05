@@ -4,7 +4,6 @@
 // Package errors provides custom error types for the maintenance manager.
 //
 //nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
-//nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
 package errors
 
 import (

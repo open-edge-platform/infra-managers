@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package status provides status types for the maintenance manager.
-// Package status provides status types for the maintenance manager.
 package status
 
 import (

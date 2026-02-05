@@ -20,16 +20,13 @@ const (
 )
 
 // ReconcilerID represents a unique identifier for a reconciler.
-// ReconcilerID represents a unique identifier for a reconciler.
 type ReconcilerID string
 
-// WrapReconcilerID creates a ReconcilerID from a string.
 // WrapReconcilerID creates a ReconcilerID from a string.
 func WrapReconcilerID(tenantID, resourceID string) ReconcilerID {
 	return ReconcilerID(tenantID + "/" + resourceID)
 }
 
-// UnwrapReconcilerID extracts the string from a ReconcilerID.
 // UnwrapReconcilerID extracts the string from a ReconcilerID.
 func UnwrapReconcilerID(id ReconcilerID) (string, string) {
 	unwrapped := strings.Split(id.String(), "/")

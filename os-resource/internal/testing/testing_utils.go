@@ -29,7 +29,6 @@ func CreateInventoryClientForTesting() {
 }
 
 // DeleteInventoryClientForTesting deletes the test inventory client.
-// DeleteInventoryClientForTesting deletes the test inventory client.
 func DeleteInventoryClientForTesting() {
 	InvClient.Close()
 	time.Sleep(1 * time.Second)

@@ -101,7 +101,6 @@ func Deduplicate(resources []TelemetryResources) []TelemetryResources {
 }
 
 // AssignTelemetryResourceKind assigns the telemetry resource kind.
-// AssignTelemetryResourceKind assigns the telemetry resource kind.
 func AssignTelemetryResourceKind(number int32) pb.TelemetryResourceKind {
 	switch number {
 	case int32(telemetryv1.TelemetryResourceKind_TELEMETRY_RESOURCE_KIND_UNSPECIFIED):
@@ -116,7 +115,6 @@ func AssignTelemetryResourceKind(number int32) pb.TelemetryResourceKind {
 }
 
 // AssignTelemetryCollectorKind assigns the telemetry collector kind.
-// AssignTelemetryCollectorKind assigns the telemetry collector kind.
 func AssignTelemetryCollectorKind(number int32) pb.CollectorKind {
 	switch number {
 	case int32(telemetryv1.CollectorKind_COLLECTOR_KIND_UNSPECIFIED):
@@ -130,7 +128,6 @@ func AssignTelemetryCollectorKind(number int32) pb.CollectorKind {
 	}
 }
 
-// AssignTelemetryResourceSeverity assigns the telemetry resource severity level.
 // AssignTelemetryResourceSeverity assigns the telemetry resource severity level.
 func AssignTelemetryResourceSeverity(number int32) pb.SeverityLevel {
 	switch number {

@@ -113,7 +113,6 @@ func ConvertOSProfileToOSResource(osProfile *fsclient.OSProfileManifest) (*osv1.
 }
 
 // GetOnboardingProviderResource retrieves the onboarding provider resource.
-// GetOnboardingProviderResource retrieves the onboarding provider resource.
 func GetOnboardingProviderResource(
 	tenantID, defaultOSResourceID string, autoProvision bool, defaultSecurityFlag bool,
 ) (*providerv1.ProviderResource, error) {

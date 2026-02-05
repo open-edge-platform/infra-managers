@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package testing provides testing utilities and mocks.
-// Package testing provides testing utilities and mocks.
 package testing
 
 import (
@@ -98,7 +97,6 @@ type MockArtifactService struct {
 }
 
 // GetRepositoryTags returns mock repository tags.
-// GetRepositoryTags returns mock repository tags.
 func (m *MockArtifactService) GetRepositoryTags(_ context.Context, repository string) ([]string, error) {
 	args := m.Called(repository)
 	repoTags, ok := args.Get(0).([]string)
@@ -110,7 +108,6 @@ func (m *MockArtifactService) GetRepositoryTags(_ context.Context, repository st
 	return repoTags, args.Error(1)
 }
 
-// DownloadArtifacts mocks artifact download.
 // DownloadArtifacts mocks artifact download.
 func (m *MockArtifactService) DownloadArtifacts(_ context.Context, repository, tag string) (*[]as.Artifact, error) {
 	args := m.Called(repository, tag)

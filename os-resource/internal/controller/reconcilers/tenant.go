@@ -32,13 +32,11 @@ var (
 )
 
 // TenantReconciler reconciles tenant-level OS resources.
-// TenantReconciler reconciles tenant-level OS resources.
 type TenantReconciler struct {
 	invClient *invclient.InventoryClient
 	osConfig  common.OsConfig
 }
 
-// NewTenantReconciler creates a new tenant reconciler.
 // NewTenantReconciler creates a new tenant reconciler.
 func NewTenantReconciler(c *invclient.InventoryClient, osConf common.OsConfig) *TenantReconciler {
 	return &TenantReconciler{

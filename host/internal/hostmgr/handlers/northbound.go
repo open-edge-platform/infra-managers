@@ -50,10 +50,7 @@ type HostManagerNBHandler struct {
 	filters   map[inv_v1.ResourceKind]Filter
 	wg        *sync.WaitGroup
 	sigTerm   chan bool
-	// NewNBHandler creates a new northbound handler for the Host Manager.
 }
-
-// NewNBHandler creates a new northbound handler for host management
 
 // NewNBHandler creates a new northbound handler for host management.
 func NewNBHandler(
@@ -72,7 +69,6 @@ func NewNBHandler(
 		wg:        &sync.WaitGroup{},
 		sigTerm:   make(chan bool),
 	}, nil
-	// Start starts the northbound handler and begins processing events.
 }
 
 // Start begins the periodic host status update loop..
@@ -123,7 +119,6 @@ func (nbh *HostManagerNBHandler) controlLoop(ticker *time.Ticker) {
 
 // Stop stops the northbound handler and cleans up resources.
 func (nbh *HostManagerNBHandler) Stop() {
-	// Stop terminates the host status update loop
 	close(nbh.sigTerm)
 	nbh.wg.Wait()
 	zlog.Info().Msg("HRM northbound handler stopped")

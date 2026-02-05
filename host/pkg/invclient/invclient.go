@@ -31,13 +31,10 @@ import (
 
 const (
 	// DefaultInventoryTimeout is the default timeout for Inventory operations.
-	// DefaultInventoryTimeout is the default timeout for Inventory operations.
 	DefaultInventoryTimeout = 5 * time.Second // Default timeout for Inventory operations
 	// ListAllDefaultTimeout The current estimation is very conservative considering 10k resources, batch size 100,
 	//  and 600ms per request on average.
 	// TODO: fine tune this longer timeout based on target scale and inventory client batch size.
-	// ListAllDefaultTimeout is the multiplier for ListAll operations timeout.
-	// ListAllDefaultTimeout is the multiplier for ListAll operations timeout.
 	ListAllDefaultTimeout = time.Minute // Longer timeout for reconciling all resources
 )
 
@@ -45,9 +42,7 @@ var (
 	zlog = logging.GetLogger("InvClient")
 
 	// InventoryTimeout is the timeout duration for Inventory API calls.
-	// InventoryTimeout is the timeout duration for Inventory API calls.
 	InventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
-	// ListAllInventoryTimeout is the timeout for listing all inventory items.
 	// ListAllInventoryTimeout is the timeout for listing all inventory items.
 	ListAllInventoryTimeout = flag.Duration(
 		"timeoutInventoryListAll",
@@ -194,7 +189,6 @@ func UpdateInvResourceFields(
 }
 
 // GetHostResourceByGUID retrieves a host resource by its GUID.
-// GetHostResourceByGUID retrieves a host resource by its GUID.
 func GetHostResourceByGUID(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -210,7 +204,6 @@ func GetHostResourceByGUID(
 	return c.GetHostByUUID(ctx, tenantID, guid)
 }
 
-// GetHostResourceByResourceID retrieves a host resource by its resource ID.
 // GetHostResourceByResourceID retrieves a host resource by its resource ID.
 func GetHostResourceByResourceID(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string,
 ) (*computev1.HostResource, error) {
@@ -297,7 +290,6 @@ func DeleteHostusb(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 }
 
 // CreateHostgpu creates a new host GPU resource in Inventory.
-// CreateHostgpu creates a new host GPU resource in Inventory.
 //
 //nolint:dupl // Protobuf oneOf-driven separation
 func CreateHostgpu(
@@ -323,7 +315,6 @@ func CreateHostgpu(
 }
 
 // UpdateHostgpu updates an existing host GPU resource.
-// UpdateHostgpu updates an existing host GPU resource.
 func UpdateHostgpu(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostgpu *computev1.HostgpuResource,
 ) error {
@@ -337,7 +328,6 @@ func UpdateHostgpu(
 	return err
 }
 
-// DeleteHostgpu deletes a host GPU resource.
 // DeleteHostgpu deletes a host GPU resource.
 //
 //nolint:dupl // Protobuf oneOf-driven separation
@@ -586,7 +576,6 @@ func DeleteIPAddress(ctx context.Context, c inv_client.TenantAwareInventoryClien
 }
 
 // SetHostAsConnectionLost marks a host as having lost connection.
-// SetHostAsConnectionLost marks a host as having lost connection.
 func SetHostAsConnectionLost(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, hostResourceID string, timeStamp uint64,
 ) error {
@@ -614,7 +603,6 @@ func SetHostAsConnectionLost(
 	return nil
 }
 
-// SetHostStatus sets the status of a host.
 // SetHostStatus sets the status of a host.
 func SetHostStatus(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient,

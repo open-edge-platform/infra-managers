@@ -35,7 +35,6 @@ type RPCServer struct {
 }
 
 // NewTelemetrymgrServer creates a new telemetry manager server.
-// NewTelemetrymgrServer creates a new telemetry manager server.
 func NewTelemetrymgrServer(
 	telCli *invclient.TelemetryInventoryClient,
 	enableAuth bool,

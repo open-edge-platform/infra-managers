@@ -12,7 +12,6 @@ import (
 )
 
 // OsConfig holds configuration for OS resource manager.
-// OsConfig holds configuration for OS resource manager.
 type OsConfig struct {
 	EnabledProfiles         []string
 	OsProfileRevision       string

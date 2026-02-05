@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package statusdetail provides status detail types for OS updates.
-// Package statusdetail provides status detail types for OS updates.
 package statusdetail
 
 import (
@@ -117,7 +116,6 @@ var stringToFailureReason = map[string]FailureReason{
 }
 
 // DetailLogEntry represents a single entry in the detail log.
-// DetailLogEntry represents a single entry in the detail log.
 type DetailLogEntry struct {
 	UpdateType    UpdateType    `json:"update_type"`
 	PackageName   string        `json:"package_name"`
@@ -130,12 +128,10 @@ type DetailLogEntry struct {
 }
 
 // DetailLog represents a collection of detail log entries.
-// DetailLog represents a collection of detail log entries.
 type DetailLog struct {
 	UpdateLog []DetailLogEntry `json:"update_log"`
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for UpdateType.
 // UnmarshalJSON implements the json.Unmarshaler interface for UpdateType.
 func (ut *UpdateType) UnmarshalJSON(data []byte) error {
 	var str string
@@ -151,7 +147,6 @@ func (ut *UpdateType) UnmarshalJSON(data []byte) error {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for Action.
-// UnmarshalJSON implements the json.Unmarshaler interface for Action.
 func (a *Action) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -166,7 +161,6 @@ func (a *Action) UnmarshalJSON(data []byte) error {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for Status.
-// UnmarshalJSON implements the json.Unmarshaler interface for Status.
 func (s *Status) UnmarshalJSON(data []byte) error {
 	var str string
 	if err := json.Unmarshal(data, &str); err != nil {
@@ -180,7 +174,6 @@ func (s *Status) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface for FailureReason.
 // UnmarshalJSON implements the json.Unmarshaler interface for FailureReason.
 func (s *FailureReason) UnmarshalJSON(data []byte) error {
 	var str string

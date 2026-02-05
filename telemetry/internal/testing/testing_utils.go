@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package testing provides testing utilities for telemetry manager.
-// Package testing provides testing utilities for telemetry manager.
 package testing
 
 import (
@@ -26,7 +25,6 @@ var (
 	TelemetryClient *invclient.TelemetryInventoryClient
 )
 
-// CreateTelemetryClientForTesting creates a telemetry client for testing.
 // CreateTelemetryClientForTesting creates a telemetry client for testing.
 func CreateTelemetryClientForTesting(tb testing.TB) {
 	tb.Helper()

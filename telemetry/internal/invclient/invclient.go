@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package invclient provides inventory client for telemetry manager.
-// Package invclient provides inventory client for telemetry manager.
 package invclient
 
 import (
@@ -40,14 +39,12 @@ var (
 )
 
 // TelemetryInventoryClient provides methods to interact with the inventory service.
-// TelemetryInventoryClient provides methods to interact with the inventory service.
 type TelemetryInventoryClient struct {
 	Client         client.TenantAwareInventoryClient
 	TelemetryCache *TelemetryCache
 	Watcher        chan *client.WatchEvents
 }
 
-// Options contains configuration options for the telemetry inventory client.
 // Options contains configuration options for the telemetry inventory client.
 type Options struct {
 	InventoryAddress   string
@@ -59,7 +56,6 @@ type Options struct {
 	EnableMetrics      bool
 }
 
-// Option is a functional option for configuring the telemetry inventory client.
 // Option is a functional option for configuring the telemetry inventory client.
 type Option func(*Options)
 
@@ -105,7 +101,6 @@ func WithEnableMetrics(enableMetrics bool) Option {
 	}
 }
 
-// WithDialOption adds a gRPC dial option.
 // WithDialOption adds a gRPC dial option.
 func WithDialOption(dialOption grpc.DialOption) Option {
 	return func(options *Options) {
@@ -166,7 +161,6 @@ func NewTelemetryInventoryClientWithOptions(wg *sync.WaitGroup, opts ...Option) 
 }
 
 // NewTelemetryInventoryClient creates a new telemetry inventory client.
-// NewTelemetryInventoryClient creates a new telemetry inventory client.
 func NewTelemetryInventoryClient(
 	invClient client.TenantAwareInventoryClient, cacheClient *TelemetryCache, watcher chan *client.WatchEvents,
 ) (*TelemetryInventoryClient, error) {
@@ -179,7 +173,6 @@ func NewTelemetryInventoryClient(
 }
 
 // Close closes the telemetry inventory client connection.
-// Close closes the telemetry inventory client connection.
 func (c *TelemetryInventoryClient) Close() {
 	if err := c.Client.Close(); err != nil {
 		zlog.InfraSec().InfraErr(err).Msgf("")
@@ -187,7 +180,6 @@ func (c *TelemetryInventoryClient) Close() {
 	zlog.InfraSec().Info().Msgf("Inventory client stopped")
 }
 
-// GetHostAndInstanceIDResourceByHostUUID retrieves host and instance ID by host UUID.
 // GetHostAndInstanceIDResourceByHostUUID retrieves host and instance ID by host UUID.
 func (c *TelemetryInventoryClient) GetHostAndInstanceIDResourceByHostUUID(ctx context.Context, tenantID, hostUUID string) (
 	hostID, instanceID string,
@@ -216,7 +208,6 @@ func (c *TelemetryInventoryClient) GetHostAndInstanceIDResourceByHostUUID(ctx co
 	return host.GetResourceId(), host.GetInstance().GetResourceId(), nil
 }
 
-// ListTelemetryProfilesByHostAndInstanceID lists telemetry profiles by host and instance ID.
 // ListTelemetryProfilesByHostAndInstanceID lists telemetry profiles by host and instance ID.
 func (c *TelemetryInventoryClient) ListTelemetryProfilesByHostAndInstanceID(
 	ctx context.Context, tenantID, hostID, instanceID string,

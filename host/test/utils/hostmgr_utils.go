@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package utils provides utility functions for host manager testing.
-// Package utils provides utility functions for host manager testing.
 //
-//nolint:revive // Package name utils is intentional for test utilities
 //nolint:revive // Package name utils is intentional for test utilities
 package utils
 
@@ -34,7 +32,6 @@ const (
 
 // HrmClient is the inventory client for testing.
 var (
-	// HrmClient is the inventory client for testing.
 	HrmClient            client.TenantAwareInventoryClient
 	HrmEventsClient      chan *client.WatchEvents
 	HostManagerNBHandler *handlers.HostManagerNBHandler
@@ -84,7 +81,6 @@ func CreateNBHandler(tb testing.TB) error {
 	HostManagerNBHandler = nbHandler
 
 	return nil
-	// CreateHrmClient creates and initializes the host manager test client.
 }
 
 // CreateHrmClient creates and initializes the host manager test client.

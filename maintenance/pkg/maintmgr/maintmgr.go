@@ -37,14 +37,12 @@ var eventsWatcherBufSize = 10
 var invMgrCli invclient.InvGrpcClient
 
 // EnableAuth enables authentication for the maintenance manager.
-// EnableAuth enables authentication for the maintenance manager.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
 }
 
-// EnableSanitizeGrpcErr enables gRPC error sanitization.
 // EnableSanitizeGrpcErr enables gRPC error sanitization.
 func EnableSanitizeGrpcErr(enable bool) Option {
 	return func(o *Options) {
@@ -53,14 +51,12 @@ func EnableSanitizeGrpcErr(enable bool) Option {
 }
 
 // EnableTracing enables tracing for the maintenance manager.
-// EnableTracing enables tracing for the maintenance manager.
 func EnableTracing(enable bool) Option {
 	return func(o *Options) {
 		o.enableTracing = enable
 	}
 }
 
-// WithRbacRulesPath sets the RBAC rules path.
 // WithRbacRulesPath sets the RBAC rules path.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
@@ -69,14 +65,12 @@ func WithRbacRulesPath(rbacPath string) Option {
 }
 
 // EnableMetrics enables metrics collection.
-// EnableMetrics enables metrics collection.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
 	}
 }
 
-// WithMetricsAddress sets the metrics address.
 // WithMetricsAddress sets the metrics address.
 func WithMetricsAddress(metricsAddress string) Option {
 	return func(o *Options) {
@@ -93,7 +87,6 @@ func parseOptions(opts ...Option) *Options {
 }
 
 // Options contains configuration options for the maintenance manager.
-// Options contains configuration options for the maintenance manager.
 type Options struct {
 	enableAuth            bool
 	enableSanitizeGrpcErr bool
@@ -104,10 +97,8 @@ type Options struct {
 }
 
 // Option is a functional option for configuring the maintenance manager.
-// Option is a functional option for configuring the maintenance manager.
 type Option func(*Options)
 
-// StartInvGrpcCli starts the inventory gRPC client.
 // StartInvGrpcCli starts the inventory gRPC client.
 func StartInvGrpcCli(
 	wg *sync.WaitGroup,
@@ -184,12 +175,10 @@ func StartInvGrpcCli(
 }
 
 // SetInvGrpcCli sets the inventory gRPC client instance.
-// SetInvGrpcCli sets the inventory gRPC client instance.
 func SetInvGrpcCli(cli invclient.InvGrpcClient) {
 	invMgrCli = cli
 }
 
-// CloseInvGrpcCli closes the inventory gRPC client connection.
 // CloseInvGrpcCli closes the inventory gRPC client connection.
 func CloseInvGrpcCli() {
 	zlog.InfraSec().Info().Msg("Stopping Inventory client")
@@ -210,7 +199,6 @@ func CloseInvGrpcCli() {
 	invMgrCli.HScheduleCacheClient = nil
 }
 
-// StartGrpcSrv starts the maintenance manager gRPC server.
 // StartGrpcSrv starts the maintenance manager gRPC server.
 func StartGrpcSrv(
 	lis net.Listener,

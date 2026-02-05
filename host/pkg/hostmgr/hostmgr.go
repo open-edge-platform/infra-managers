@@ -50,8 +50,6 @@ const (
 	eventsWatcherBufSize = 10
 )
 
-// EnableAuth enables authentication for the host manager
-
 // EnableAuth enables authentication for the host manager.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
@@ -159,9 +157,7 @@ func StartInvGrpcCli(
 
 // SetInvGrpcCli sets the inventory gRPC client.
 func SetInvGrpcCli(gcli inv_client.TenantAwareInventoryClient) {
-	// StartGrpcSrv starts the host manager gRPC server
 	invClientInstance = gcli
-	// StartGrpcSrv starts the gRPC server for the Host Manager.
 }
 
 // CloseInvGrpcCli closes the inventory gRPC client connection.

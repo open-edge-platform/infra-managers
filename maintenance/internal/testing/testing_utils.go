@@ -79,20 +79,17 @@ var (
 		StartSeconds: TimeNow + SafeTimeDelay + DelayStart10,
 	}
 	// SingleSchedule1 is a test single schedule resource (variant 1).
-	// SingleSchedule1 is a test single schedule resource (variant 1).
 	SingleSchedule1 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
 		ScheduleStatus: schedule_v1.ScheduleStatus_SCHEDULE_STATUS_OS_UPDATE,
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart20,
 	}
 	// SingleSchedule2 is a test single schedule resource (variant 2).
-	// SingleSchedule2 is a test single schedule resource (variant 2).
 	SingleSchedule2 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
 		ScheduleStatus: schedule_v1.ScheduleStatus_SCHEDULE_STATUS_OS_UPDATE,
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart50,
 	}
-	// SingleSchedule3 is a test single schedule resource (variant 3).
 	// SingleSchedule3 is a test single schedule resource (variant 3).
 	SingleSchedule3 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
@@ -101,12 +98,10 @@ var (
 		EndSeconds:     TimeNow + SafeTimeDelay + DelayStart50 + DelayStart50 + DelayStart5,
 	}
 	// MmSingleSchedule3 is a maintenance manager single schedule (variant 3).
-	// MmSingleSchedule3 is a maintenance manager single schedule (variant 3).
 	MmSingleSchedule3 = pb.SingleSchedule{
 		StartSeconds: TimeNow + SafeTimeDelay + DelayStart5 + DelayStart50,
 		EndSeconds:   TimeNow + SafeTimeDelay + DelayStart50 + DelayStart50 + DelayStart5,
 	}
-	// SingleSchedule4 is a test single schedule resource (variant 4).
 	// SingleSchedule4 is a test single schedule resource (variant 4).
 	SingleSchedule4 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
@@ -114,13 +109,11 @@ var (
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart10,
 	}
 	// SingleSchedule5 is a test single schedule resource (variant 5).
-	// SingleSchedule5 is a test single schedule resource (variant 5).
 	SingleSchedule5 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
 		ScheduleStatus: schedule_v1.ScheduleStatus_SCHEDULE_STATUS_SHIPPING,
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart10,
 	}
-	// SingleSchedule6 is a test single schedule resource (variant 6).
 	// SingleSchedule6 is a test single schedule resource (variant 6).
 	SingleSchedule6 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
@@ -128,13 +121,11 @@ var (
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart10,
 	}
 	// SingleSchedule7 is a test single schedule resource (variant 7).
-	// SingleSchedule7 is a test single schedule resource (variant 7).
 	SingleSchedule7 = schedule_v1.SingleScheduleResource{
 		TenantId:       Tenant1,
 		ScheduleStatus: schedule_v1.ScheduleStatus_SCHEDULE_STATUS_FIRMWARE_UPDATE,
 		StartSeconds:   TimeNow + SafeTimeDelay + DelayStart10,
 	}
-	// RepeatedSchedule1 is a test repeated schedule resource (variant 1).
 	// RepeatedSchedule1 is a test repeated schedule resource (variant 1).
 	RepeatedSchedule1 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
@@ -148,7 +139,6 @@ var (
 		CronDayWeek:     "0",
 	}
 	// MmRepeatedSchedule1 is a maintenance manager repeated schedule list (variant 1).
-	// MmRepeatedSchedule1 is a maintenance manager repeated schedule list (variant 1).
 	MmRepeatedSchedule1 = []*pb.RepeatedSchedule{
 		{
 			DurationSeconds: uint32(DurationTest),
@@ -159,7 +149,6 @@ var (
 			CronDayWeek:     "0",
 		},
 	}
-	// RepeatedSchedule2 is a test repeated schedule resource (variant 2).
 	// RepeatedSchedule2 is a test repeated schedule resource (variant 2).
 	RepeatedSchedule2 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
@@ -172,7 +161,6 @@ var (
 		CronMonth:       "*",
 		CronDayWeek:     "*",
 	}
-	// MmRepeatedSchedule2 is a maintenance manager repeated schedule list (variant 2).
 	// MmRepeatedSchedule2 is a maintenance manager repeated schedule list (variant 2).
 	MmRepeatedSchedule2 = []*pb.RepeatedSchedule{
 		{
@@ -193,7 +181,6 @@ var (
 		},
 	}
 	// RepeatedSchedule3 is a test repeated schedule resource (variant 3).
-	// RepeatedSchedule3 is a test repeated schedule resource (variant 3).
 	RepeatedSchedule3 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
 		Name:            "repeatedSchedule test 1",
@@ -205,7 +192,6 @@ var (
 		CronMonth:       "*",
 		CronDayWeek:     "*",
 	}
-	// RepeatedSchedule4 is a test repeated schedule resource (variant 4).
 	// RepeatedSchedule4 is a test repeated schedule resource (variant 4).
 	RepeatedSchedule4 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
@@ -219,7 +205,6 @@ var (
 		CronDayWeek:     "*",
 	}
 	// RepeatedSchedule5 is a test repeated schedule resource (variant 5).
-	// RepeatedSchedule5 is a test repeated schedule resource (variant 5).
 	RepeatedSchedule5 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
 		Name:            "repeatedSchedule test 1",
@@ -231,7 +216,6 @@ var (
 		CronMonth:       "*",
 		CronDayWeek:     "*",
 	}
-	// RepeatedSchedule6 is a test repeated schedule resource (variant 6).
 	// RepeatedSchedule6 is a test repeated schedule resource (variant 6).
 	RepeatedSchedule6 = schedule_v1.RepeatedScheduleResource{
 		TenantId:        Tenant1,
@@ -274,7 +258,6 @@ var (
 )
 
 // CreateHost creates a test host resource.
-// CreateHost creates a test host resource.
 func CreateHost(t *testing.T, tenantID string, host *computev1.HostResource) *computev1.HostResource {
 	t.Helper()
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
@@ -296,7 +279,6 @@ func CreateHost(t *testing.T, tenantID string, host *computev1.HostResource) *co
 	return host
 }
 
-// CreateAndBindSingleSchedule creates and binds a single schedule to a host.
 // CreateAndBindSingleSchedule creates and binds a single schedule to a host.
 //
 //nolint:dupl // Helper testing function very similar to CreateAndBindRepeatedSchedule, but kept separate for easier consumption
@@ -336,7 +318,6 @@ func CreateAndBindSingleSchedule(
 	t.Cleanup(func() { dao.DeleteResource(t, tenantID, rID) })
 }
 
-// CreateAndBindRepeatedSchedule creates and binds a repeated schedule to a host.
 // CreateAndBindRepeatedSchedule creates and binds a repeated schedule to a host.
 //
 //nolint:dupl // Helper testing function very similar to CreateAndBindSingleSchedule, but kept separate for easier consumption

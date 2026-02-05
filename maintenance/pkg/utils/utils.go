@@ -42,7 +42,6 @@ const (
 )
 
 // IsInstanceNotProvisioned checks if an instance is not yet provisioned.
-// IsInstanceNotProvisioned checks if an instance is not yet provisioned.
 func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
 	if instance == nil {
 		// If a host has no Instance, it's not provisioned yet
@@ -52,7 +51,6 @@ func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
 		instance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
 }
 
-// IsHostUntrusted checks if a host is untrusted.
 // IsHostUntrusted checks if a host is untrusted.
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
 	// this can mean a state inconsistency if desired state != current state, but for safety we check both.
@@ -108,7 +106,6 @@ func PopulateUpdateSchedule(rsResources []*schedule_v1.RepeatedScheduleResource,
 	return &sche, nil
 }
 
-// PopulateOsProfileUpdateSource populates the OS profile update source fields.
 // PopulateOsProfileUpdateSource populates the OS profile update source fields.
 func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) (*pb.OSProfileUpdateSource, error) {
 	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
@@ -177,7 +174,6 @@ func GetClosestSingleSchedule(sScheds []*schedule_v1.SingleScheduleResource) *sc
 }
 
 // GetUpdateStatusFromInstance retrieves the update status from an instance.
-// GetUpdateStatusFromInstance retrieves the update status from an instance.
 func GetUpdateStatusFromInstance(inst *computev1.InstanceResource) inv_status.ResourceStatus {
 	return inv_status.ResourceStatus{
 		StatusIndicator: inst.UpdateStatusIndicator,
@@ -200,7 +196,6 @@ func returnUpdateStatusNeed(newStatus *inv_status.ResourceStatus,
 	return newStatus, true
 }
 
-// GetUpdatedUpdateStatusIfNeeded returns an updated status if changes are detected.
 // GetUpdatedUpdateStatusIfNeeded returns an updated status if changes are detected.
 func GetUpdatedUpdateStatusIfNeeded(newUpdateStatus *pb.UpdateStatus,
 	instStatusInd statusv1.StatusIndication, instUpdateMessage string) (
@@ -245,7 +240,6 @@ func validateJSONSchema(jsonStr string) (int, error) {
 }
 
 // GetUpdateStatusDetailIfNeeded retrieves status details if they have changed.
-// GetUpdateStatusDetailIfNeeded retrieves status details if they have changed.
 func GetUpdateStatusDetailIfNeeded(invUpStatus *inv_status.ResourceStatus,
 	mmUpStatus *pb.UpdateStatus, osType os_v1.OsType,
 ) string {
@@ -279,7 +273,6 @@ func GetUpdateStatusDetailIfNeeded(invUpStatus *inv_status.ResourceStatus,
 }
 
 // SafeUint64ToInt64 safely converts uint64 to int64 with overflow protection.
-// SafeUint64ToInt64 safely converts uint64 to int64 with overflow protection.
 func SafeUint64ToInt64(u uint64) (int64, error) {
 	if u > math.MaxInt64 {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "uint64 value exceeds int64 range")
@@ -288,7 +281,6 @@ func SafeUint64ToInt64(u uint64) (int64, error) {
 }
 
 // SafeInt64ToUint64 safely converts int64 to uint64 with underflow protection.
-// SafeInt64ToUint64 safely converts int64 to uint64 with underflow protection.
 func SafeInt64ToUint64(i int64) (uint64, error) {
 	if i < 0 {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "int64 value is negative and cannot be converted to uint64")
@@ -296,7 +288,6 @@ func SafeInt64ToUint64(i int64) (uint64, error) {
 	return uint64(i), nil
 }
 
-// GetUpdatedUpdateStatus calculates the updated status based on current state.
 // GetUpdatedUpdateStatus calculates the updated status based on current state.
 func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.ResourceStatus {
 	switch newUpdateStatus.StatusType {
@@ -317,7 +308,6 @@ func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.Resour
 	}
 }
 
-// ConvertToComparableSemVer converts a version string to a comparable semantic version format.
 // ConvertToComparableSemVer converts a version string to a comparable semantic version format.
 func ConvertToComparableSemVer(s string) (string, error) {
 	// convert image version string to a comparable semantic version format

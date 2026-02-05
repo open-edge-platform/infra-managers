@@ -25,6 +25,5 @@ const (
 )
 
 // DisableProviderAutomationFlag disables provider automation.
-// DisableProviderAutomationFlag disables provider automation.
 var DisableProviderAutomationFlag = flag.Bool("disableProviderAutomation", false,
 	"If set to true, OSRM doesn't auto-create infra_onboarding Provider")

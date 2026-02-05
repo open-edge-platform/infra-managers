@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package server provides gRPC server functionality for telemetry manager.
-// Package server provides gRPC server functionality for telemetry manager.
 package server
 
 import (
@@ -27,14 +26,12 @@ import (
 var zlog = logging.GetLogger("TelemetryServergRPC")
 
 // EnableAuth enables authentication for the server.
-// EnableAuth enables authentication for the server.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
 }
 
-// EnableSanitizeGrpcErr enables gRPC error sanitization.
 // EnableSanitizeGrpcErr enables gRPC error sanitization.
 func EnableSanitizeGrpcErr(enable bool) Option {
 	return func(o *Options) {
@@ -43,14 +40,12 @@ func EnableSanitizeGrpcErr(enable bool) Option {
 }
 
 // EnableTracing enables distributed tracing.
-// EnableTracing enables distributed tracing.
 func EnableTracing(enable bool) Option {
 	return func(o *Options) {
 		o.enableTracing = enable
 	}
 }
 
-// EnableValidate enables request validation.
 // EnableValidate enables request validation.
 func EnableValidate(enable bool) Option {
 	return func(o *Options) {
@@ -59,7 +54,6 @@ func EnableValidate(enable bool) Option {
 }
 
 // WithRbacRulesPath sets the RBAC rules path.
-// WithRbacRulesPath sets the RBAC rules path.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
 		o.rbacRulesPath = rbacPath
@@ -67,14 +61,12 @@ func WithRbacRulesPath(rbacPath string) Option {
 }
 
 // EnableMetrics enables metrics collection.
-// EnableMetrics enables metrics collection.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
 	}
 }
 
-// WithMetricsAddress sets the metrics server address.
 // WithMetricsAddress sets the metrics server address.
 func WithMetricsAddress(metricsAddress string) Option {
 	return func(o *Options) {
@@ -91,7 +83,6 @@ func parseOptions(opts ...Option) *Options {
 }
 
 // Options contains server configuration options.
-// Options contains server configuration options.
 type Options struct {
 	enableAuth            bool
 	enableValidate        bool
@@ -102,7 +93,6 @@ type Options struct {
 	metricsAddress        string
 }
 
-// Option is a functional option for configuring the server.
 // Option is a functional option for configuring the server.
 type Option func(*Options)
 
@@ -193,7 +183,6 @@ func telemetrymgrGrpcServer(
 	wg.Done()
 }
 
-// StartTelemetrymgrGrpcServer starts the telemetry manager gRPC server.
 // StartTelemetrymgrGrpcServer starts the telemetry manager gRPC server.
 func StartTelemetrymgrGrpcServer(
 	termChan chan bool,
