@@ -139,7 +139,7 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 			valid: true,
 		},
 		"UpdatedDevice": {
-			&pb.DeviceInfo{
+			in: &pb.DeviceInfo{
 				Version:          "1.2.56",
 				Hostname:         "testhost",
 				OperationalState: "enabled",
