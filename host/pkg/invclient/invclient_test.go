@@ -365,7 +365,7 @@ func TestInvClient_UpdateHostdevice(t *testing.T) {
 	t.Cleanup(func() { dao.DeleteResource(t, tenant1, id) })
 
 	device.Version = "1.3.45"
-	device.OperationState = "disabled"
+	device.OperationalState = "disabled"
 	device.ResourceId = id
 	err = invclient.UpdateHostdevice(ctx, client, tenant1, device)
 	require.NoError(t, err)
