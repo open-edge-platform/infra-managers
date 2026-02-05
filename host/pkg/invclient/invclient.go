@@ -470,8 +470,6 @@ func CreateHostdevice(
 
 // UpdateHostdevice updates an existing Hostdevice resource info in Inventory,
 // except state and other fields are not allowed from RM.
-//
-//nolint:dupl // Protobuf oneOf-driven separation
 func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string,
 	hostDevice *computev1.HostdeviceResource,
 ) error {

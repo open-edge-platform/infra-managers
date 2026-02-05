@@ -162,8 +162,6 @@ func hostDeviceToAddOrUpdate(ctx context.Context, tenantID string, update bool,
 }
 
 // Helper function to reduce cyclomatic complexity.
-//
-//nolint:dupl // Protobuf oneOf-driven separation
 func hostDeviceToRemove(ctx context.Context, tenantID string, invDevice *computev1.HostdeviceResource,
 ) error {
 	zlog.Debug().Msgf("Delete host device: tenantID=%s, hostDevice=%v", tenantID, invDevice)
@@ -174,8 +172,6 @@ func hostDeviceToRemove(ctx context.Context, tenantID string, invDevice *compute
 }
 
 // This function updates Host device resources in Inventory if needed.
-//
-//nolint:dupl // Protobuf oneOf-driven separation
 func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.HostResource, deviceInfo *pb.DeviceInfo) error {
 	// Devices are always eager loaded. No need to query Inventory again
 	invDevice := hostRes.GetHostDevice()
