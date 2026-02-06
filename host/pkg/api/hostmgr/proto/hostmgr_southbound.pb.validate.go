@@ -488,6 +488,35 @@ func (m *SystemInfo) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetDeviceInfo()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SystemInfoValidationError{
+					field:  "DeviceInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SystemInfoValidationError{
+					field:  "DeviceInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDeviceInfo()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SystemInfoValidationError{
+				field:  "DeviceInfo",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return SystemInfoMultiError(errors)
 	}
@@ -1278,6 +1307,406 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = OsReleaseValidationError{}
+
+// Validate checks the field values on DeviceInfo with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *DeviceInfo) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeviceInfo with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in DeviceInfoMultiError, or
+// nil if none found.
+func (m *DeviceInfo) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeviceInfo) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetVersion()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "Version",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetHostname()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "Hostname",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetOperationalState()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "OperationalState",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetBuildNumber()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "BuildNumber",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetSku()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "Sku",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetFeatures()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "Features",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetDeviceGuid()) < 1 {
+		err := DeviceInfoValidationError{
+			field:  "DeviceGuid",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(m.GetDeviceGuid()) > 36 {
+		err := DeviceInfoValidationError{
+			field:  "DeviceGuid",
+			reason: "value length must be at most 36 bytes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if err := m._validateUuid(m.GetDeviceGuid()); err != nil {
+		err = DeviceInfoValidationError{
+			field:  "DeviceGuid",
+			reason: "value must be a valid UUID",
+			cause:  err,
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetControlMode()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "ControlMode",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetDnsSuffix()) > 128 {
+		err := DeviceInfoValidationError{
+			field:  "DnsSuffix",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetRasInfo()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceInfoValidationError{
+					field:  "RasInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceInfoValidationError{
+					field:  "RasInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRasInfo()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceInfoValidationError{
+				field:  "RasInfo",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DeviceInfoMultiError(errors)
+	}
+
+	return nil
+}
+
+func (m *DeviceInfo) _validateUuid(uuid string) error {
+	if matched := _hostmgr_southbound_uuidPattern.MatchString(uuid); !matched {
+		return errors.New("invalid uuid format")
+	}
+
+	return nil
+}
+
+// DeviceInfoMultiError is an error wrapping multiple validation errors
+// returned by DeviceInfo.ValidateAll() if the designated constraints aren't met.
+type DeviceInfoMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeviceInfoMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeviceInfoMultiError) AllErrors() []error { return m }
+
+// DeviceInfoValidationError is the validation error returned by
+// DeviceInfo.Validate if the designated constraints aren't met.
+type DeviceInfoValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeviceInfoValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeviceInfoValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeviceInfoValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeviceInfoValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeviceInfoValidationError) ErrorName() string { return "DeviceInfoValidationError" }
+
+// Error satisfies the builtin error interface
+func (e DeviceInfoValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeviceInfo.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeviceInfoValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeviceInfoValidationError{}
+
+// Validate checks the field values on RASInfo with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *RASInfo) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RASInfo with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in RASInfoMultiError, or nil if none found.
+func (m *RASInfo) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RASInfo) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetNetworkStatus()) > 128 {
+		err := RASInfoValidationError{
+			field:  "NetworkStatus",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetRemoteStatus()) > 128 {
+		err := RASInfoValidationError{
+			field:  "RemoteStatus",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetRemoteTrigger()) > 128 {
+		err := RASInfoValidationError{
+			field:  "RemoteTrigger",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetMpsHostname()) > 128 {
+		err := RASInfoValidationError{
+			field:  "MpsHostname",
+			reason: "value length must be at most 128 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return RASInfoMultiError(errors)
+	}
+
+	return nil
+}
+
+// RASInfoMultiError is an error wrapping multiple validation errors returned
+// by RASInfo.ValidateAll() if the designated constraints aren't met.
+type RASInfoMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RASInfoMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RASInfoMultiError) AllErrors() []error { return m }
+
+// RASInfoValidationError is the validation error returned by RASInfo.Validate
+// if the designated constraints aren't met.
+type RASInfoValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RASInfoValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RASInfoValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RASInfoValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RASInfoValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RASInfoValidationError) ErrorName() string { return "RASInfoValidationError" }
+
+// Error satisfies the builtin error interface
+func (e RASInfoValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRASInfo.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RASInfoValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RASInfoValidationError{}
 
 // Validate checks the field values on Storage with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
