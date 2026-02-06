@@ -50,6 +50,11 @@ var (
 		hostmgr.AllowHostDiscoveryValue,
 		hostmgr.AllowHostDiscoveryDescription,
 	)
+	disabledProvisioning = flag.Bool(
+		hostmgr.DisabledProvisioning,
+		hostmgr.DisabledProvisioningValue,
+		hostmgr.DisabledProvisioningDescription,
+	)
 	enableAuth           = flag.Bool(rbac.EnableAuth, true, rbac.EnableAuthDescription)
 	rbacRules            = flag.String(rbac.RbacRules, "/rego/authz.rego", rbac.RbacRulesDescription)
 	invCacheUUIDEnable   = flag.Bool(client.InvCacheUUIDEnable, false, client.InvCacheUUIDEnableDescription)
@@ -104,18 +109,19 @@ func main() {
 	flag.Parse()
 
 	conf := config.HostMgrConfig{
-		EnableTracing:       *enableTracing,
-		EnableMetrics:       *enableMetrics,
-		TraceURL:            *traceURL,
-		InventoryAddr:       *invsvcaddr,
-		CACertPath:          *caCertPath,
-		TLSKeyPath:          *tlsKeyPath,
-		TLSCertPath:         *tlsCertPath,
-		InsecureGRPC:        *insecureGrpc,
-		EnableHostDiscovery: *allowHostDiscovery,
-		EnableUUIDCache:     *invCacheUUIDEnable,
-		UUIDCacheTTL:        *invCacheStaleTimeout,
-		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset),
+		EnableTracing:        *enableTracing,
+		EnableMetrics:        *enableMetrics,
+		TraceURL:             *traceURL,
+		InventoryAddr:        *invsvcaddr,
+		CACertPath:           *caCertPath,
+		TLSKeyPath:           *tlsKeyPath,
+		TLSCertPath:          *tlsCertPath,
+		InsecureGRPC:         *insecureGrpc,
+		EnableHostDiscovery:  *allowHostDiscovery,
+		DisabledProvisioning: *disabledProvisioning,
+		EnableUUIDCache:      *invCacheUUIDEnable,
+		UUIDCacheTTL:         *invCacheStaleTimeout,
+		UUIDCacheTTLOffset:   int(*invCacheStaleTimeoutOffset),
 	}
 	if err := conf.Validate(); err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Failed to start due to invalid configuration: %v", conf)

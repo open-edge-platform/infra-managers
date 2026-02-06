@@ -115,7 +115,7 @@ func (s *server) UpdateHostSystemInfoByGUID(ctx context.Context,
 			"Host tID=%s, UUID=%s is not trusted, the message will not be handled", tenantID, guid)
 	}
 
-	if hmgr_util.IsHostNotProvisioned(hostres) {
+	if !DisabledProvisioningValue && hmgr_util.IsHostNotProvisioned(hostres) {
 		zlog.InfraSec().
 			InfraError("Host tID=%s, UUID=%s is not yet provisioned, skipping update", tenantID, hostres.GetUuid()).
 			Msg("UpdateHostSystemInfoByGUID")
@@ -190,9 +190,11 @@ func (s *server) UpdateInstanceStateStatusByHostGUID(
 		return nil, err
 	}
 
-	err = updateInstanceStateStatusByHostGUID(ctx, tenantID, host.GetInstance(), in)
-	if err != nil {
-		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
+	if !DisabledProvisioningValue {
+		err = updateInstanceStateStatusByHostGUID(ctx, tenantID, host.GetInstance(), in)
+		if err != nil {
+			return nil, inv_errors.ErrorToSanitizedGrpcError(err)
+		}
 	}
 
 	return &pb.UpdateInstanceStateStatusByHostGUIDResponse{}, nil
@@ -213,7 +215,7 @@ func (s *server) updateHostStatusIfNeeded(
 		return nil
 	}
 
-	if hmgr_util.IsHostNotProvisioned(host) {
+	if !DisabledProvisioningValue && hmgr_util.IsHostNotProvisioned(host) {
 		zlog.InfraSec().
 			InfraError("Skip updating instance state for host tID=%s, UUID=%s (not provisioned)", tenantID, host.GetUuid()).
 			Msg("UpdateInstanceStateStatusByHostGUID")
