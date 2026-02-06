@@ -33,8 +33,8 @@ var zlog = logging.GetLogger("HostManager")
 // TODO(max): remove global instances.
 var (
 	invClientInstance         inv_client.TenantAwareInventoryClient
-	AllowHostDiscoveryValue   = true  // Default value in flag
-	DisabledProvisioningValue = false // Default value in flag
+	AllowHostDiscoveryValue   = true // Default value in flag
+	DisabledProvisioningValue = true // Default value in flag // NOTE: set to true only for testing, should be false in production
 )
 
 const (
