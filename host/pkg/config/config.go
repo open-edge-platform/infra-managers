@@ -16,18 +16,19 @@ import (
 
 // HostMgrConfig contains configuration for the host manager..
 type HostMgrConfig struct {
-	EnableTracing       bool
-	EnableMetrics       bool
-	TraceURL            string
-	InventoryAddr       string
-	CACertPath          string
-	TLSKeyPath          string
-	TLSCertPath         string
-	InsecureGRPC        bool
-	EnableHostDiscovery bool
-	EnableUUIDCache     bool
-	UUIDCacheTTL        time.Duration
-	UUIDCacheTTLOffset  int
+	EnableTracing        bool
+	EnableMetrics        bool
+	TraceURL             string
+	InventoryAddr        string
+	CACertPath           string
+	TLSKeyPath           string
+	TLSCertPath          string
+	InsecureGRPC         bool
+	EnableHostDiscovery  bool
+	DisabledProvisioning bool
+	EnableUUIDCache      bool
+	UUIDCacheTTL         time.Duration
+	UUIDCacheTTLOffset   int
 }
 
 // Validate checks if the configuration is valid.
