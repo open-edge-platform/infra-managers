@@ -32,8 +32,9 @@ var zlog = logging.GetLogger("HostManager")
 
 // TODO(max): remove global instances.
 var (
-	invClientInstance       inv_client.TenantAwareInventoryClient
-	AllowHostDiscoveryValue = true // Default value in flag
+	invClientInstance         inv_client.TenantAwareInventoryClient
+	AllowHostDiscoveryValue   = true  // Default value in flag
+	DisabledProvisioningValue = false // Default value in flag
 )
 
 const (
@@ -41,6 +42,10 @@ const (
 	AllowHostDiscovery = "allowHostDiscovery"
 	// AllowHostDiscoveryDescription provides description of the AllowHostDiscovery flag.
 	AllowHostDiscoveryDescription = "Flag to allow Host discovery automatically when it does not exist in the Inventory"
+	// DisabledProvisioning toggles provisioning-related checks in the host manager.
+	DisabledProvisioning = "disabledProvisioning"
+	// DisabledProvisioningDescription provides description of the DisabledProvisioning flag.
+	DisabledProvisioningDescription = "Flag to disable provisioning checks for host updates"
 	// Backoff config for retrying the SetHostConnectionLost.
 	backoffInterval = 5 * time.Second
 	backoffRetries  = uint64(5)
@@ -113,7 +118,9 @@ func StartInvGrpcCli(
 	ctx := context.Background()
 	resourceKinds := []inv_v1.ResourceKind{
 		inv_v1.ResourceKind_RESOURCE_KIND_HOST,
-		inv_v1.ResourceKind_RESOURCE_KIND_INSTANCE,
+	}
+	if !conf.DisabledProvisioning {
+		resourceKinds = append(resourceKinds, inv_v1.ResourceKind_RESOURCE_KIND_INSTANCE)
 	}
 	zlog.InfraSec().Info().Msg("initial Inv Grpc Client start.")
 
@@ -151,6 +158,7 @@ func StartInvGrpcCli(
 	SetInvGrpcCli(gcli)
 	zlog.InfraSec().Info().Msg("initial Grpc Client preparation is done.")
 	AllowHostDiscoveryValue = conf.EnableHostDiscovery
+	DisabledProvisioningValue = conf.DisabledProvisioning
 
 	return gcli, events, nil
 }
