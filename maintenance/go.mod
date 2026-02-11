@@ -10,7 +10,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.0
 	github.com/google/uuid v1.6.0
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.0
-	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.13
+	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.15
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.77.0
