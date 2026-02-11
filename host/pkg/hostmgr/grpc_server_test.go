@@ -18,6 +18,7 @@ import (
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
+	"github.com/open-edge-platform/infra-managers/host/pkg/hostmgr"
 	hrm_status "github.com/open-edge-platform/infra-managers/host/pkg/status"
 	hmgr_util "github.com/open-edge-platform/infra-managers/host/pkg/utils"
 	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
@@ -658,6 +659,150 @@ func TestHostManagerClient_UpdateInstanceStateStatusByHostGUID(t *testing.T) {
 					updHostInv.GetHostStatusIndicator())
 				assert.LessOrEqual(t, uint64(timeBeforeUpdate), updHostInv.GetHostStatusTimestamp())
 			}
+		})
+	}
+}
+
+func TestHostManagerClient_UpdateInstanceStateStatusByHostGUID_DisabledProvisioning(t *testing.T) {
+	testcases := map[string]struct {
+		disabledProvisioning bool
+		instanceUpdateError  bool
+		expectedCode         codes.Code
+	}{
+		"DisabledProvisioningTrue": {
+			disabledProvisioning: true,
+			instanceUpdateError:  false,
+		},
+		"DisabledProvisioningFalse": {
+			disabledProvisioning: false,
+			instanceUpdateError:  true,
+			expectedCode:         codes.FailedPrecondition,
+		},
+	}
+
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			prevDisabledProvisioning := hostmgr.DisabledProvisioningValue
+			hostmgr.DisabledProvisioningValue = tc.disabledProvisioning
+			t.Cleanup(func() {
+				hostmgr.DisabledProvisioningValue = prevDisabledProvisioning
+			})
+
+			dao := inv_testing.NewInvResourceDAOOrFail(t)
+			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
+			defer cancel()
+
+			hostInv := dao.CreateHost(t, tenant1)
+
+			instReq := &pb.UpdateInstanceStateStatusByHostGUIDRequest{
+				HostGuid:             hostInv.GetUuid(),
+				InstanceState:        pb.InstanceState_INSTANCE_STATE_RUNNING,
+				InstanceStatus:       pb.InstanceStatus_INSTANCE_STATUS_RUNNING,
+				ProviderStatusDetail: "5 of 5 components are running",
+			}
+
+			instResp, err := HostManagerTestClient.UpdateInstanceStateStatusByHostGUID(ctx, instReq)
+
+			if tc.instanceUpdateError {
+				require.Error(t, err)
+				assert.Equal(t, tc.expectedCode, status.Code(err))
+				require.Nil(t, instResp)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, instResp)
+
+			updatedHost := GetHostbyUUID(t, hostInv.GetUuid())
+			expectedHostStatus := hmgr_util.GetHostStatus(pb.HostStatus_RUNNING)
+			assert.Equal(t, expectedHostStatus.Status, updatedHost.GetHostStatus())
+			assert.Equal(t, expectedHostStatus.StatusIndicator, updatedHost.GetHostStatusIndicator())
+		})
+	}
+}
+
+func TestHostManagerClient_UpdateHostSystemInfoByGUID_DisabledProvisioning(t *testing.T) {
+	testcases := map[string]struct {
+		disabledProvisioning bool
+		provisioningDone     bool // true if Instance is created or false if not
+		expectError          bool
+		expectedCode         codes.Code
+	}{
+		"DisabledProvisioningTrue": {
+			disabledProvisioning: true,
+			provisioningDone:     false,
+			expectError:          false,
+		},
+		"DisabledProvisioningFalse": {
+			disabledProvisioning: false,
+			provisioningDone:     false,
+			expectError:          true,
+			expectedCode:         codes.FailedPrecondition,
+		},
+		"DisabledProvisioningFalse_Provisioned": {
+			disabledProvisioning: false,
+			provisioningDone:     true,
+			expectError:          false,
+		},
+	}
+
+	for name, tc := range testcases {
+		t.Run(name, func(t *testing.T) {
+			prevDisabledProvisioning := hostmgr.DisabledProvisioningValue
+			hostmgr.DisabledProvisioningValue = tc.disabledProvisioning
+			t.Cleanup(func() {
+				hostmgr.DisabledProvisioningValue = prevDisabledProvisioning
+			})
+
+			dao := inv_testing.NewInvResourceDAOOrFail(t)
+			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
+			defer cancel()
+
+			hostInv := dao.CreateHost(t, tenant1)
+			osInv := dao.CreateOs(t, tenant1)
+			_ = dao.CreateInstanceWithOpts(t, tenant1, hostInv, osInv, true, func(inst *computev1.InstanceResource) {
+				if tc.provisioningDone {
+					inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
+					inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
+				} else {
+					inst.ProvisioningStatus = om_status.ProvisioningStatusFailed.Status
+					inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusFailed.StatusIndicator
+				}
+			})
+
+			req := &pb.UpdateHostSystemInfoByGUIDRequest{
+				HostGuid: hostInv.GetUuid(),
+				SystemInfo: &pb.SystemInfo{
+					HwInfo: &pb.HWInfo{
+						SerialNum: "sn-disabled-prov",
+						Cpu: &pb.SystemCPU{
+							Cores:   4,
+							Model:   "Intel CPU",
+							Sockets: 1,
+							Threads: 8,
+							Vendor:  "GenuineIntel",
+							Arch:    "x86",
+						},
+						Memory: &pb.SystemMemory{Size: 16},
+					},
+				},
+			}
+
+			resp, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, req)
+			if tc.expectError {
+				require.Error(t, err)
+				assert.Equal(t, tc.expectedCode, status.Code(err))
+				require.Nil(t, resp)
+
+				updatedHost := GetHostbyUUID(t, hostInv.GetUuid())
+				assert.Equal(t, hostInv.GetSerialNumber(), updatedHost.GetSerialNumber())
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, resp)
+
+			updatedHost := GetHostbyUUID(t, hostInv.GetUuid())
+			assert.Equal(t, "sn-disabled-prov", updatedHost.GetSerialNumber())
+			assert.Equal(t, uint32(4), updatedHost.GetCpuCores())
 		})
 	}
 }
