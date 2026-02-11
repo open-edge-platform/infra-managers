@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package testing provides testing utilities and mocks.
 package testing
 
 import (
@@ -15,7 +16,9 @@ import (
 )
 
 const (
+	// EnProfileRepo is the profile repository name.
 	EnProfileRepo = "files-edge-orch/en/manifest-en-profile/"
+	// UbuntuProfile is the Ubuntu OS profile manifest for testing.
 	UbuntuProfile = `# SPDX-FileCopyrightText: (C) 2024 Intel Corporation
 appVersion: apps/v1
 metadata:
@@ -37,6 +40,7 @@ spec:
     artifact: edge-orch/edge-node/file/profile-scripts/file/ubuntu-22.04-lts-generic
     artifactVersion: 1.0.16	
 `
+	// EdgeMicrovisorToolkitProfile is the Edge Microvisor Toolkit profile for testing.
 	EdgeMicrovisorToolkitProfile = `# SPDX-FileCopyrightText: (C) 2024 Intel Corporation
 appVersion: apps/v1
 metadata:
@@ -59,35 +63,40 @@ spec:
 `
 )
 
-var ExampleEdgeMicrovisorToolkitArtifact = as.Artifact{
-	Name:      "microvisor-nonrt.yaml",
-	MediaType: "application/vnd.oci.image.layer.v1.tar",
-	Digest:    "sha256:a2717eccf1539c02000e9329410cb23009191a8c25f47f31e815cb32ac91f6cb",
-	Data:      []byte(EdgeMicrovisorToolkitProfile),
-}
-
-var ExampleUbuntuOSArtifact = as.Artifact{
-	Name:      "ubuntu-22.04-lts-generic.yaml",
-	MediaType: "application/vnd.oci.image.layer.v1.tar",
-	Digest:    "sha256:8d1a1f184624118cfeee5f31ff6df21ab7a8a4e2262ef66854a1731fa003b5c4",
-	Data:      []byte(UbuntuProfile),
-}
+var (
+	// ExampleEdgeMicrovisorToolkitArtifact is an example artifact for testing.
+	ExampleEdgeMicrovisorToolkitArtifact = as.Artifact{
+		Name:      "microvisor-nonrt.yaml",
+		MediaType: "application/vnd.oci.image.layer.v1.tar",
+		Digest:    "sha256:a2717eccf1539c02000e9329410cb23009191a8c25f47f31e815cb32ac91f6cb",
+		Data:      []byte(EdgeMicrovisorToolkitProfile),
+	}
+	// ExampleUbuntuOSArtifact is an example Ubuntu OS artifact for testing.
+	ExampleUbuntuOSArtifact = as.Artifact{
+		Name:      "ubuntu-22.04-lts-generic.yaml",
+		MediaType: "application/vnd.oci.image.layer.v1.tar",
+		Digest:    "sha256:8d1a1f184624118cfeee5f31ff6df21ab7a8a4e2262ef66854a1731fa003b5c4",
+		Data:      []byte(UbuntuProfile),
+	}
+	// ExampleOsConfig is an example OS configuration for testing.
+	ExampleOsConfig = common.OsConfig{
+		EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
+		OsProfileRevision:       "main",
+		DefaultProfile:          "ubuntu-22.04-lts-generic",
+		AutoProvision:           true,
+		InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
+		OSSecurityFeatureEnable: false,
+	}
+)
 
 const defaultTickerPeriodHours = 12
 
-var ExampleOsConfig = common.OsConfig{
-	EnabledProfiles:         []string{"ubuntu-22.04-lts-generic"},
-	OsProfileRevision:       "main",
-	DefaultProfile:          "ubuntu-22.04-lts-generic",
-	AutoProvision:           true,
-	InventoryTickerPeriod:   defaultTickerPeriodHours * time.Hour,
-	OSSecurityFeatureEnable: false,
-}
-
+// MockArtifactService provides a mock implementation of the artifact service.
 type MockArtifactService struct {
 	mock.Mock
 }
 
+// GetRepositoryTags returns mock repository tags.
 func (m *MockArtifactService) GetRepositoryTags(_ context.Context, repository string) ([]string, error) {
 	args := m.Called(repository)
 	repoTags, ok := args.Get(0).([]string)
@@ -99,6 +108,7 @@ func (m *MockArtifactService) GetRepositoryTags(_ context.Context, repository st
 	return repoTags, args.Error(1)
 }
 
+// DownloadArtifacts mocks artifact download.
 func (m *MockArtifactService) DownloadArtifacts(_ context.Context, repository, tag string) (*[]as.Artifact, error) {
 	args := m.Called(repository, tag)
 	artifacts, ok := args.Get(0).(*[]as.Artifact)

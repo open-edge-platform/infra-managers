@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package invclient provides inventory client functionality for the maintenance manager.
 package invclient
 
 import (
@@ -29,16 +30,22 @@ import (
 )
 
 const (
-	DefaultInventoryTimeout        = 5 * time.Second
-	batchSize                      = 1000
-	SentinelEndTimeUnset    uint64 = 9999999999 // Sentinel value for end time indicating the run is still ongoing
+	// DefaultInventoryTimeout is the default timeout for inventory operations.
+	DefaultInventoryTimeout = 5 * time.Second
+	batchSize               = 1000
+	// SentinelEndTimeUnset is a sentinel value indicating the end time is not set.
+	SentinelEndTimeUnset uint64 = 9999999999
 )
 
+// OSUpdateRunCompletionFilter represents filter options for OS update run completion status.
 type OSUpdateRunCompletionFilter int
 
 const (
+	// OSUpdateRunAll is a filter to retrieve all OS update runs.
 	OSUpdateRunAll OSUpdateRunCompletionFilter = iota
+	// OSUpdateRunCompleted filters for completed OS update runs.
 	OSUpdateRunCompleted
+	// OSUpdateRunUncompleted filters for uncompleted OS update runs.
 	OSUpdateRunUncompleted
 )
 
@@ -56,11 +63,13 @@ type InstanceUpdatePlan struct {
 	Needed            bool
 }
 
+// InvGrpcClient is the inventory gRPC client.
 type InvGrpcClient struct {
 	InvClient            inv_client.TenantAwareInventoryClient
 	HScheduleCacheClient *schedule_cache.HScheduleCacheClient
 }
 
+// NewInvGrpcClient creates a new inventory gRPC client.
 func NewInvGrpcClient(
 	invClient inv_client.TenantAwareInventoryClient,
 	hScheduleCache *schedule_cache.HScheduleCacheClient,
@@ -71,6 +80,7 @@ func NewInvGrpcClient(
 	}
 }
 
+// ListSingleSchedules lists all single schedules from the inventory.
 func ListSingleSchedules(ctx context.Context, cli InvGrpcClient, tenantID string, hostRes *computev1.HostResource,
 ) ([]*schedules_v1.SingleScheduleResource, error) {
 	hostID := hostRes.GetResourceId()
@@ -107,6 +117,7 @@ func loadSingleSchedulesFromCache(ctx context.Context, cli InvGrpcClient, tenant
 	return allSingleSchedules, nil
 }
 
+// ListRepeatedSchedules lists all repeated schedules from the inventory.
 func ListRepeatedSchedules(ctx context.Context, cli InvGrpcClient, tenantID string, hostRes *computev1.HostResource,
 ) ([]*schedules_v1.RepeatedScheduleResource, error) {
 	hostID := hostRes.GetResourceId()
@@ -145,6 +156,7 @@ func loadRepeatedSchedulesFromCache(ctx context.Context, cli InvGrpcClient, tena
 	return allRepeatedSchedules, nil
 }
 
+// GetInstanceResourceByHostGUID retrieves an instance resource by its host GUID.
 func GetInstanceResourceByHostGUID(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostGUID string,
 ) (
@@ -175,6 +187,7 @@ func GetInstanceResourceByHostGUID(
 	return instance, nil
 }
 
+// GetOSUpdatePolicyByInstanceID retrieves an OS update policy by instance ID.
 func GetOSUpdatePolicyByInstanceID(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, instanceID string,
 ) (*computev1.OSUpdatePolicyResource, error) {
@@ -225,6 +238,7 @@ func GetOSUpdatePolicyByInstanceID(
 	return osUpdatePolicy, nil
 }
 
+// UpdateInstance updates an instance resource in the inventory.
 func UpdateInstance(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -286,6 +300,7 @@ func UpdateInstance(
 	return err
 }
 
+// GetOSResourceIDByProfileInfo retrieves an OS resource ID by profile information.
 func GetOSResourceIDByProfileInfo(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	tenantID, profileName, osImageID string) (
 	string, error,
@@ -323,6 +338,7 @@ func GetOSResourceIDByProfileInfo(ctx context.Context, c inv_client.TenantAwareI
 	return osResID, nil
 }
 
+// GetLatestImmutableOSByProfile retrieves the latest immutable OS by profile.
 func GetLatestImmutableOSByProfile(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -386,6 +402,7 @@ func GetLatestImmutableOSByProfile(
 	return latestOS, nil
 }
 
+// GetOSResourceByID retrieves an OS resource by its ID.
 func GetOSResourceByID(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -419,6 +436,7 @@ func GetOSResourceByID(
 	return osResource, nil
 }
 
+// CreateOSUpdateRun creates a new OS update run in the inventory.
 func CreateOSUpdateRun(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
 ) (*computev1.OSUpdateRunResource, error) {
@@ -442,6 +460,7 @@ func CreateOSUpdateRun(
 	return runRes.GetOsUpdateRun(), nil
 }
 
+// DeleteOSUpdateRun deletes an OS update run from the inventory.
 func DeleteOSUpdateRun(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, osUpRun *computev1.OSUpdateRunResource,
 ) error {
@@ -461,6 +480,7 @@ func DeleteOSUpdateRun(
 	return err
 }
 
+// UpdateOSUpdateRun updates an OS update run in the inventory.
 func UpdateOSUpdateRun(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -521,6 +541,7 @@ func UpdateOSUpdateRun(
 	return err
 }
 
+// GetLatestOSUpdateRunByInstanceID retrieves the latest OS update run by instance ID.
 func GetLatestOSUpdateRunByInstanceID(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,

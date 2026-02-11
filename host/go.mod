@@ -3,12 +3,12 @@
 
 module github.com/open-edge-platform/infra-managers/host
 
-go 1.24.9
+go 1.25.5
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.0
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.33.2
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.0
 	github.com/open-edge-platform/infra-managers/maintenance v1.24.1
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.38.15
 	github.com/prometheus/client_golang v1.23.2

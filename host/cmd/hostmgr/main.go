@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package main implements the Host Manager service.
 package main
 
 import (
@@ -48,6 +49,11 @@ var (
 		hostmgr.AllowHostDiscovery,
 		hostmgr.AllowHostDiscoveryValue,
 		hostmgr.AllowHostDiscoveryDescription,
+	)
+	disabledProvisioning = flag.Bool(
+		hostmgr.DisabledProvisioning,
+		hostmgr.DisabledProvisioningValue,
+		hostmgr.DisabledProvisioningDescription,
 	)
 	enableAuth           = flag.Bool(rbac.EnableAuth, true, rbac.EnableAuthDescription)
 	rbacRules            = flag.String(rbac.RbacRules, "/rego/authz.rego", rbac.RbacRulesDescription)
@@ -103,18 +109,19 @@ func main() {
 	flag.Parse()
 
 	conf := config.HostMgrConfig{
-		EnableTracing:       *enableTracing,
-		EnableMetrics:       *enableMetrics,
-		TraceURL:            *traceURL,
-		InventoryAddr:       *invsvcaddr,
-		CACertPath:          *caCertPath,
-		TLSKeyPath:          *tlsKeyPath,
-		TLSCertPath:         *tlsCertPath,
-		InsecureGRPC:        *insecureGrpc,
-		EnableHostDiscovery: *allowHostDiscovery,
-		EnableUUIDCache:     *invCacheUUIDEnable,
-		UUIDCacheTTL:        *invCacheStaleTimeout,
-		UUIDCacheTTLOffset:  int(*invCacheStaleTimeoutOffset),
+		EnableTracing:        *enableTracing,
+		EnableMetrics:        *enableMetrics,
+		TraceURL:             *traceURL,
+		InventoryAddr:        *invsvcaddr,
+		CACertPath:           *caCertPath,
+		TLSKeyPath:           *tlsKeyPath,
+		TLSCertPath:          *tlsCertPath,
+		InsecureGRPC:         *insecureGrpc,
+		EnableHostDiscovery:  *allowHostDiscovery,
+		DisabledProvisioning: *disabledProvisioning,
+		EnableUUIDCache:      *invCacheUUIDEnable,
+		UUIDCacheTTL:         *invCacheStaleTimeout,
+		UUIDCacheTTLOffset:   int(*invCacheStaleTimeoutOffset),
 	}
 	if err := conf.Validate(); err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Failed to start due to invalid configuration: %v", conf)
@@ -170,9 +177,10 @@ func main() {
 	}()
 
 	// Create a listener on TCP port
-	lis, err := net.Listen("tcp", *servaddr)
-	if err != nil {
-		zlog.InfraSec().Fatal().Err(err).Msgf("Error listening with TCP: %s", lis.Addr().String())
+	lc := net.ListenConfig{}
+	lis, listenErr := lc.Listen(context.Background(), "tcp", *servaddr)
+	if listenErr != nil {
+		zlog.InfraSec().Fatal().Err(listenErr).Msgf("Error listening with TCP on %s", *servaddr)
 	}
 
 	// Add host manager grpc server - it sets readyCHan to true

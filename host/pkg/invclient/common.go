@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package invclient provides an interface to the Inventory service for the Host Manager.
 package invclient
 
 import (

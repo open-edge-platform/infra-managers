@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-package util
+// Package utils provides utility functions for the maintenance manager.
+//
+//nolint:revive // utils is an acceptable package name for utility functions
+package utils
 
 import (
 	"encoding/json"
@@ -31,11 +34,14 @@ import (
 var zlog = logging.GetLogger("MaintenanceManagerUtils")
 
 const (
-	EnableSanitizeGrpcErr            = "enableSanitizeGrpcErr"
+	// EnableSanitizeGrpcErr is a configuration option to enable gRPC error sanitization.
+	EnableSanitizeGrpcErr = "enableSanitizeGrpcErr"
+	// EnableSanitizeGrpcErrDescription describes the EnableSanitizeGrpcErr option.
 	EnableSanitizeGrpcErrDescription = "enable to sanitize grpc error of each RPC call"
 	semverCoreSegments               = 3 // Major.Minor.Patch
 )
 
+// IsInstanceNotProvisioned checks if an instance is not yet provisioned.
 func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
 	if instance == nil {
 		// If a host has no Instance, it's not provisioned yet
@@ -45,6 +51,7 @@ func IsInstanceNotProvisioned(instance *computev1.InstanceResource) bool {
 		instance.ProvisioningStatus != om_status.ProvisioningStatusDone.Status
 }
 
+// IsHostUntrusted checks if a host is untrusted.
 func IsHostUntrusted(hostres *computev1.HostResource) bool {
 	// this can mean a state inconsistency if desired state != current state, but for safety we check both.
 	// eventually we should only check the desired state,
@@ -99,6 +106,7 @@ func PopulateUpdateSchedule(rsResources []*schedule_v1.RepeatedScheduleResource,
 	return &sche, nil
 }
 
+// PopulateOsProfileUpdateSource populates the OS profile update source fields.
 func PopulateOsProfileUpdateSource(os *os_v1.OperatingSystemResource) (*pb.OSProfileUpdateSource, error) {
 	osProfileUpdateSource := &pb.OSProfileUpdateSource{}
 
@@ -165,6 +173,7 @@ func GetClosestSingleSchedule(sScheds []*schedule_v1.SingleScheduleResource) *sc
 	return ssRet
 }
 
+// GetUpdateStatusFromInstance retrieves the update status from an instance.
 func GetUpdateStatusFromInstance(inst *computev1.InstanceResource) inv_status.ResourceStatus {
 	return inv_status.ResourceStatus{
 		StatusIndicator: inst.UpdateStatusIndicator,
@@ -187,6 +196,7 @@ func returnUpdateStatusNeed(newStatus *inv_status.ResourceStatus,
 	return newStatus, true
 }
 
+// GetUpdatedUpdateStatusIfNeeded returns an updated status if changes are detected.
 func GetUpdatedUpdateStatusIfNeeded(newUpdateStatus *pb.UpdateStatus,
 	instStatusInd statusv1.StatusIndication, instUpdateMessage string) (
 	*inv_status.ResourceStatus, bool,
@@ -229,6 +239,7 @@ func validateJSONSchema(jsonStr string) (int, error) {
 	return len(detail.UpdateLog), nil
 }
 
+// GetUpdateStatusDetailIfNeeded retrieves status details if they have changed.
 func GetUpdateStatusDetailIfNeeded(invUpStatus *inv_status.ResourceStatus,
 	mmUpStatus *pb.UpdateStatus, osType os_v1.OsType,
 ) string {
@@ -261,6 +272,7 @@ func GetUpdateStatusDetailIfNeeded(invUpStatus *inv_status.ResourceStatus,
 	}
 }
 
+// SafeUint64ToInt64 safely converts uint64 to int64 with overflow protection.
 func SafeUint64ToInt64(u uint64) (int64, error) {
 	if u > math.MaxInt64 {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "uint64 value exceeds int64 range")
@@ -268,6 +280,7 @@ func SafeUint64ToInt64(u uint64) (int64, error) {
 	return int64(u), nil
 }
 
+// SafeInt64ToUint64 safely converts int64 to uint64 with underflow protection.
 func SafeInt64ToUint64(i int64) (uint64, error) {
 	if i < 0 {
 		return 0, inv_errors.Errorfc(codes.InvalidArgument, "int64 value is negative and cannot be converted to uint64")
@@ -275,6 +288,7 @@ func SafeInt64ToUint64(i int64) (uint64, error) {
 	return uint64(i), nil
 }
 
+// GetUpdatedUpdateStatus calculates the updated status based on current state.
 func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.ResourceStatus {
 	switch newUpdateStatus.StatusType {
 	case pb.UpdateStatus_STATUS_TYPE_STARTED:
@@ -294,6 +308,7 @@ func GetUpdatedUpdateStatus(newUpdateStatus *pb.UpdateStatus) *inv_status.Resour
 	}
 }
 
+// ConvertToComparableSemVer converts a version string to a comparable semantic version format.
 func ConvertToComparableSemVer(s string) (string, error) {
 	// convert image version string to a comparable semantic version format
 	// Example: "3.0.20250717.0732" -> "3.0.20250717-build0732"

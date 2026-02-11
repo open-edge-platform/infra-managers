@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	// DefaultInventoryTimeout is the default timeout for Inventory operations.
 	DefaultInventoryTimeout = 5 * time.Second // Default timeout for Inventory operations
 	// ListAllDefaultTimeout The current estimation is very conservative considering 10k resources, batch size 100,
 	//  and 600ms per request on average.
@@ -40,13 +41,16 @@ const (
 var (
 	zlog = logging.GetLogger("InvClient")
 
-	InventoryTimeout        = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// InventoryTimeout is the timeout duration for Inventory API calls.
+	InventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
+	// ListAllInventoryTimeout is the timeout for listing all inventory items.
 	ListAllInventoryTimeout = flag.Duration(
 		"timeoutInventoryListAll",
 		ListAllDefaultTimeout,
 		"Timeout used when listing all resources for a given type from Inventory",
 	)
 
+	// UpdateHoststorageFieldMask is the field mask for host storage updates.
 	UpdateHoststorageFieldMask = []string{
 		computev1.HoststorageResourceFieldKind,
 		computev1.HoststorageResourceFieldDeviceName,
@@ -56,6 +60,7 @@ var (
 		computev1.HoststorageResourceFieldModel,
 		computev1.HoststorageResourceFieldCapacityBytes,
 	}
+	// UpdateHostnicFieldMask is the field mask for host NIC updates.
 	UpdateHostnicFieldMask = []string{
 		computev1.HostnicResourceFieldKind,
 		computev1.HostnicResourceFieldDeviceName,
@@ -78,6 +83,7 @@ var (
 		computev1.HostnicResourceFieldLinkState,
 		computev1.HostnicResourceFieldBmcInterface,
 	}
+	// UpdateIPAddressFieldMask is the field mask for IP address updates.
 	UpdateIPAddressFieldMask = []string{
 		network_v1.IPAddressResourceFieldAddress,
 		network_v1.IPAddressResourceFieldConfigMethod,
@@ -85,6 +91,7 @@ var (
 		network_v1.IPAddressResourceFieldStatusDetail,
 		network_v1.IPAddressResourceFieldCurrentState,
 	}
+	// UpdateHostusbFieldMask is the field mask for host USB updates.
 	UpdateHostusbFieldMask = []string{
 		computev1.HostusbResourceFieldKind,
 		computev1.HostusbResourceFieldDeviceName,
@@ -95,6 +102,7 @@ var (
 		computev1.HostusbResourceFieldClass,
 		computev1.HostusbResourceFieldSerial,
 	}
+	// UpdateHostgpuFieldMask is the field mask for host GPU updates.
 	UpdateHostgpuFieldMask = []string{
 		computev1.HostgpuResourceFieldPciId,
 		computev1.HostgpuResourceFieldProduct,
@@ -180,6 +188,7 @@ func UpdateInvResourceFields(
 	return nil
 }
 
+// GetHostResourceByGUID retrieves a host resource by its GUID.
 func GetHostResourceByGUID(
 	ctx context.Context,
 	c inv_client.TenantAwareInventoryClient,
@@ -195,6 +204,7 @@ func GetHostResourceByGUID(
 	return c.GetHostByUUID(ctx, tenantID, guid)
 }
 
+// GetHostResourceByResourceID retrieves a host resource by its resource ID.
 func GetHostResourceByResourceID(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string,
 ) (*computev1.HostResource, error) {
 	ctx, cancel := context.WithTimeout(ctx, *InventoryTimeout)
@@ -279,6 +289,8 @@ func DeleteHostusb(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	return err
 }
 
+// CreateHostgpu creates a new host GPU resource in Inventory.
+//
 //nolint:dupl // Protobuf oneOf-driven separation
 func CreateHostgpu(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostgpu *computev1.HostgpuResource) (
@@ -302,6 +314,7 @@ func CreateHostgpu(
 	return inv_util.GetResourceIDFromResource(resp)
 }
 
+// UpdateHostgpu updates an existing host GPU resource.
 func UpdateHostgpu(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostgpu *computev1.HostgpuResource,
 ) error {
@@ -315,6 +328,8 @@ func UpdateHostgpu(
 	return err
 }
 
+// DeleteHostgpu deletes a host GPU resource.
+//
 //nolint:dupl // Protobuf oneOf-driven separation
 func DeleteHostgpu(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string) error {
 	details := fmt.Sprintf("tenantID=%s, resourceID=%s", tenantID, resourceID)
@@ -560,6 +575,7 @@ func DeleteIPAddress(ctx context.Context, c inv_client.TenantAwareInventoryClien
 	return err
 }
 
+// SetHostAsConnectionLost marks a host as having lost connection.
 func SetHostAsConnectionLost(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, hostResourceID string, timeStamp uint64,
 ) error {
@@ -587,6 +603,7 @@ func SetHostAsConnectionLost(
 	return nil
 }
 
+// SetHostStatus sets the status of a host.
 func SetHostStatus(
 	ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	tenantID, resourceID string, hostStatus inv_status.ResourceStatus,

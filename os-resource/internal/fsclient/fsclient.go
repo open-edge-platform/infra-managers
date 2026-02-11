@@ -33,10 +33,12 @@ const (
 )
 
 var (
-	zlog                       = logging.GetLogger("fsclient")
+	zlog = logging.GetLogger("fsclient")
+	// EnvNameRsFilesProxyAddress is the environment variable name for RS files proxy address.
 	EnvNameRsFilesProxyAddress = "RSPROXY_FILES_ADDRESS"
-	EnvNameRsEnProfileRepo     = "RS_EN_PROFILE_REPO"
-	client                     = &http.Client{
+	// EnvNameRsEnProfileRepo is the environment variable name for RS profile repository.
+	EnvNameRsEnProfileRepo = "RS_EN_PROFILE_REPO"
+	client                 = &http.Client{
 		Timeout: httpRequestTimeout,
 		Transport: &http.Transport{
 			Proxy:             http.ProxyFromEnvironment,
@@ -45,6 +47,8 @@ var (
 	}
 )
 
+// OSProfileManifest represents an OS profile manifest.
+//
 // Maintain consistency with OS profiles
 //
 //nolint:tagliatelle // Renaming the yaml keys may effect while unmarshalling/marshaling so, used nolint.
@@ -70,6 +74,7 @@ type OSProfileManifest struct {
 	} `yaml:"spec"`
 }
 
+// OSPackage represents an OS package.
 type OSPackage struct {
 	Repo []struct {
 		Name    *string `json:"name"`
@@ -77,23 +82,29 @@ type OSPackage struct {
 	} `json:"repo"`
 }
 
+// ExistingCVEs represents existing CVEs.
 type ExistingCVEs []struct {
 	CveID            *string   `json:"cve_id"`
 	Priority         *string   `json:"priority"`
 	AffectedPackages []*string `json:"affected_packages"`
 }
 
+// FixedCVEs represents fixed CVEs.
 type FixedCVEs []struct {
 	CveID            *string   `json:"cve_id"`
 	Priority         *string   `json:"priority"`
 	AffectedPackages []*string `json:"affected_packages"`
 }
 
+// OvalDefinitions represents OVAL definitions.
+//
 // Define the structure based on the OVAL XML format.
 type OvalDefinitions struct {
 	XMLName     xml.Name     `xml:"oval_definitions"` //nolint:tagliatelle // OVAL XML standard
 	Definitions []Definition `xml:"definitions>definition"`
 }
+
+// Definition represents an OVAL definition.
 type Definition struct {
 	ID          string      `xml:"id,attr"`
 	Class       string      `xml:"class,attr"`
@@ -107,15 +118,21 @@ type Definition struct {
 		} `xml:"issued"`
 	} `xml:"metadata>advisory"`
 }
+
+// Reference represents an OVAL reference.
 type Reference struct {
 	Source string `xml:"source,attr"`
 	RefID  string `xml:"ref_id,attr"`  //nolint:tagliatelle // OVAL XML standard
 	RefURL string `xml:"ref_url,attr"` //nolint:tagliatelle // OVAL XML standard
 }
+
+// Affected represents affected packages.
 type Affected struct {
 	Family   string `xml:"family,attr"`
 	Platform string `xml:"platform"`
 }
+
+// CVEInfo represents CVE information.
 type CVEInfo struct {
 	CVEID            string   `json:"cve_id"`
 	Priority         string   `json:"priority"`
@@ -150,6 +167,7 @@ func extractPackages(description string) []string {
 	return pkgs
 }
 
+// GetLatestOsProfiles retrieves the latest OS profiles.
 func GetLatestOsProfiles(ctx context.Context, profileNames []string, tag string) (map[string][]*OSProfileManifest, error) {
 	enProfileRepo, err := getProfileRepoFromEnv()
 	if err != nil {
@@ -232,6 +250,7 @@ func fetchOSProfile(ctx context.Context, repo, profileName, tag string) (*OSProf
 	return &enManifest, nil
 }
 
+// GetPackageManifest retrieves the package manifest for an OS profile.
 func GetPackageManifest(ctx context.Context, packageManifestURL string) (string, error) {
 	rsProxyAddress := os.Getenv(EnvNameRsFilesProxyAddress)
 	if rsProxyAddress == "" {
@@ -255,7 +274,11 @@ func GetPackageManifest(ctx context.Context, packageManifestURL string) (string,
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download package manifest: %v", err)
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			zlog.Error().Err(closeErr).Msg("Failed to close response body")
+		}
+	}()
 
 	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -351,7 +374,11 @@ func downloadAndDecompressCVEData(ctx context.Context, cveURL, cveType string) (
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			zlog.Error().Err(err).Msg("Failed to close response body")
+		}
+	}()
 	bz2Reader := bzip2.NewReader(resp.Body)
 	data, readErr := io.ReadAll(bz2Reader)
 	if readErr != nil {
@@ -399,7 +426,7 @@ func formatCVEResults(results []CVEInfo) ([]byte, error) {
 		AffectedPackages []*string `json:"affected_packages"`
 	}, 0, len(results))
 	for _, result := range results {
-		var affectedPkgs []*string
+		affectedPkgs := make([]*string, 0, len(result.AffectedPackages))
 		for _, pkg := range result.AffectedPackages {
 			pkgCopy := pkg
 			affectedPkgs = append(affectedPkgs, &pkgCopy)
@@ -458,7 +485,11 @@ func downloadImmutableCVEData(ctx context.Context, rsProxyAddress, cveURL, cveTy
 		zlog.InfraSec().Error().Err(err).Msgf("Failed to connect to release server to download %s CVEs list: %v", cveType, err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			zlog.Error().Err(closeErr).Msg("Failed to close response body")
+		}
+	}()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		zlog.InfraSec().Error().Err(err).
@@ -491,10 +522,12 @@ func validateCVEData(respBody []byte, cveType string) error {
 	return nil
 }
 
+// GetExistingCVEs retrieves existing CVEs for an OS profile.
 func GetExistingCVEs(ctx context.Context, osType, existingCVEsURL string) (string, error) {
 	return getCVEsFromURL(ctx, osType, existingCVEsURL, cveTypeExisting)
 }
 
+// GetFixedCVEs retrieves fixed CVEs for an OS profile.
 func GetFixedCVEs(ctx context.Context, osType, fixedCVEsURL string) (string, error) {
 	return getCVEsFromURL(ctx, osType, fixedCVEsURL, cveTypeFixed)
 }
