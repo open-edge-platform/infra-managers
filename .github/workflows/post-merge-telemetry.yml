@@ -11,6 +11,7 @@ on:
       - release-*
     paths:
       - "telemetry/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
