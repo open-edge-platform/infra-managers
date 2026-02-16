@@ -11,6 +11,7 @@ on:
       - release-*
     paths:
       - "maintenance/**"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,7 +22,7 @@ jobs:
       contents: read
       security-events: write
       id-token: write
-    uses: open-edge-platform/orch-ci/.github/workflows/post-merge.yml@c9e0ef33c129a67f7f2c3bae026362e7710a63a0  # 2026.0.8
+    uses: open-edge-platform/orch-ci/.github/workflows/post-merge.yml@ff9b56d8909f2688d2e52dc2d0b7ddeb76c65b62  # 2026.0.8
     with:
       bootstrap_tools: "all,golangci-lint2"
       run_version_check: true
