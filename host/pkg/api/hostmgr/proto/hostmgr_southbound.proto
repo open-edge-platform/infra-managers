@@ -155,7 +155,7 @@ message DeviceInfo {
 
   string features = 6 [(validate.rules).string = {max_len: 128}];
 
-  string device_guid = 7 [(validate.rules).string ={
+  string device_guid = 7 [(validate.rules).string = {
     min_len: 1
     uuid: true
     max_bytes: 36
