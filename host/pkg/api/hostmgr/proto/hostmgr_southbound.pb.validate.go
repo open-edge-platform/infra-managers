@@ -1396,17 +1396,6 @@ func (m *DeviceInfo) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetDeviceGuid()) < 1 {
-		err := DeviceInfoValidationError{
-			field:  "DeviceGuid",
-			reason: "value length must be at least 1 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if len(m.GetDeviceGuid()) > 36 {
 		err := DeviceInfoValidationError{
 			field:  "DeviceGuid",
