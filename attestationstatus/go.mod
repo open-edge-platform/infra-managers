@@ -3,11 +3,11 @@
 
 module github.com/open-edge-platform/infra-managers/attestationstatus
 
-go 1.25.5
+go 1.25.7
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.0
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.2
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.3
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.79.1
