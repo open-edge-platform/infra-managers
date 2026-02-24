@@ -244,7 +244,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 			// Create a fresh context for each subtest to avoid deadline exceeded errors
 			subtestCtx, subtestCancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 			defer subtestCancel()
-			
+
 			resp, err := MaintManagerTestClient.PlatformUpdateStatus(subtestCtx, tc.in)
 			if !tc.valid {
 				require.Error(t, err)
