@@ -290,19 +290,11 @@ func PopulateHoststorageWithDiskInfo(disk *pb.SystemDisk, hostres *computev1.Hos
 func PopulateHostdeviceWithDeviceInfo(device *pb.DeviceInfo, hostres *computev1.HostResource) (
 	*computev1.HostdeviceResource, error,
 ) {
-	if device == nil {
-		zlog.InfraSec().InfraError("DeviceInfo cannot be nil").Msgf("")
-		return nil, errors.Errorfc(codes.InvalidArgument, "DeviceInfo cannot be nil")
-	}
 	if hostres == nil {
 		zlog.InfraSec().InfraError("HostResource cannot be nil").Msgf("")
 		return nil, errors.Errorfc(codes.InvalidArgument, "HostResource cannot be nil")
 	}
 	rasInfo := device.GetRasInfo()
-	if rasInfo == nil {
-		zlog.InfraSec().InfraError("RASInfo cannot be nil").Msgf("")
-		return nil, errors.Errorfc(codes.InvalidArgument, "RASInfo cannot be nil")
-	}
 	deviceres := &computev1.HostdeviceResource{
 		TenantId:         hostres.GetTenantId(),
 		Version:          device.GetVersion(),

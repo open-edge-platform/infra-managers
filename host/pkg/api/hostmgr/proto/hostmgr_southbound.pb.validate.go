@@ -1407,18 +1407,6 @@ func (m *DeviceInfo) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if err := m._validateUuid(m.GetDeviceGuid()); err != nil {
-		err = DeviceInfoValidationError{
-			field:  "DeviceGuid",
-			reason: "value must be a valid UUID",
-			cause:  err,
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if utf8.RuneCountInString(m.GetControlMode()) > 128 {
 		err := DeviceInfoValidationError{
 			field:  "ControlMode",
@@ -1472,14 +1460,6 @@ func (m *DeviceInfo) validate(all bool) error {
 
 	if len(errors) > 0 {
 		return DeviceInfoMultiError(errors)
-	}
-
-	return nil
-}
-
-func (m *DeviceInfo) _validateUuid(uuid string) error {
-	if matched := _hostmgr_southbound_uuidPattern.MatchString(uuid); !matched {
-		return errors.New("invalid uuid format")
 	}
 
 	return nil

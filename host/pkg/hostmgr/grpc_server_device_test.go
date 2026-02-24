@@ -108,7 +108,7 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 	})
-	t.Cleanup(func() { HardDeleteHoststoragesWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
+	t.Cleanup(func() { HardDeleteHostdeviceWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	testcases := map[string]struct {
 		in    *pb.DeviceInfo

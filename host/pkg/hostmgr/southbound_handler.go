@@ -179,22 +179,20 @@ func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.H
 		return err
 	}
 
-	isInvDeviceEmpty := invDevice == nil
-	isHostDeviceEmpty := hostDevice == &computev1.HostdeviceResource{}
-	if isInvDeviceEmpty {
-		if !isHostDeviceEmpty {
+	if invDevice.GetResourceId() == "" {
+		if deviceInfo.GetRasInfo() != nil {
 			err = hostDeviceToAdd(ctx, tenantID, hostDevice)
 			if err != nil {
 				return err
 			}
-		} else {
-			zlog.Debug().Msgf("Skip hostDevice update: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
 		}
 	} else {
-		if !isHostDeviceEmpty {
-			err = hostDeviceToUpdate(ctx, tenantID, hostDevice, invDevice)
-			if err != nil {
-				return err
+		if deviceInfo.GetRasInfo() != nil {
+			if invDevice.GetVersion() != hostDevice.GetVersion() {
+				err = hostDeviceToUpdate(ctx, tenantID, hostDevice, invDevice)
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			err = hostDeviceToDelete(ctx, tenantID, invDevice)

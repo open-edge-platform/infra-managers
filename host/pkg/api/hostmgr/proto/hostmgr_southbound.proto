@@ -155,10 +155,7 @@ message DeviceInfo {
 
   string features = 6 [(validate.rules).string = {max_len: 128}];
 
-  string device_guid = 7 [(validate.rules).string = {
-    uuid: true
-    max_bytes: 36
-  }];
+  string device_guid = 7 [(validate.rules).string = {max_bytes: 36}];
 
   string control_mode = 8 [(validate.rules).string = {max_len: 128}];
 
