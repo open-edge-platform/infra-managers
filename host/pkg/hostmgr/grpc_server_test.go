@@ -83,6 +83,9 @@ var systemInfo1 = &pb.UpdateHostSystemInfoByGUIDRequest{
 			ReleaseDate: "09/30/2022",
 			Vendor:      "Dell Inc.",
 		},
+		DeviceInfo: &pb.DeviceInfo{
+			RasInfo: &pb.RASInfo{},
+		},
 	},
 }
 

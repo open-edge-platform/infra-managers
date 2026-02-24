@@ -132,6 +132,79 @@ func updateHoststorage(ctx context.Context, tenantID string, hostRes *computev1.
 	return nil
 }
 
+func hostDeviceToAdd(ctx context.Context, tenantID string, hostDevice *computev1.HostdeviceResource) error {
+	zlog.Debug().Msgf("Add host device: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+	id, err := inv_mgr_cli.CreateHostdevice(ctx, invClientInstance, tenantID, hostDevice)
+	if err != nil {
+		return err
+	}
+	hostDevice.ResourceId = id
+	return nil
+}
+
+func hostDeviceToUpdate(ctx context.Context, tenantID string, hostDevice, invDevice *computev1.HostdeviceResource,
+) error {
+	hostDevice.ResourceId = invDevice.GetResourceId()
+	if !hmgr_util.ProtoEqualSubset(hostDevice, invDevice, inv_mgr_cli.UpdateHostdeviceFieldMask...) {
+		zlog.Debug().Msgf("Update host device: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+		if err := inv_mgr_cli.UpdateHostdevice(ctx, invClientInstance, tenantID, hostDevice); err != nil {
+			return err
+		}
+	} else {
+		zlog.Debug().Msgf("Skip hostDevice update: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+	}
+	return nil
+}
+
+func hostDeviceToDelete(ctx context.Context, tenantID string, invDevice *computev1.HostdeviceResource) error {
+	zlog.Debug().Msgf("Delete host device: tenantID=%s, hostDevice=%v", tenantID, invDevice)
+	err := inv_mgr_cli.DeleteHostdevice(ctx, invClientInstance, tenantID, invDevice.GetResourceId())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// This function updates Host device resources in Inventory if needed.
+func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.HostResource, deviceInfo *pb.DeviceInfo,
+) error {
+	// Devices are always eager loaded. No need to query Inventory again
+	invDevice := hostRes.GetHostDevice()
+
+	zlog.Debug().Msgf("Update host device: tenantID=%s, Inventory Device Info=%v, reported device info=%v",
+		tenantID, invDevice, deviceInfo)
+
+	hostDevice, err := hmgr_util.PopulateHostdeviceWithDeviceInfo(deviceInfo, hostRes)
+	if err != nil {
+		return err
+	}
+
+	if invDevice.GetResourceId() == "" {
+		if deviceInfo.GetRasInfo() != nil {
+			err = hostDeviceToAdd(ctx, tenantID, hostDevice)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		if deviceInfo.GetRasInfo() != nil {
+			if invDevice.GetVersion() != hostDevice.GetVersion() {
+				err = hostDeviceToUpdate(ctx, tenantID, hostDevice, invDevice)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			err = hostDeviceToDelete(ctx, tenantID, invDevice)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // Logic is the following - use the interface name (as reported by bare metal agent) as unique identifier.
 func findNicInList(nicToFind *computev1.HostnicResource, listOfNics []*computev1.HostnicResource) (
 	*computev1.HostnicResource, bool,
