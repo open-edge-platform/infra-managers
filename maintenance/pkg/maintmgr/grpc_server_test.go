@@ -625,7 +625,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	// Create a fresh context for the remaining operations to avoid deadline exceeded
 	ctx, cancel = inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
 	defer cancel()
-	
+
 	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, host.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
 		computev1.HostResourceFieldCurrentState,
 	}}, &inv_v1.Resource{
