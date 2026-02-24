@@ -3,7 +3,7 @@
 
 module github.com/open-edge-platform/infra-managers/networking
 
-go 1.25.5
+go 1.25.7
 
 require (
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.3
