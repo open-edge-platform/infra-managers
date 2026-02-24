@@ -6,6 +6,7 @@ package maintmgr_test
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -37,8 +38,6 @@ import (
 //nolint:funlen // long function due to matrix-based test
 func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
-	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
-	defer cancel()
 
 	os := dao.CreateOs(t, mm_testing.Tenant1)
 	mutableOSUpdatePolicy := dao.CreateOSUpdatePolicy(
@@ -50,6 +49,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 		inv_testing.OSUpdatePolicyUpdatePackages("test packages"),
 	)
 	immutableOsProfileName := "immutable OS profile name"
+	immutableOsProfileName2 := "immutable OS profile name 2"
 	osImageSha256 := inv_testing.GenerateRandomSha256()
 	osImageSha2562 := inv_testing.GenerateRandomSha256()
 	immutableOs := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
@@ -62,7 +62,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 	immutableOs2 := dao.CreateOsWithOpts(t, mm_testing.Tenant1, true, func(os *os_v1.OperatingSystemResource) {
 		os.Name = "Immutable OS 2"
 		os.Sha256 = osImageSha2562
-		os.ProfileName = immutableOsProfileName
+		os.ProfileName = immutableOsProfileName2
 		os.ProfileVersion = "1.0.1"
 		os.SecurityFeature = os_v1.SecurityFeature_SECURITY_FEATURE_NONE
 		os.OsType = os_v1.OsType_OS_TYPE_IMMUTABLE
@@ -114,8 +114,7 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 		func(inst *computev1.InstanceResource) {
 			inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 			inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
-		}, inv_testing.InstanceOsUpdatePolicy(mutableOSUpdatePolicy),
-		inv_testing.InstanceOsUpdatePolicy(immmutableOSUpdatePolicy),
+		}, inv_testing.InstanceOsUpdatePolicy(immmutableOSUpdatePolicy),
 	)
 
 	testCases := map[string]struct {
@@ -232,9 +231,21 @@ func TestServer_PlatformUpdateStatusErrors(t *testing.T) {
 		},
 	}
 
-	for tcName, tc := range testCases {
+	// Sort test case names for deterministic execution order
+	testNames := make([]string, 0, len(testCases))
+	for name := range testCases {
+		testNames = append(testNames, name)
+	}
+	sort.Strings(testNames)
+
+	for _, tcName := range testNames {
+		tc := testCases[tcName]
 		t.Run(tcName, func(t *testing.T) {
-			resp, err := MaintManagerTestClient.PlatformUpdateStatus(ctx, tc.in)
+			// Create a fresh context for each subtest to avoid deadline exceeded errors
+			subtestCtx, subtestCancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
+			defer subtestCancel()
+
+			resp, err := MaintManagerTestClient.PlatformUpdateStatus(subtestCtx, tc.in)
 			if !tc.valid {
 				require.Error(t, err)
 				sts, _ := status.FromError(err)
@@ -488,7 +499,7 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 	require.NotNil(t, inst.GetOsUpdatePolicy())
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, inst.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
 		computev1.InstanceResourceFieldUpdateStatus,
@@ -611,6 +622,10 @@ func TestServer_UpdateEdgeNode(t *testing.T) {
 
 	// should not handle untrusted
 	// Host and instance start with RUNNING status
+	// Create a fresh context for the remaining operations to avoid deadline exceeded
+	ctx, cancel = inv_testing.CreateContextWithENJWT(t, mm_testing.Tenant1)
+	defer cancel()
+
 	_, err = client.InvClient.Update(ctx, mm_testing.Tenant1, host.ResourceId, &fieldmaskpb.FieldMask{Paths: []string{
 		computev1.HostResourceFieldCurrentState,
 	}}, &inv_v1.Resource{
