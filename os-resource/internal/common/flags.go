@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Package common provides common configuration and flags.
-//
-//nolint:revive // Package name 'common' is intentional for shared utilities
 package common
 
 import "flag"
