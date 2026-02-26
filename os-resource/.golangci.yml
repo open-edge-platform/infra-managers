@@ -164,7 +164,7 @@ linters:
       - std-error-handling
     rules:
       - linters:
-        - revive
+          - revive
         text: "var-naming: avoid meaningless package names"
         path: internal/common/
       - path: (.+)\.go$
