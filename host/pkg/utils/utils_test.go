@@ -1068,19 +1068,19 @@ func TestIsSameHostSystemInfo(t *testing.T) {
 		Instance: nil,
 	}
 
-	hostStorages := make([]*computev1.HoststorageResource, 0)
+	hostStorages := make([]*computev1.HoststorageResource, 0, 1)
 	hostStorages = append(hostStorages, hostStorageResource)
 	hostRes.HostStorages = hostStorages
 
-	hostNics := make([]*computev1.HostnicResource, 0)
+	hostNics := make([]*computev1.HostnicResource, 0, 1)
 	hostNics = append(hostNics, hostNicResource)
 	hostRes.HostNics = hostNics
 
-	hostUsbs := make([]*computev1.HostusbResource, 0)
+	hostUsbs := make([]*computev1.HostusbResource, 0, 1)
 	hostUsbs = append(hostUsbs, hostUsbResource)
 	hostRes.HostUsbs = hostUsbs
 
-	hostGpus := make([]*computev1.HostgpuResource, 0)
+	hostGpus := make([]*computev1.HostgpuResource, 0, 1)
 	hostGpus = append(hostGpus, hostGpuResource)
 	hostRes.HostGpus = hostGpus
 

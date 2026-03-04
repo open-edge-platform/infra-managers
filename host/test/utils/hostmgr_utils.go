@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package utils provides utility functions for host manager testing.
+//
+//nolint:revive // Package name utils is intentional for test utilities
 package utils
 
 import (
@@ -27,6 +30,7 @@ const (
 	clientName     = "TestHrmInventoryClient"
 )
 
+// HrmClient is the inventory client for testing.
 var (
 	HrmClient            client.TenantAwareInventoryClient
 	HrmEventsClient      chan *client.WatchEvents
@@ -79,6 +83,7 @@ func CreateNBHandler(tb testing.TB) error {
 	return nil
 }
 
+// CreateHrmClient creates and initializes the host manager test client.
 func CreateHrmClient(tb testing.TB) {
 	tb.Helper()
 

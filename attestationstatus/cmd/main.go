@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package main implements the Attestation Status Manager service.
 package main
 
 import (
@@ -143,12 +144,12 @@ func main() {
 	}()
 
 	// Create a listener on TCP port
-	listener, err := net.Listen("tcp", *sbservaddr)
-	if err != nil {
-		zlog.InfraSec().Fatal().Err(err).Msgf("Error listening with TCP: %s", listener.Addr().String())
+	lc := net.ListenConfig{}
+	listener, listenErr := lc.Listen(context.Background(), "tcp", *sbservaddr)
+	if listenErr != nil {
+		zlog.InfraSec().Fatal().Err(listenErr).Msgf("Error listening with TCP on %s", *sbservaddr)
 	}
 
-	// Add host manager grpc server - it sets readyCHan to true
 	attestmgr.StartSBGrpcSrv(listener, readyChan, termChan, &wg,
 		attestmgr.EnableTracing(*enableTracing),
 		attestmgr.EnableAuth(*enableAuth),

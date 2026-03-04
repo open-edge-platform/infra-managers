@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
+
+// Package common provides common configuration and flags.
 package common
 
 import "flag"
 
 const (
-	OsProfileRevision                  = "osProfileRevision"
-	OsProfileRevisionDescription       = "Specifies the release version of OS profiles in the Release Service"
+	// OsProfileRevision is the OS profile revision flag name.
+	OsProfileRevision = "osProfileRevision"
+	// OsProfileRevisionDescription describes the OsProfileRevision flag.
+	OsProfileRevisionDescription = "Specifies the release version of OS profiles in the Release Service"
+	// EnabledProfiles is the enabled profiles flag name.
 	EnabledProfiles                    = "enabledProfiles"
 	EnabledProfilesDescription         = "Specifies a list of profile names"
 	DefaultProfile                     = "defaultProfile"
@@ -17,5 +22,6 @@ const (
 	OSSecurityFeatureEnableDescription = "Specifies whether to enable or disable security feature"
 )
 
+// DisableProviderAutomationFlag disables provider automation.
 var DisableProviderAutomationFlag = flag.Bool("disableProviderAutomation", false,
 	"If set to true, OSRM doesn't auto-create infra_onboarding Provider")

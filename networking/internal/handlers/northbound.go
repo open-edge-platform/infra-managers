@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package handlers implements the gRPC service handlers for the networking manager.
 package handlers
 
 import (
@@ -120,7 +121,7 @@ func (nbh *NBHandler) controlLoop(ticker *time.Ticker) {
 			nbh.reconcileResource(tID, resID)
 		case <-ticker.C:
 			// Full periodic reconcile action
-			_ = nbh.reconcileAll() //nolint:errcheck // periodic reconciliation
+			_ = nbh.reconcileAll() //nolint:errcheck // Errors logged within reconcileAll
 		case <-nbh.sigTerm:
 			// Stop the ticker and signal done
 			// No other events will be processed

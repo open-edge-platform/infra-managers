@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package alivemgr implements the availability manager for tracking host heartbeats.
 package alivemgr
 
 import (
@@ -56,6 +57,7 @@ type aliverMgr struct {
 	loseConnHostsChan chan util.TenantIDResourceIDTuple
 }
 
+// StartAlvMgr starts the availability manager for tracking host heartbeats.
 func StartAlvMgr(termChan chan bool) chan util.TenantIDResourceIDTuple {
 	go func(termChan chan bool) {
 		zlog.InfraSec().Info().Msg("Start Availability Manager")
@@ -171,6 +173,7 @@ func (hb *heartbeat) updateDuration() {
 	}
 }
 
+// UpdateHostHeartBeat updates the heartbeat timestamp for a host.
 func UpdateHostHeartBeat(host *computev1.HostResource) error {
 	hbk := util.NewTenantIDResourceIDTupleFromHost(host)
 	value, has := alvMgr.hostHeartbeatMap.Load(hbk)
@@ -193,6 +196,7 @@ func UpdateHostHeartBeat(host *computev1.HostResource) error {
 	return nil
 }
 
+// ForgetHost removes a host from the heartbeat tracking map.
 func ForgetHost(host *computev1.HostResource) {
 	hbk := util.NewTenantIDResourceIDTupleFromHost(host)
 	alvMgr.hostHeartbeatMap.Delete(hbk)
@@ -212,7 +216,10 @@ func SyncHosts(desiredHostsList []util.TenantIDResourceIDTuple) {
 	hbksToRemove := make([]util.TenantIDResourceIDTuple, 0)
 	alvMgr.hostHeartbeatMap.Range(func(key, _ any) bool {
 		zlog.Debug().Msgf("host %s", key)
-		hbk := key.(util.TenantIDResourceIDTuple) //nolint:errcheck // it's always string
+		hbk, ok := key.(util.TenantIDResourceIDTuple)
+		if !ok {
+			return true
+		}
 		if _, exists := hbksMap[hbk]; !exists {
 			zlog.Debug().Msgf("Host %s doesn't exist in desired host lists, removing from heartbeat map",
 				hbk)
@@ -232,6 +239,7 @@ func IsHostTracked(host *computev1.HostResource) bool {
 	return exists
 }
 
+// GetHostHeartBeat retrieves the heartbeat information for a host.
 func GetHostHeartBeat(host *computev1.HostResource) (bool, error) {
 	hbk := util.NewTenantIDResourceIDTupleFromHost(host)
 	value, has := alvMgr.hostHeartbeatMap.Load(hbk)

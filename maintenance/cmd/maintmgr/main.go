@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package main implements the maintenance manager service.
 package main
 
 import (
@@ -139,7 +140,7 @@ func main() {
 	}
 
 	// Create a listener on TCP port
-	lis, err := net.Listen("tcp", *servaddr)
+	lis, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *servaddr)
 	if err != nil {
 		zlog.InfraSec().Fatal().Err(err).Msgf("Error listening with TCP: %s", lis.Addr().String())
 	}

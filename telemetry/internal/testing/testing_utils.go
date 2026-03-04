@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package testing provides testing utilities for telemetry manager.
 package testing
 
 import (
@@ -18,10 +19,13 @@ const (
 )
 
 var (
-	Zlog            = logging.GetLogger(loggerName)
+	// Zlog is the logger for testing.
+	Zlog = logging.GetLogger(loggerName)
+	// TelemetryClient is the telemetry inventory client for testing.
 	TelemetryClient *invclient.TelemetryInventoryClient
 )
 
+// CreateTelemetryClientForTesting creates a telemetry client for testing.
 func CreateTelemetryClientForTesting(tb testing.TB) {
 	tb.Helper()
 	var err error

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package reconcilers provides reconciliation logic for networking resources.
 package reconcilers
 
 import (
@@ -21,21 +22,24 @@ const (
 	maxDelay = 30 * time.Second
 )
 
-// Inventory resource IDs + tenant IDs are used to feed reconciler functions.
+// ReconcilerID represents a reconciler identifier, uniquely identifying a reconciler instance for a specific tenant and resource.
 type ReconcilerID string
 
 func (id ReconcilerID) String() string {
 	return utils.FormatTenantResourceID(id.GetTenantID(), id.GetResourceID())
 }
 
+// GetTenantID returns the tenant ID from the reconciler ID.
 func (id ReconcilerID) GetTenantID() string {
 	return strings.Split(string(id), "_")[0]
 }
 
+// GetResourceID returns the resource ID from the reconciler ID.
 func (id ReconcilerID) GetResourceID() string {
 	return strings.Split(string(id), "_")[1]
 }
 
+// NewReconcilerID creates a new ReconcilerID from tenant and resource IDs.
 func NewReconcilerID(tenantID, resourceID string) ReconcilerID {
 	return ReconcilerID(fmt.Sprintf("%s_%s", tenantID, resourceID))
 }

@@ -30,7 +30,7 @@ func resolveOsResAndCVEsIfNeeded(
 	tenantID string,
 	mmUpStatus *pb.UpdateStatus,
 	instRes *computev1.InstanceResource,
-	status *inv_status.ResourceStatus,
+	resStatus *inv_status.ResourceStatus,
 	needed bool,
 ) (osResID, existingCVEs string, err error) {
 	if !needed {
@@ -40,7 +40,7 @@ func resolveOsResAndCVEsIfNeeded(
 	if err != nil {
 		return "", "", err
 	}
-	existingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, osResID, instRes, status)
+	existingCVEs, err = GetNewExistingCVEs(ctx, client, tenantID, osResID, instRes, resStatus)
 	if err != nil {
 		return "", "", err
 	}
@@ -234,6 +234,7 @@ func getUpdateOS(
 	return os, nil
 }
 
+// GetNewOSResourceIDIfNeeded retrieves a new OS resource ID if needed for the update.
 func GetNewOSResourceIDIfNeeded(ctx context.Context, c inv_client.TenantAwareInventoryClient,
 	tenantID string, mmUpStatus *pb.UpdateStatus, instance *computev1.InstanceResource,
 ) (string, error) {
@@ -469,6 +470,7 @@ func updateOSUpdateRun(
 	return nil
 }
 
+// GetNewExistingCVEs retrieves new and existing CVEs for comparison.
 func GetNewExistingCVEs(
 	ctx context.Context,
 	client inv_client.TenantAwareInventoryClient,

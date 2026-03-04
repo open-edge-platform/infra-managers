@@ -122,7 +122,9 @@ func StartAttestMgrTestingEnvironment() {
 }
 
 func StopAttestMgrTestingEnvironment() {
-	AttestMgrTestClientConn.Close()
+	if err := AttestMgrTestClientConn.Close(); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to close AttestMgrTestClientConn")
+	}
 	close(termChan)
 	wg.Wait()
 }

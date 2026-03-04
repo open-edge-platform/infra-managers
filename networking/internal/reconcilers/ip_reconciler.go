@@ -21,6 +21,7 @@ var (
 	zlog       = logging.GetLogger(loggerName)
 )
 
+// IPReconciler reconciles IP address resources for networking.
 type IPReconciler struct {
 	netClient      *clients.NetInventoryClient
 	tracingEnabled bool

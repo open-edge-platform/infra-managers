@@ -2,6 +2,8 @@
 * SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 * SPDX-License-Identifier: Apache-2.0
  */
+
+// Package telemetrymgr provides telemetry manager service implementation.
 package telemetrymgr
 
 import (
@@ -11,7 +13,7 @@ import (
 	pb "github.com/open-edge-platform/infra-managers/telemetry/pkg/api/telemetrymgr/v1"
 )
 
-// Telemetry agent resource mapping.
+// TelemetryResources represents telemetry resource configuration for agent mapping.
 type TelemetryResources struct {
 	MetricGroup    string
 	MetricType     string
@@ -48,7 +50,7 @@ func getLastIndex(resources []TelemetryResources, index int) int {
 	return lastIndex
 }
 
-// removes duplicates and combine based on priority.
+// Deduplicate removes duplicate telemetry resources and combines them based on priority.
 func Deduplicate(resources []TelemetryResources) []TelemetryResources {
 	sort.Sort(ByMetrics(resources))
 
@@ -98,6 +100,7 @@ func Deduplicate(resources []TelemetryResources) []TelemetryResources {
 	return deduplicated
 }
 
+// AssignTelemetryResourceKind assigns the telemetry resource kind.
 func AssignTelemetryResourceKind(number int32) pb.TelemetryResourceKind {
 	switch number {
 	case int32(telemetryv1.TelemetryResourceKind_TELEMETRY_RESOURCE_KIND_UNSPECIFIED):
@@ -111,6 +114,7 @@ func AssignTelemetryResourceKind(number int32) pb.TelemetryResourceKind {
 	}
 }
 
+// AssignTelemetryCollectorKind assigns the telemetry collector kind.
 func AssignTelemetryCollectorKind(number int32) pb.CollectorKind {
 	switch number {
 	case int32(telemetryv1.CollectorKind_COLLECTOR_KIND_UNSPECIFIED):
@@ -124,6 +128,7 @@ func AssignTelemetryCollectorKind(number int32) pb.CollectorKind {
 	}
 }
 
+// AssignTelemetryResourceSeverity assigns the telemetry resource severity level.
 func AssignTelemetryResourceSeverity(number int32) pb.SeverityLevel {
 	switch number {
 	case int32(telemetryv1.SeverityLevel_SEVERITY_LEVEL_UNSPECIFIED):

@@ -4,6 +4,7 @@
 package server_test
 
 import (
+	"context"
 	"net"
 	"os"
 	"path/filepath"
@@ -37,11 +38,15 @@ func TestMain(m *testing.M) {
 
 func TestStartTelemetrymgrGrpcServer(t *testing.T) {
 	// Create a mock listener
-	lis, err := net.Listen("tcp", "localhost:0")
+	lis, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Failed to listen: %v", err)
 	}
-	defer lis.Close()
+	defer func() {
+		if closeErr := lis.Close(); closeErr != nil {
+			t.Logf("Failed to close listener: %v", closeErr)
+		}
+	}()
 
 	// Create a mock wait group
 	wg := &sync.WaitGroup{}

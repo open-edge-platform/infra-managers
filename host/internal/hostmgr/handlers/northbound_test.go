@@ -63,21 +63,16 @@ func TestReconcileAll(t *testing.T) {
 	host1T2 := dao.CreateHost(t, tenant2)
 	host2T2 := dao.CreateHostNoCleanup(t, tenant2)
 
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host1T1)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host1T1))
 	require.True(t, alivemgr.IsHostTracked(host1T1))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host2T1)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host2T1))
 	require.True(t, alivemgr.IsHostTracked(host2T1))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host3T1)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host3T1))
 	require.True(t, alivemgr.IsHostTracked(host3T1))
 
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host1T2)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host1T2))
 	require.True(t, alivemgr.IsHostTracked(host1T2))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host2T2)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host2T2))
 	require.True(t, alivemgr.IsHostTracked(host2T2))
 
 	handlers.TickerPeriod = 1 * time.Second
@@ -165,17 +160,16 @@ func TestHostReconcile(t *testing.T) {
 	host3T1 := dao.CreateHost(t, tenant1)
 	host1T2 := dao.CreateHost(t, tenant2)
 
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host1T1)
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host1T1))
 	require.True(t, alivemgr.IsHostTracked(host1T1))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host2T1)
+
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host2T1))
 	require.True(t, alivemgr.IsHostTracked(host2T1))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host3T1)
+
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host3T1))
 	require.True(t, alivemgr.IsHostTracked(host3T1))
-	//nolint:errcheck // it's a test
-	alivemgr.UpdateHostHeartBeat(host1T2)
+
+	require.NoError(t, alivemgr.UpdateHostHeartBeat(host1T2))
 	require.True(t, alivemgr.IsHostTracked(host1T2))
 
 	handlers.TickerPeriod = 2 * time.Minute

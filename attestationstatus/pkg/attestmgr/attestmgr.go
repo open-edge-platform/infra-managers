@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package attestmgr implements the Attestation Status Manager gRPC service.
 package attestmgr
 
 import (
@@ -21,7 +22,7 @@ import (
 
 var zlog = logging.GetLogger("AttestationStatusManager")
 
-// options handling.
+// Options contains configuration options for the Attestation Status Manager.
 type Options struct {
 	enableAuth     bool
 	enableTracing  bool
@@ -30,6 +31,7 @@ type Options struct {
 	metricsAddress string
 }
 
+// Option is a function that configures Options.
 type Option func(*Options)
 
 func parseOptions(opts ...Option) *Options {
@@ -40,36 +42,42 @@ func parseOptions(opts ...Option) *Options {
 	return options
 }
 
+// EnableAuth returns an Option that enables or disables authentication.
 func EnableAuth(enable bool) Option {
 	return func(o *Options) {
 		o.enableAuth = enable
 	}
 }
 
+// EnableTracing returns an Option that enables or disables distributed tracing.
 func EnableTracing(enable bool) Option {
 	return func(o *Options) {
 		o.enableTracing = enable
 	}
 }
 
+// WithRbacRulesPath returns an Option that sets the path to RBAC rules.
 func WithRbacRulesPath(rbacPath string) Option {
 	return func(o *Options) {
 		o.rbacRulesPath = rbacPath
 	}
 }
 
+// EnableMetrics returns an Option that enables or disables metrics collection.
 func EnableMetrics(enable bool) Option {
 	return func(o *Options) {
 		o.enableMetrics = enable
 	}
 }
 
+// WithMetricsAddress returns an Option that sets the metrics exporter address.
 func WithMetricsAddress(metricsAddress string) Option {
 	return func(o *Options) {
 		o.metricsAddress = metricsAddress
 	}
 }
 
+// StartSBGrpcSrv starts the southbound gRPC server for Attestation Status Manager.
 func StartSBGrpcSrv(
 	lis net.Listener,
 	readyChan chan bool,

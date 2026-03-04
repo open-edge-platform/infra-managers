@@ -23,8 +23,10 @@ var logC = logging.GetLogger("TelemetryCache")
 const defaultBatchSize = uint32(500)
 
 var (
+	// PeriodicCacheRefresh is the interval for periodic cache refresh.
 	PeriodicCacheRefresh = 5 * time.Minute
-	BatchSize            = defaultBatchSize
+	// BatchSize is the batch size for cache operations.
+	BatchSize = defaultBatchSize
 )
 
 type cacheKey struct {
@@ -58,6 +60,7 @@ func getKey(tenantID, id string) cacheKey {
 	}
 }
 
+// TelemetryCache provides caching for telemetry profiles.
 type TelemetryCache struct {
 	InvClient client.TenantAwareInventoryClient
 
@@ -71,6 +74,7 @@ type TelemetryCache struct {
 	lock                   sync.Mutex              // Mutex to access cache maps
 }
 
+// NewTelemetryCacheClientWithOptions creates a new telemetry cache client with options.
 func NewTelemetryCacheClientWithOptions(
 	ctx context.Context,
 	opts ...Option,
@@ -152,6 +156,7 @@ func NewTelemetryCacheClient(invClient client.TenantAwareInventoryClient) *Telem
 	}
 }
 
+// Stop stops the telemetry cache.
 func (tc *TelemetryCache) Stop() {
 	close(tc.sigTerm)
 	tc.wg.Wait()
@@ -257,6 +262,7 @@ func (tc *TelemetryCache) getResource(key cacheKey) (*inv_v1.Resource, error) {
 	return res.GetResource(), nil
 }
 
+// ListTelemetryProfileByRelation lists telemetry profiles by relation.
 func (tc *TelemetryCache) ListTelemetryProfileByRelation(tenantID, relationResourceID string) []*telemetryv1.TelemetryProfile {
 	key := getKey(tenantID, relationResourceID)
 	tc.lock.Lock()
@@ -275,6 +281,7 @@ func (tc *TelemetryCache) ListTelemetryProfileByRelation(tenantID, relationResou
 	return res
 }
 
+// LoadAllTelemetryProfiles loads all telemetry profiles into the cache.
 func (tc *TelemetryCache) LoadAllTelemetryProfiles() {
 	// TODO Current reconciliation is dumb, clean everything in the local cache and re-build it
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)

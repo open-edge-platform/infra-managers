@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package invclient provides an interface to the Inventory service for the Attestation Status Manager.
 package invclient
 
 import (
@@ -24,7 +25,8 @@ import (
 )
 
 const (
-	DefaultInventoryTimeout = 5 * time.Second // Default timeout for Inventory operations
+	// DefaultInventoryTimeout is the default timeout for Inventory operations.
+	DefaultInventoryTimeout = 5 * time.Second
 	// ListAllDefaultTimeout The current estimation is very conservative considering 10k resources, batch size 100,
 	//  and 600ms per request on average.
 	// TODO: fine tune this longer timeout based on target scale and inventory client batch size.
@@ -41,6 +43,7 @@ var (
 	inventoryTimeout = flag.Duration("invTimeout", DefaultInventoryTimeout, "Inventory API calls timeout")
 )
 
+// StartInventoryClient initializes and starts the Inventory gRPC client.
 func StartInventoryClient(wg *sync.WaitGroup, conf config.AttestationStatusMgrConfig) error {
 	ctx := context.Background()
 
@@ -77,15 +80,19 @@ func StartInventoryClient(wg *sync.WaitGroup, conf config.AttestationStatusMgrCo
 	return nil
 }
 
+// SetInventoryClient sets the global inventory client.
 func SetInventoryClient(gcli inv_client.TenantAwareInventoryClient) {
 	inventoryClient = gcli
 }
 
+// CloseInventoryClient closes the global inventory client connection.
 func CloseInventoryClient() {
-	inventoryClient.Close()
+	if err := inventoryClient.Close(); err != nil {
+		zlog.Warn().Err(err).Msg("Failed to close inventory client")
+	}
 }
 
-// Given a Host GUID, return an Instance ResourceID if it exists.
+// GetInstanceIDByHostGUID returns an Instance ResourceID for the given Host GUID if it exists.
 func GetInstanceIDByHostGUID(
 	ctx context.Context,
 	tenantID string,
@@ -118,7 +125,7 @@ func GetInstanceIDByHostGUID(
 	return instanceRes.GetResourceId(), nil
 }
 
-// UpdateInstanceAttestation updates Instance Attestation status.
+// UpdateInstanceAttestationStatus updates the attestation status for an instance.
 func UpdateInstanceAttestationStatus(
 	ctx context.Context,
 	tenantID string,
@@ -130,8 +137,9 @@ func UpdateInstanceAttestationStatus(
 	childCtx, cancel := context.WithTimeout(ctx, *inventoryTimeout)
 	defer cancel()
 
-	// Set Timestamp
-	instRes.TrustedAttestationStatusTimestamp = uint64(time.Now().Unix())
+	// Set Timestamp - Unix timestamps are always positive, so conversion from int64 to uint64 is safe
+	now := time.Now().Unix()
+	instRes.TrustedAttestationStatusTimestamp = uint64(now)
 
 	// only PATCH these fields per Fieldmaks
 	fieldMask := &fieldmaskpb.FieldMask{

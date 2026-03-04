@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
+// Package config provides configuration structures and validation for the Attestation Status Manager.
 package config
 
 import (
@@ -11,6 +12,7 @@ import (
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 )
 
+// AttestationStatusMgrConfig contains configuration for the Attestation Status Manager.
 type AttestationStatusMgrConfig struct {
 	EnableMetrics bool
 	EnableTracing bool
@@ -22,6 +24,7 @@ type AttestationStatusMgrConfig struct {
 	InsecureGRPC  bool
 }
 
+// Validate checks if the configuration is valid.
 func (c AttestationStatusMgrConfig) Validate() error {
 	if c.InventoryAddr == "" {
 		return inv_errors.Errorfc(codes.InvalidArgument,
