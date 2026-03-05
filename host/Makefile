@@ -13,7 +13,6 @@ TOOL_VERSION_CHECK ?= 1
 
 ##### Variables #####
 
-
 # Required Go Dependencies
 GOLINT               := true
 GOJUNITREPORT        := true
