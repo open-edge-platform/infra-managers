@@ -71,7 +71,7 @@ Lists the metrics collection interval allowed on the Edge Node.
 | Kernel | OS kernel logs | kmsg | Host |
 | Container | Container logs <br> /var/log/containers/*.log | Container | Host |
 | RKE | Rancher logs in K8s Edge Node | RKE Server <br> RKE Agent <br> kubelet | Cluster |
-| Opentelemetry |  | opentelemetry | Cluster |
+| Opentelemetry | - | opentelemetry | Cluster |
 
 ### Logging level options
 
