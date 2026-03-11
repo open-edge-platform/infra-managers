@@ -1,7 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
+// Package errors provides error wrapping utilities for the Host Manager.
+//
+//nolint:revive // Package name intentionally conflicts with stdlib for custom error handling
 package errors
 
 import (
