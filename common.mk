@@ -94,7 +94,7 @@ export PGSSLMODE=disable
 
 # Yamllint variables
 YAML_FILES   ?= $(shell find . -type f \( -name '*.yaml' -o -name '*.yml' \) -print )
-YAML_IGNORE  ?= vendor, .github/workflows, ./$(VENV_NAME)
+YAML_IGNORE  ?= vendor, .github/workflows, $(VENV_NAME)
 
 #### Build Targets ####
 

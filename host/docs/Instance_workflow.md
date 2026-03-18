@@ -61,7 +61,8 @@ sequenceDiagram
 1. `Operator` creates a valid ESP profile in `Provisioning Server 1`.
     1. Assuming that it includes installing of a custom packages from the corresponding repository.
 2. `Provisioning Server 1` returns a SHA256 checksum of an ESP profile to the `Operator`.
-    1. SHA256 checksum can be generated based on the specific repository's commit (e.g., example [here](https://stackoverflow.com/questions/61332371/how-to-get-a-sha256-hash-code-for-a-github-repo)).
+    1. SHA256 checksum can be generated based on the specific repository's commit (e.g., example
+        [how to get a sha256 hash code for a github repo](https://stackoverflow.com/questions/61332371/how-to-get-a-sha256-hash-code-for-a-github-repo)).
         1. ESP profile installation artifacts must **NOT** affect SHA256 checksum, thus the checksum generation is
            performed on the tarball file of the specific git commit.
     2. In the case of multiple `Provisioning Servers`, where ESP profiles can be duplicated, we will ensure unique
