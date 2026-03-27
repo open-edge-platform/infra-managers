@@ -8,11 +8,7 @@ go 1.25.7
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
-<<<<<<< host-manager-api-updates
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.6-0.20260318154125-dc998e29d3fe
-=======
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.5
->>>>>>> main
 	github.com/open-edge-platform/infra-managers/maintenance v1.25.2
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.39.10
 	github.com/prometheus/client_golang v1.23.2
@@ -137,10 +133,6 @@ require (
 	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260209200024-4cfbd4190f57 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260209200024-4cfbd4190f57 // indirect
-<<<<<<< host-manager-api-updates
-	gopkg.in/ini.v1 v1.67.1 // indirect
-=======
->>>>>>> main
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
