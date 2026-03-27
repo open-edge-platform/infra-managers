@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -111,20 +111,20 @@ var (
 		computev1.HostgpuResourceFieldDeviceName,
 		computev1.HostgpuResourceFieldFeatures,
 	}
-	UpdateHostdeviceFieldMask = []string{
-		computev1.HostdeviceResourceFieldVersion,
-		computev1.HostdeviceResourceFieldDeviceName,
-		computev1.HostdeviceResourceFieldOperationalState,
-		computev1.HostdeviceResourceFieldBuildNumber,
-		computev1.HostdeviceResourceFieldSku,
-		computev1.HostdeviceResourceFieldFeatures,
-		computev1.HostdeviceResourceFieldDeviceGuid,
-		computev1.HostdeviceResourceFieldControlMode,
-		computev1.HostdeviceResourceFieldDnsSuffix,
-		computev1.HostdeviceResourceFieldNetworkStatus,
-		computev1.HostdeviceResourceFieldRemoteStatus,
-		computev1.HostdeviceResourceFieldRemoteTrigger,
-		computev1.HostdeviceResourceFieldMpsHostname,
+	UpdateHostamtconfigFieldMask = []string{
+		computev1.HostamtconfigResourceFieldVersion,
+		computev1.HostamtconfigResourceFieldDeviceName,
+		computev1.HostamtconfigResourceFieldOperationalState,
+		computev1.HostamtconfigResourceFieldBuildNumber,
+		computev1.HostamtconfigResourceFieldSku,
+		computev1.HostamtconfigResourceFieldFeatures,
+		computev1.HostamtconfigResourceFieldDeviceGuid,
+		computev1.HostamtconfigResourceFieldControlMode,
+		computev1.HostamtconfigResourceFieldDnsSuffix,
+		computev1.HostamtconfigResourceFieldNetworkStatus,
+		computev1.HostamtconfigResourceFieldRemoteStatus,
+		computev1.HostamtconfigResourceFieldRemoteTrigger,
+		computev1.HostamtconfigResourceFieldMpsHostname,
 	}
 )
 
@@ -590,64 +590,64 @@ func DeleteIPAddress(ctx context.Context, c inv_client.TenantAwareInventoryClien
 	return err
 }
 
-// CreateHostdevice creates a new Hostdevice resource in Inventory.
+// CreateHostamtconfig creates a new Hostamtconfig resource in Inventory.
 //
 //nolint:dupl // Protobuf oneOf-driven separation
-func CreateHostdevice(
-	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostDevice *computev1.HostdeviceResource,
+func CreateHostamtconfig(
+	ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string, hostAmtconfig *computev1.HostamtconfigResource,
 ) (string, error) {
-	details := fmt.Sprintf("tenantID=%s, hostDevice=%v", tenantID, hostDevice)
-	zlog.Debug().Msgf("Create Hostdevice: %s", details)
+	details := fmt.Sprintf("tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+	zlog.Debug().Msgf("Create Hostamtconfig: %s", details)
 
 	ctx, cancel := context.WithTimeout(ctx, *InventoryTimeout)
 	defer cancel()
 	resource := &inv_v1.Resource{
-		Resource: &inv_v1.Resource_HostDevice{
-			HostDevice: hostDevice,
+		Resource: &inv_v1.Resource_HostAmtconfig{
+			HostAmtconfig: hostAmtconfig,
 		},
 	}
 	resp, err := c.Create(ctx, tenantID, resource)
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Failed create Hostdevice resource: %s", details)
+		zlog.InfraSec().InfraErr(err).Msgf("Failed create Hostamtconfig resource: %s", details)
 		return "", err
 	}
 	return inv_util.GetResourceIDFromResource(resp)
 }
 
-// UpdateHostdevice updates an existing Hostdevice resource info in Inventory,
+// UpdateHostamtconfig updates an existing Hostamtconfig resource info in Inventory,
 // except state and other fields are not allowed from RM.
-func UpdateHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string,
-	hostDevice *computev1.HostdeviceResource,
+func UpdateHostamtconfig(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID string,
+	hostAmtconfig *computev1.HostamtconfigResource,
 ) error {
-	details := fmt.Sprintf("tenantID=%s, hostDevice=%v", tenantID, hostDevice)
-	zlog.Debug().Msgf("Update Hostdevice: %s", hostDevice)
+	details := fmt.Sprintf("tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+	zlog.Debug().Msgf("Update Hostamtconfig: %s", hostAmtconfig)
 
-	err := UpdateInvResourceFields(ctx, c, tenantID, hostDevice, UpdateHostdeviceFieldMask)
+	err := UpdateInvResourceFields(ctx, c, tenantID, hostAmtconfig, UpdateHostamtconfigFieldMask)
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostdevice resource: %s", details)
+		zlog.InfraSec().InfraErr(err).Msgf("Failed update Hostamtconfig resource: %s", details)
 		return err
 	}
 	return nil
 }
 
-// DeleteHostdevice deletes an existing hostdevice resource in Inventory. If it gets a not found error while deleting the
+// DeleteHostamtconfig deletes an existing hostamtconfig resource in Inventory. If it gets a not found error while deleting the
 // resource, it doesn't return an error.
 //
 //nolint:dupl // Protobuf oneOf-driven separation
-func DeleteHostdevice(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string) error {
+func DeleteHostamtconfig(ctx context.Context, c inv_client.TenantAwareInventoryClient, tenantID, resourceID string) error {
 	details := fmt.Sprintf("tenantID=%s, resourceID=%s", tenantID, resourceID)
-	zlog.Debug().Msgf("Delete Hostdevice: %s", details)
+	zlog.Debug().Msgf("Delete Hostamtconfig: %s", details)
 
 	ctx, cancel := context.WithTimeout(ctx, *InventoryTimeout)
 	defer cancel()
 
 	_, err := c.Delete(ctx, tenantID, resourceID)
 	if inv_errors.IsNotFound(err) {
-		zlog.Debug().Msgf("Not found while Hostdevice delete, dropping err: %s", details)
+		zlog.Debug().Msgf("Not found while Hostamtconfig delete, dropping err: %s", details)
 		return nil
 	}
 	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Failed delete Hostdevice resource: %s", details)
+		zlog.InfraSec().InfraErr(err).Msgf("Failed delete Hostamtconfig resource: %s", details)
 		return err
 	}
 

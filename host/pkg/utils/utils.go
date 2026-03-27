@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 // Package util provides utility functions for host management.
@@ -286,33 +286,33 @@ func PopulateHoststorageWithDiskInfo(disk *pb.SystemDisk, hostres *computev1.Hos
 	return storageres, nil
 }
 
-// PopulateHostdeviceWithDeviceInfo translates a DeviceInfo into a host device resource.
-func PopulateHostdeviceWithDeviceInfo(device *pb.DeviceInfo, hostres *computev1.HostResource) (
-	*computev1.HostdeviceResource, error,
+// PopulateHostamtconfigWithAmtConfigInfo translates a AmtConfigInfo into a host deamtconfigvice resource.
+func PopulateHostamtconfigWithAmtConfigInfo(amtconfig *pb.AmtConfigInfo, hostres *computev1.HostResource) (
+	*computev1.HostamtconfigResource, error,
 ) {
 	if hostres == nil {
 		zlog.InfraSec().InfraError("HostResource cannot be nil").Msgf("")
 		return nil, errors.Errorfc(codes.InvalidArgument, "HostResource cannot be nil")
 	}
-	rasInfo := device.GetRasInfo()
-	deviceres := &computev1.HostdeviceResource{
+	rasInfo := amtconfig.GetRasInfo()
+	amtconfigres := &computev1.HostamtconfigResource{
 		TenantId:         hostres.GetTenantId(),
-		Version:          device.GetVersion(),
-		DeviceName:       device.GetHostname(),
-		OperationalState: device.GetOperationalState(),
-		BuildNumber:      device.GetHostname(),
-		Sku:              device.GetSku(),
-		Features:         device.GetFeatures(),
-		DeviceGuid:       device.GetDeviceGuid(),
-		ControlMode:      device.GetControlMode(),
-		DnsSuffix:        device.GetDnsSuffix(),
+		Version:          amtconfig.GetVersion(),
+		DeviceName:       amtconfig.GetDeviceName(),
+		OperationalState: amtconfig.GetOperationalState(),
+		BuildNumber:      amtconfig.GetBuildNumber(),
+		Sku:              amtconfig.GetSku(),
+		Features:         amtconfig.GetFeatures(),
+		DeviceGuid:       amtconfig.GetDeviceGuid(),
+		ControlMode:      amtconfig.GetControlMode(),
+		DnsSuffix:        amtconfig.GetDnsSuffix(),
 		NetworkStatus:    rasInfo.GetNetworkStatus(),
 		RemoteStatus:     rasInfo.GetRemoteStatus(),
 		RemoteTrigger:    rasInfo.GetRemoteTrigger(),
 		MpsHostname:      rasInfo.GetMpsHostname(),
 		Host:             hostres,
 	}
-	return deviceres, nil
+	return amtconfigres, nil
 }
 
 func linkStateToNetworkInterfaceLinkState(linkState bool) computev1.NetworkInterfaceLinkState {

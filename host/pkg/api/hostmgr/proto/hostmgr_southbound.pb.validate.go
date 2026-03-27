@@ -489,11 +489,11 @@ func (m *SystemInfo) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetDeviceInfo()).(type) {
+		switch v := interface{}(m.GetAmtInfo()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, SystemInfoValidationError{
-					field:  "DeviceInfo",
+					field:  "AmtInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -501,16 +501,16 @@ func (m *SystemInfo) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, SystemInfoValidationError{
-					field:  "DeviceInfo",
+					field:  "AmtInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetDeviceInfo()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetAmtInfo()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return SystemInfoValidationError{
-				field:  "DeviceInfo",
+				field:  "AmtInfo",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
@@ -1308,22 +1308,22 @@ var _ interface {
 	ErrorName() string
 } = OsReleaseValidationError{}
 
-// Validate checks the field values on DeviceInfo with the rules defined in the
-// proto definition for this message. If any rules are violated, the first
+// Validate checks the field values on AmtConfigInfo with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *DeviceInfo) Validate() error {
+func (m *AmtConfigInfo) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on DeviceInfo with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in DeviceInfoMultiError, or
+// ValidateAll checks the field values on AmtConfigInfo with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in AmtConfigInfoMultiError, or
 // nil if none found.
-func (m *DeviceInfo) ValidateAll() error {
+func (m *AmtConfigInfo) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *DeviceInfo) validate(all bool) error {
+func (m *AmtConfigInfo) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -1331,7 +1331,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	var errors []error
 
 	if utf8.RuneCountInString(m.GetVersion()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "Version",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1341,9 +1341,9 @@ func (m *DeviceInfo) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetHostname()) > 128 {
-		err := DeviceInfoValidationError{
-			field:  "Hostname",
+	if utf8.RuneCountInString(m.GetDeviceName()) > 128 {
+		err := AmtConfigInfoValidationError{
+			field:  "DeviceName",
 			reason: "value length must be at most 128 runes",
 		}
 		if !all {
@@ -1353,7 +1353,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetOperationalState()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "OperationalState",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1364,7 +1364,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetBuildNumber()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "BuildNumber",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1375,7 +1375,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetSku()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "Sku",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1386,7 +1386,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetFeatures()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "Features",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1397,7 +1397,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if len(m.GetDeviceGuid()) > 36 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "DeviceGuid",
 			reason: "value length must be at most 36 bytes",
 		}
@@ -1408,7 +1408,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetControlMode()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "ControlMode",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1419,7 +1419,7 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if utf8.RuneCountInString(m.GetDnsSuffix()) > 128 {
-		err := DeviceInfoValidationError{
+		err := AmtConfigInfoValidationError{
 			field:  "DnsSuffix",
 			reason: "value length must be at most 128 runes",
 		}
@@ -1433,7 +1433,7 @@ func (m *DeviceInfo) validate(all bool) error {
 		switch v := interface{}(m.GetRasInfo()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, DeviceInfoValidationError{
+				errors = append(errors, AmtConfigInfoValidationError{
 					field:  "RasInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1441,7 +1441,7 @@ func (m *DeviceInfo) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, DeviceInfoValidationError{
+				errors = append(errors, AmtConfigInfoValidationError{
 					field:  "RasInfo",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1450,7 +1450,7 @@ func (m *DeviceInfo) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetRasInfo()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return DeviceInfoValidationError{
+			return AmtConfigInfoValidationError{
 				field:  "RasInfo",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -1459,18 +1459,19 @@ func (m *DeviceInfo) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return DeviceInfoMultiError(errors)
+		return AmtConfigInfoMultiError(errors)
 	}
 
 	return nil
 }
 
-// DeviceInfoMultiError is an error wrapping multiple validation errors
-// returned by DeviceInfo.ValidateAll() if the designated constraints aren't met.
-type DeviceInfoMultiError []error
+// AmtConfigInfoMultiError is an error wrapping multiple validation errors
+// returned by AmtConfigInfo.ValidateAll() if the designated constraints
+// aren't met.
+type AmtConfigInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m DeviceInfoMultiError) Error() string {
+func (m AmtConfigInfoMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1479,11 +1480,11 @@ func (m DeviceInfoMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m DeviceInfoMultiError) AllErrors() []error { return m }
+func (m AmtConfigInfoMultiError) AllErrors() []error { return m }
 
-// DeviceInfoValidationError is the validation error returned by
-// DeviceInfo.Validate if the designated constraints aren't met.
-type DeviceInfoValidationError struct {
+// AmtConfigInfoValidationError is the validation error returned by
+// AmtConfigInfo.Validate if the designated constraints aren't met.
+type AmtConfigInfoValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1491,22 +1492,22 @@ type DeviceInfoValidationError struct {
 }
 
 // Field function returns field value.
-func (e DeviceInfoValidationError) Field() string { return e.field }
+func (e AmtConfigInfoValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e DeviceInfoValidationError) Reason() string { return e.reason }
+func (e AmtConfigInfoValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e DeviceInfoValidationError) Cause() error { return e.cause }
+func (e AmtConfigInfoValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e DeviceInfoValidationError) Key() bool { return e.key }
+func (e AmtConfigInfoValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e DeviceInfoValidationError) ErrorName() string { return "DeviceInfoValidationError" }
+func (e AmtConfigInfoValidationError) ErrorName() string { return "AmtConfigInfoValidationError" }
 
 // Error satisfies the builtin error interface
-func (e DeviceInfoValidationError) Error() string {
+func (e AmtConfigInfoValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1518,14 +1519,14 @@ func (e DeviceInfoValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sDeviceInfo.%s: %s%s",
+		"invalid %sAmtConfigInfo.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = DeviceInfoValidationError{}
+var _ error = AmtConfigInfoValidationError{}
 
 var _ interface {
 	Field() string
@@ -1533,7 +1534,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = DeviceInfoValidationError{}
+} = AmtConfigInfoValidationError{}
 
 // Validate checks the field values on RASInfo with the rules defined in the
 // proto definition for this message. If any rules are violated, the first

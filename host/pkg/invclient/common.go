@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -52,9 +52,9 @@ func getInventoryResourceAndID(resource proto.Message) (*inv_v1.Resource, string
 			Hostgpu: res,
 		}
 		invResourceID = res.GetResourceId()
-	case *computev1.HostdeviceResource:
-		invResource.Resource = &inv_v1.Resource_HostDevice{
-			HostDevice: res,
+	case *computev1.HostamtconfigResource:
+		invResource.Resource = &inv_v1.Resource_HostAmtconfig{
+			HostAmtconfig: res,
 		}
 		invResourceID = res.GetResourceId()
 	case *network_v1.IPAddressResource:

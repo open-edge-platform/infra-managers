@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -306,14 +306,14 @@ func ConvertSystemDiskIntoHostStorages(tb testing.TB, storage *pb.Storage,
 	return hostStorages
 }
 
-// ConvertDeviceInfoIntoHostDevice is a helper function to convert deviceInfo into hostdevice resource.
-func ConvertDeviceInfoIntoHostDevice(tb testing.TB, device *pb.DeviceInfo,
+// ConvertAmtConfigInfoIntoHostAmtconfig is a helper function to convert amtconfigInfo into hostamtconfig resource.
+func ConvertAmtConfigInfoIntoHostAmtconfig(tb testing.TB, amtconfig *pb.AmtConfigInfo,
 	host *computev1.HostResource,
-) *computev1.HostdeviceResource {
+) *computev1.HostamtconfigResource {
 	tb.Helper()
 
-	hostDevice, err := hutils.PopulateHostdeviceWithDeviceInfo(device, host)
-	require.NoError(tb, err, "Unable to convert hoistDevice")
+	hostDevice, err := hutils.PopulateHostamtconfigWithAmtConfigInfo(amtconfig, host)
+	require.NoError(tb, err, "Unable to convert hostAmtconfig")
 	return hostDevice
 }
 
@@ -333,10 +333,10 @@ func HardDeleteHoststoragesWithUpdateHostSystemInfo(
 	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
 }
 
-// HardDeleteHostdeviceWithUpdateHostSystemInfo deletes the device info by removing the DeviceInfo
-// objects from the SystemInfo. The SB does not support incremental update - original systemInfo
+// HardDeleteHostamtconfigWithUpdateHostSystemInfo deletes the amtconfig info by removing the AmtConfigInfo
+// from the HwInfo of the SystemInfo. The SB does not support incremental updates - original systemInfo
 // is requested to avoid side effects.
-func HardDeleteHostdeviceWithUpdateHostSystemInfo(
+func HardDeleteHostamtconfigWithUpdateHostSystemInfo(
 	tb testing.TB, tenantID string, systemInfo *pb.UpdateHostSystemInfoByGUIDRequest,
 ) {
 	tb.Helper()
@@ -344,7 +344,7 @@ func HardDeleteHostdeviceWithUpdateHostSystemInfo(
 	ctx, cancel := inv_testing.CreateContextWithENJWT(tb, tenantID)
 	defer cancel()
 
-	systemInfo.SystemInfo.DeviceInfo = &pb.DeviceInfo{}
+	systemInfo.SystemInfo.AmtInfo = &pb.AmtConfigInfo{}
 	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo)
 	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
 }

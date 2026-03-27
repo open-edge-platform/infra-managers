@@ -15,8 +15,8 @@ import (
 	om_status "github.com/open-edge-platform/infra-onboarding/onboarding-manager/pkg/status"
 )
 
-// Verify Add/Remove of DeviceInfo resources.
-func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
+// Verify Add/Remove of AmtConfigInfo resources.
+func TestHostManagerClient_AddRemoveAmt(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
 	os := dao.CreateOs(t, tenant1)
@@ -26,13 +26,13 @@ func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
 	})
 
 	testcases := map[string]struct {
-		in    *pb.DeviceInfo
+		in    *pb.AmtConfigInfo
 		valid bool
 	}{
-		"GoodDevice1": {
-			in: &pb.DeviceInfo{
+		"GoodAmt1": {
+			in: &pb.AmtConfigInfo{
 				Version:          "1.2.34",
-				Hostname:         "testhost",
+				DeviceName:       "testhost",
 				OperationalState: "enabled",
 				BuildNumber:      "1234",
 				Sku:              "5467",
@@ -49,8 +49,8 @@ func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
 			},
 			valid: true,
 		},
-		"GoodDevice2": {
-			in: &pb.DeviceInfo{
+		"GoodAmt2": {
+			in: &pb.AmtConfigInfo{
 				RasInfo: &pb.RASInfo{},
 			},
 			valid: true,
@@ -61,9 +61,9 @@ func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
 			ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
 			defer cancel()
 
-			// Modify the device resources
+			// Modify the Amtconfig resources
 			systemInfo1.HostGuid = hostInv.GetUuid()
-			systemInfo1.SystemInfo.DeviceInfo = tc.in
+			systemInfo1.SystemInfo.AmtInfo = tc.in
 			_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
 			if err != nil {
 				if tc.valid {
@@ -82,25 +82,25 @@ func TestHostManagerClient_AddRemoveDevice(t *testing.T) {
 				// validate with get
 				host := GetHostbyUUID(t, hostInv.GetUuid())
 				require.NotNil(t, host)
-				invDevice := host.HostDevice
-				hostDevice := ConvertDeviceInfoIntoHostDevice(t, tc.in, host)
-				assertSameHostDevice(t, hostDevice, invDevice)
+				invAmtconfig := host.HostAmtconfig
+				hostAmtconfig := ConvertAmtConfigInfoIntoHostAmtconfig(t, tc.in, host)
+				assertSameHostAmtconfig(t, hostAmtconfig, invAmtconfig)
 
-				systemInfo1.SystemInfo.DeviceInfo = &pb.DeviceInfo{}
+				systemInfo1.SystemInfo.AmtInfo = &pb.AmtConfigInfo{}
 				_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
 				require.NoError(t, err, "UpdateHostSystemInfoByGUID() failed")
 
 				// validate again with get
 				host = GetHostbyUUID(t, hostInv.GetUuid())
 				require.NotNil(t, host)
-				require.Empty(t, host.HostDevice)
+				require.Empty(t, host.HostAmtconfig)
 			}
 		})
 	}
 }
 
-// Verify update of the DeviceInfo resources.
-func TestHostManagerClient_UpdateDevice(t *testing.T) {
+// Verify update of the AmtConfigInfo resources.
+func TestHostManagerClient_UpdateAmt(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
 	os := dao.CreateOs(t, tenant1)
@@ -108,16 +108,16 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 	})
-	t.Cleanup(func() { HardDeleteHostdeviceWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
+	t.Cleanup(func() { HardDeleteHostamtconfigWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	testcases := map[string]struct {
-		in    *pb.DeviceInfo
+		in    *pb.AmtConfigInfo
 		valid bool
 	}{
-		"FirstDevice": {
-			in: &pb.DeviceInfo{
+		"FirstAmt": {
+			in: &pb.AmtConfigInfo{
 				Version:          "1.2.34",
-				Hostname:         "testhost",
+				DeviceName:       "testhost",
 				OperationalState: "enabled",
 				BuildNumber:      "1234",
 				Sku:              "5467",
@@ -134,10 +134,10 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 			},
 			valid: true,
 		},
-		"UpdatedDevice": {
-			in: &pb.DeviceInfo{
+		"UpdatedAmt": {
+			in: &pb.AmtConfigInfo{
 				Version:          "1.2.56",
-				Hostname:         "testhost",
+				DeviceName:       "testhost",
 				OperationalState: "enabled",
 				BuildNumber:      "7890",
 				Sku:              "5467",
@@ -162,7 +162,7 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 
 			// Modify the storage resources
 			systemInfo1.HostGuid = hostInv.GetUuid()
-			systemInfo1.SystemInfo.DeviceInfo = tc.in
+			systemInfo1.SystemInfo.AmtInfo = tc.in
 			_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
 			if err != nil {
 				if tc.valid {
@@ -181,16 +181,16 @@ func TestHostManagerClient_UpdateDevice(t *testing.T) {
 				// validate with get
 				host := GetHostbyUUID(t, hostInv.GetUuid())
 				require.NotNil(t, host)
-				invDevice := host.HostDevice
-				hostDevice := ConvertDeviceInfoIntoHostDevice(t, tc.in, host)
-				assertSameHostDevice(t, hostDevice, invDevice)
+				invAmtconfig := host.HostAmtconfig
+				hostAmtconfig := ConvertAmtConfigInfoIntoHostAmtconfig(t, tc.in, host)
+				assertSameHostAmtconfig(t, hostAmtconfig, invAmtconfig)
 			}
 		})
 	}
 }
 
 // Verify no changes are applied.
-func TestHostManagerClient_UpdateDeviceNoChanges(t *testing.T) {
+func TestHostManagerClient_UpdateAmtNoChanges(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	hostInv := dao.CreateHost(t, tenant1)
 	os := dao.CreateOs(t, tenant1)
@@ -198,14 +198,14 @@ func TestHostManagerClient_UpdateDeviceNoChanges(t *testing.T) {
 		inst.ProvisioningStatus = om_status.ProvisioningStatusDone.Status
 		inst.ProvisioningStatusIndicator = om_status.ProvisioningStatusDone.StatusIndicator
 	})
-	t.Cleanup(func() { HardDeleteHostdeviceWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
+	t.Cleanup(func() { HardDeleteHostamtconfigWithUpdateHostSystemInfo(t, tenant1, systemInfo1) })
 
 	ctx, cancel := inv_testing.CreateContextWithENJWT(t, tenant1)
 	defer cancel()
 
-	device := &pb.DeviceInfo{
+	amtconfig := &pb.AmtConfigInfo{
 		Version:          "1.2.34",
-		Hostname:         "testhost",
+		DeviceName:       "testhost",
 		OperationalState: "enabled",
 		BuildNumber:      "1234",
 		Sku:              "5467",
@@ -222,7 +222,7 @@ func TestHostManagerClient_UpdateDeviceNoChanges(t *testing.T) {
 	}
 
 	systemInfo1.HostGuid = hostInv.GetUuid()
-	systemInfo1.SystemInfo.DeviceInfo = device
+	systemInfo1.SystemInfo.AmtInfo = amtconfig
 	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
 	require.NoError(t, err)
 	_, err = HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo1)
@@ -230,24 +230,24 @@ func TestHostManagerClient_UpdateDeviceNoChanges(t *testing.T) {
 
 	host := GetHostbyUUID(t, hostInv.GetUuid())
 	require.NotNil(t, host)
-	invDevice := host.HostDevice
-	hostDevice := ConvertDeviceInfoIntoHostDevice(t, device, host)
-	assertSameHostDevice(t, hostDevice, invDevice)
+	invAmtconfig := host.HostAmtconfig
+	hostAmtconfig := ConvertAmtConfigInfoIntoHostAmtconfig(t, amtconfig, host)
+	assertSameHostAmtconfig(t, hostAmtconfig, invAmtconfig)
 }
 
-func assertSameHostDevice(t *testing.T, expectedDevice, actualDevice *computev1.HostdeviceResource) {
+func assertSameHostAmtconfig(t *testing.T, expectedAmtconfig, actualAmtconfig *computev1.HostamtconfigResource) {
 	t.Helper()
 
-	// make the devices comparable
-	expectedDevice.ResourceId = ""
-	expectedDevice.Host = nil
-	expectedDevice.CreatedAt = ""
-	expectedDevice.UpdatedAt = ""
-	actualDevice.ResourceId = ""
-	actualDevice.Host = nil
-	actualDevice.CreatedAt = ""
-	actualDevice.UpdatedAt = ""
-	if eq, diff := inv_testing.ProtoEqualOrDiff(expectedDevice, actualDevice); !eq {
-		t.Errorf("HostDevice data not equal: %v", diff)
+	// make the amtconfigs comparable
+	expectedAmtconfig.ResourceId = ""
+	expectedAmtconfig.Host = nil
+	expectedAmtconfig.CreatedAt = ""
+	expectedAmtconfig.UpdatedAt = ""
+	actualAmtconfig.ResourceId = ""
+	actualAmtconfig.Host = nil
+	actualAmtconfig.CreatedAt = ""
+	actualAmtconfig.UpdatedAt = ""
+	if eq, diff := inv_testing.ProtoEqualOrDiff(expectedAmtconfig, actualAmtconfig); !eq {
+		t.Errorf("HostAmtconfig data not equal: %v", diff)
 	}
 }

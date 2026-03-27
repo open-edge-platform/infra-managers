@@ -4,13 +4,13 @@
 ## Table of Contents
 
 - [hostmgr/proto/hostmgr_southbound.proto](#hostmgr_proto_hostmgr_southbound-proto)
+    - [AmtConfigInfo](#hostmgr_southbound_proto-AmtConfigInfo)
     - [BiosInfo](#hostmgr_southbound_proto-BiosInfo)
     - [BmInfo](#hostmgr_southbound_proto-BmInfo)
     - [BmcInfo](#hostmgr_southbound_proto-BmcInfo)
     - [CPUTopology](#hostmgr_southbound_proto-CPUTopology)
     - [Config](#hostmgr_southbound_proto-Config)
     - [CoreGroup](#hostmgr_southbound_proto-CoreGroup)
-    - [DeviceInfo](#hostmgr_southbound_proto-DeviceInfo)
     - [HWInfo](#hostmgr_southbound_proto-HWInfo)
     - [HostStatus](#hostmgr_southbound_proto-HostStatus)
     - [HostStatusResp](#hostmgr_southbound_proto-HostStatusResp)
@@ -54,8 +54,32 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## hostmgr/proto/hostmgr_southbound.proto
-SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 SPDX-License-Identifier: Apache-2.0
+
+
+<a name="hostmgr_southbound_proto-AmtConfigInfo"></a>
+
+### AmtConfigInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [string](#string) |  |  |
+| device_name | [string](#string) |  |  |
+| operational_state | [string](#string) |  |  |
+| build_number | [string](#string) |  |  |
+| sku | [string](#string) |  |  |
+| features | [string](#string) |  |  |
+| device_guid | [string](#string) |  |  |
+| control_mode | [string](#string) |  |  |
+| dns_suffix | [string](#string) |  |  |
+| ras_info | [RASInfo](#hostmgr_southbound_proto-RASInfo) |  |  |
+
+
+
+
 
 
 <a name="hostmgr_southbound_proto-BiosInfo"></a>
@@ -149,30 +173,6 @@ SPDX-License-Identifier: Apache-2.0
 | ----- | ---- | ----- | ----------- |
 | core_type | [string](#string) |  | type of CPU cores (e.g., P-Core or E-Core) |
 | core_list | [uint32](#uint32) | repeated | a list of CPU cores in the group |
-
-
-
-
-
-
-<a name="hostmgr_southbound_proto-DeviceInfo"></a>
-
-### DeviceInfo
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| version | [string](#string) |  |  |
-| hostname | [string](#string) |  |  |
-| operational_state | [string](#string) |  |  |
-| build_number | [string](#string) |  |  |
-| sku | [string](#string) |  |  |
-| features | [string](#string) |  |  |
-| device_guid | [string](#string) |  |  |
-| control_mode | [string](#string) |  |  |
-| dns_suffix | [string](#string) |  |  |
-| ras_info | [RASInfo](#hostmgr_southbound_proto-RASInfo) |  |  |
 
 
 
@@ -457,7 +457,7 @@ SPDX-License-Identifier: Apache-2.0
 | os_info | [OsInfo](#hostmgr_southbound_proto-OsInfo) |  |  |
 | bm_ctl_info | [BmInfo](#hostmgr_southbound_proto-BmInfo) |  |  |
 | bios_info | [BiosInfo](#hostmgr_southbound_proto-BiosInfo) |  |  |
-| device_info | [DeviceInfo](#hostmgr_southbound_proto-DeviceInfo) |  |  |
+| amt_info | [AmtConfigInfo](#hostmgr_southbound_proto-AmtConfigInfo) |  |  |
 
 
 

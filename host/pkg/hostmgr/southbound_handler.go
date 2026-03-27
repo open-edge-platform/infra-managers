@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -132,70 +132,70 @@ func updateHoststorage(ctx context.Context, tenantID string, hostRes *computev1.
 	return nil
 }
 
-func hostDeviceToAdd(ctx context.Context, tenantID string, hostDevice *computev1.HostdeviceResource) error {
-	zlog.Debug().Msgf("Add host device: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
-	id, err := inv_mgr_cli.CreateHostdevice(ctx, invClientInstance, tenantID, hostDevice)
+func hostAmtconfigToAdd(ctx context.Context, tenantID string, hostAmtconfig *computev1.HostamtconfigResource) error {
+	zlog.Debug().Msgf("Add host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+	id, err := inv_mgr_cli.CreateHostamtconfig(ctx, invClientInstance, tenantID, hostAmtconfig)
 	if err != nil {
 		return err
 	}
-	hostDevice.ResourceId = id
+	hostAmtconfig.ResourceId = id
 	return nil
 }
 
-func hostDeviceToUpdate(ctx context.Context, tenantID string, hostDevice, invDevice *computev1.HostdeviceResource,
+func hostAmtconfigToUpdate(ctx context.Context, tenantID string, hostAmtconfig, invDevice *computev1.HostamtconfigResource,
 ) error {
-	hostDevice.ResourceId = invDevice.GetResourceId()
-	if !hmgr_util.ProtoEqualSubset(hostDevice, invDevice, inv_mgr_cli.UpdateHostdeviceFieldMask...) {
-		zlog.Debug().Msgf("Update host device: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
-		if err := inv_mgr_cli.UpdateHostdevice(ctx, invClientInstance, tenantID, hostDevice); err != nil {
+	hostAmtconfig.ResourceId = invDevice.GetResourceId()
+	if !hmgr_util.ProtoEqualSubset(hostAmtconfig, invDevice, inv_mgr_cli.UpdateHostamtconfigFieldMask...) {
+		zlog.Debug().Msgf("Update host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+		if err := inv_mgr_cli.UpdateHostamtconfig(ctx, invClientInstance, tenantID, hostAmtconfig); err != nil {
 			return err
 		}
 	} else {
-		zlog.Debug().Msgf("Skip hostDevice update: tenantID=%s, hostDevice=%v", tenantID, hostDevice)
+		zlog.Debug().Msgf("Skip hostAmtconfig update: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
 	}
 	return nil
 }
 
-func hostDeviceToDelete(ctx context.Context, tenantID string, invDevice *computev1.HostdeviceResource) error {
-	zlog.Debug().Msgf("Delete host device: tenantID=%s, hostDevice=%v", tenantID, invDevice)
-	err := inv_mgr_cli.DeleteHostdevice(ctx, invClientInstance, tenantID, invDevice.GetResourceId())
+func hostAmtconfigToDelete(ctx context.Context, tenantID string, invDevice *computev1.HostamtconfigResource) error {
+	zlog.Debug().Msgf("Delete host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, invDevice)
+	err := inv_mgr_cli.DeleteHostamtconfig(ctx, invClientInstance, tenantID, invDevice.GetResourceId())
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// This function updates Host device resources in Inventory if needed.
-func updateHostdevice(ctx context.Context, tenantID string, hostRes *computev1.HostResource, deviceInfo *pb.DeviceInfo,
+// This function updates Host amtconfig resources in Inventory if needed.
+func updateHostamtconfig(ctx context.Context, tenantID string, hostRes *computev1.HostResource, amtconfigInfo *pb.AmtConfigInfo,
 ) error {
-	// Devices are always eager loaded. No need to query Inventory again
-	invDevice := hostRes.GetHostDevice()
+	// Amconfigs are always eager loaded. No need to query Inventory again
+	invAmtconfig := hostRes.GetHostAmtconfig()
 
-	zlog.Debug().Msgf("Update host device: tenantID=%s, Inventory Device Info=%v, reported device info=%v",
-		tenantID, invDevice, deviceInfo)
+	zlog.Debug().Msgf("Update host amtconfig: tenantID=%s, Inventory Amtconfig Info=%v, reported amtconfig info=%v",
+		tenantID, invAmtconfig, amtconfigInfo)
 
-	hostDevice, err := hmgr_util.PopulateHostdeviceWithDeviceInfo(deviceInfo, hostRes)
+	hostAmtconfig, err := hmgr_util.PopulateHostamtconfigWithAmtConfigInfo(amtconfigInfo, hostRes)
 	if err != nil {
 		return err
 	}
 
-	if invDevice.GetResourceId() == "" {
-		if deviceInfo.GetRasInfo() != nil {
-			err = hostDeviceToAdd(ctx, tenantID, hostDevice)
+	if invAmtconfig.GetResourceId() == "" {
+		if amtconfigInfo.GetRasInfo() != nil {
+			err = hostAmtconfigToAdd(ctx, tenantID, hostAmtconfig)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		if deviceInfo.GetRasInfo() != nil {
-			if invDevice.GetVersion() != hostDevice.GetVersion() {
-				err = hostDeviceToUpdate(ctx, tenantID, hostDevice, invDevice)
+		if amtconfigInfo.GetRasInfo() != nil {
+			if invAmtconfig.GetVersion() != hostAmtconfig.GetVersion() {
+				err = hostAmtconfigToUpdate(ctx, tenantID, hostAmtconfig, invAmtconfig)
 				if err != nil {
 					return err
 				}
 			}
 		} else {
-			err = hostDeviceToDelete(ctx, tenantID, invDevice)
+			err = hostAmtconfigToDelete(ctx, tenantID, invAmtconfig)
 			if err != nil {
 				return err
 			}
