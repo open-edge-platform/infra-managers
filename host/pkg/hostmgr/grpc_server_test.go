@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -82,6 +82,9 @@ var systemInfo1 = &pb.UpdateHostSystemInfoByGUIDRequest{
 			Version:     "1.0.18",
 			ReleaseDate: "09/30/2022",
 			Vendor:      "Dell Inc.",
+		},
+		AmtInfo: &pb.AmtConfigInfo{
+			RasInfo: &pb.RASInfo{},
 		},
 	},
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 module github.com/open-edge-platform/infra-managers/host
@@ -8,7 +8,7 @@ go 1.25.7
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.5
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.6-0.20260327101448-2dead732f49d
 	github.com/open-edge-platform/infra-managers/maintenance v1.25.2
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.39.10
 	github.com/prometheus/client_golang v1.23.2
