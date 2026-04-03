@@ -370,7 +370,25 @@ func Test_TelemetryCache_UpdateTelemetryGroups(t *testing.T) {
 	tgMetric.Name = "Updated Name"
 	tgMetric.UpdatedAt = updatedRes.GetTelemetryGroup().GetUpdatedAt()
 
-	time.Sleep(200 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, inst.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, site.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, region.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant2, siteT2.GetResourceId())
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
 
 	assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
 	assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
@@ -396,7 +414,25 @@ func Test_TelemetryCache_UpdateTelemetryGroups(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	time.Sleep(200 * time.Millisecond)
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, inst.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, site.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, region.ResourceId)
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
+
+	require.Eventually(t, func() bool {
+		cached := telemetryCache.ListTelemetryProfileByRelation(tenant2, siteT2.GetResourceId())
+		return len(cached) == 1
+	}, 5*time.Second, 50*time.Millisecond)
 
 	assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
 	assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
