@@ -303,6 +303,7 @@ func Test_TelemetryCache_ListTelemetryProfileByRelation(t *testing.T) {
 	}
 }
 
+//nolint:funlen // it's a test
 func Test_TelemetryCache_UpdateTelemetryGroups(t *testing.T) {
 	dao := inv_testing.NewInvResourceDAOOrFail(t)
 	// Init a schedule cache with the testing client
