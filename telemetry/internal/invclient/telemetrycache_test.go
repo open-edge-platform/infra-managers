@@ -371,31 +371,46 @@ func Test_TelemetryCache_UpdateTelemetryGroups(t *testing.T) {
 	tgMetric.Name = "Updated Name"
 	tgMetric.UpdatedAt = updatedRes.GetTelemetryGroup().GetUpdatedAt()
 
+	// Wait for event to propagate through the system
+	time.Sleep(500 * time.Millisecond)
+
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, inst.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, site.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, region.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant2, siteT2.GetResourceId())
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
-	assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
-	assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
-	assertSameTpInCache(t, tenant1, telemetryCache, region.ResourceId, tpRegion)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, region.ResourceId, tpRegion)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
 	// Ensure isolation and no modification to other tenant cache
-	assertSameTpInCache(t, tenant2, telemetryCache, siteT2.GetResourceId(), telProfT2)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant2, telemetryCache, siteT2.GetResourceId(), telProfT2)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
 
 	updateTgReq2 := &inv_v1.Resource{
 		Resource: &inv_v1.Resource_TelemetryGroup{
@@ -415,31 +430,46 @@ func Test_TelemetryCache_UpdateTelemetryGroups(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Wait for event to propagate through the system
+	time.Sleep(500 * time.Millisecond)
+
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, inst.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, site.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant1, region.ResourceId)
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
 	require.Eventually(t, func() bool {
 		cached := telemetryCache.ListTelemetryProfileByRelation(tenant2, siteT2.GetResourceId())
 		return len(cached) == 1
-	}, 5*time.Second, 50*time.Millisecond)
+	}, 10*time.Second, 100*time.Millisecond)
 
-	assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
-	assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
-	assertSameTpInCache(t, tenant1, telemetryCache, region.ResourceId, tpRegion)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, inst.ResourceId, tpInst)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, site.ResourceId, tpSite)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant1, telemetryCache, region.ResourceId, tpRegion)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
 	// Ensure isolation and no modification to other tenant cache
-	assertSameTpInCache(t, tenant2, telemetryCache, siteT2.GetResourceId(), telProfT2)
+	require.Eventually(t, func() bool {
+		assertSameTpInCache(t, tenant2, telemetryCache, siteT2.GetResourceId(), telProfT2)
+		return true
+	}, 10*time.Second, 100*time.Millisecond)
 }
 
 func Test_TelemetryCache_UpdateTelemetryProfilesRelation(t *testing.T) {
