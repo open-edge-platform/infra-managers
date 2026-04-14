@@ -17,7 +17,7 @@ import (
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
-	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testing"
+	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testutils"
 )
 
 // From HRM inv_client UpdateIPAddress function.

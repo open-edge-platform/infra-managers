@@ -18,7 +18,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
-	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testing"
+	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testutils"
 	pb "github.com/open-edge-platform/infra-managers/maintenance/pkg/api/maintmgr/v1"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	util "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"
