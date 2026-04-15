@@ -73,14 +73,17 @@ endif
 #   https://readthedocs.intel.com/SecureCodingStandards/latest/compiler/golang/
 # -trimpath: Remove all file system paths from the resulting executable.
 # -gcflags="all=-m": Print optimizations applied by the compiler for review and verification against security requirements.
-# -gcflags="all=-spectre=all" Enable all available Spectre mitigations
-# -ldflags="all=-s -w" remove the symbol and debug info
-# -ldflags="all=-X ..." Embed binary build stamping information
+# -gcflags="all=-N -l": Disable compiler optimizations and inlining.
+# -gcflags / -asmflags for ./cmd/..., ./internal/..., ./pkg/...: Enable -spectre=all only for project packages.
+#   If new source roots are introduced, update these scoped patterns.
+# -ldflags="all=-s -w": Remove symbol and debug info.
+# -ldflags="all=-X ...": Embed binary build stamping information.
+# -arm64: Spectre flags are disabled because this target does not support the same mitigations.
 ifeq ($(GOARCH),arm64)
-	# Note that arm64 (Apple, similar) does not support any spectre mititations.
+	# Note that arm64 (Apple, similar) does not support any spectre mitigations.
   GOEXTRAFLAGS := -trimpath -gcflags="all=-spectre= -N -l" -asmflags="all=-spectre=" -ldflags="all=-s -w -X 'main.RepoURL=$(LABEL_REPO_URL)' -X 'main.Version=$(LABEL_VERSION)' -X 'main.Revision=$(LABEL_REVISION)' -X 'main.BuildDate=$(LABEL_BUILD_DATE)'"
 else
-  GOEXTRAFLAGS := -trimpath -gcflags="all=-spectre=all -N -l" -asmflags="all=-spectre=all" -ldflags="all=-s -w -X 'main.RepoURL=$(LABEL_REPO_URL)' -X 'main.Version=$(LABEL_VERSION)' -X 'main.Revision=$(LABEL_REVISION)' -X 'main.BuildDate=$(LABEL_BUILD_DATE)'"
+	GOEXTRAFLAGS := -trimpath -gcflags="all=-N -l" -gcflags="./cmd/...=-N -l -spectre=all" -gcflags="./internal/...=-N -l -spectre=all" -gcflags="./pkg/...=-N -l -spectre=all" -asmflags="./cmd/...=-spectre=all" -asmflags="./internal/...=-spectre=all" -asmflags="./pkg/...=-spectre=all" -ldflags="all=-s -w -X 'main.RepoURL=$(LABEL_REPO_URL)' -X 'main.Version=$(LABEL_VERSION)' -X 'main.Revision=$(LABEL_REVISION)' -X 'main.BuildDate=$(LABEL_BUILD_DATE)'"
 endif
 
 # Postgres DB configuration and credentials for testing. This mimics the Aurora

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testing"
+	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testutils"
 )
 
 func TestValidate(t *testing.T) {

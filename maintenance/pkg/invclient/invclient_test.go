@@ -20,7 +20,7 @@ import (
 	schedule_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/schedule/v1"
 	schedule_cache "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client/cache/schedule"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
-	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testing"
+	mm_testing "github.com/open-edge-platform/infra-managers/maintenance/internal/testutils"
 	"github.com/open-edge-platform/infra-managers/maintenance/pkg/invclient"
 	mm_status "github.com/open-edge-platform/infra-managers/maintenance/pkg/status"
 	inv_utils "github.com/open-edge-platform/infra-managers/maintenance/pkg/utils"

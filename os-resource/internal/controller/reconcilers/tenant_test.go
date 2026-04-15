@@ -28,7 +28,7 @@ import (
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/common"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/controller/reconcilers"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/fsclient"
-	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testing"
+	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testutils"
 	util2 "github.com/open-edge-platform/infra-managers/os-resource/internal/util"
 	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )

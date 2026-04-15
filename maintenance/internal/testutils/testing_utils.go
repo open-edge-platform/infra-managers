@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-// Package testing provides testing utilities for the maintenance manager.
-package testing
+// Package testutils provides testing utilities for the maintenance manager.
+package testutils
 
 import (
 	"context"

@@ -15,7 +15,7 @@ import (
 
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-managers/telemetry/internal/server"
-	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testing"
+	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testutils"
 )
 
 var rbacRules = "../../rego/authz.rego"

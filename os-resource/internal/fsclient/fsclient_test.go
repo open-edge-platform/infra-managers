@@ -16,7 +16,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	as "github.com/open-edge-platform/infra-core/inventory/v2/pkg/artifactservice"
-	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testing"
+	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testutils"
 )
 
 const (

@@ -21,7 +21,7 @@ import (
 	as "github.com/open-edge-platform/infra-core/inventory/v2/pkg/artifactservice"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/fsclient"
-	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testing"
+	osrm_testing "github.com/open-edge-platform/infra-managers/os-resource/internal/testutils"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/util"
 )
 

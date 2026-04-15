@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-// Package testing provides testing utilities for telemetry manager.
-package testing
+// Package testutils provides testing utilities for telemetry manager.
+package testutils
 
 import (
 	"testing"

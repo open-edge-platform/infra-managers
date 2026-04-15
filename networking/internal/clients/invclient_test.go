@@ -20,7 +20,7 @@ import (
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"
-	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testing"
+	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testutils"
 )
 
 func TestMain(m *testing.M) {
