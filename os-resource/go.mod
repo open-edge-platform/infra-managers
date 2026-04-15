@@ -3,7 +3,7 @@
 
 module github.com/open-edge-platform/infra-managers/os-resource
 
-go 1.25.7
+go 1.26.1
 
 require (
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.34.5

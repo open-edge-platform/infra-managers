@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: (C) 2025 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
-// Package testing provides testing utilities for the networking manager.
-package testing
+// Package testutils provides testing utilities for the networking manager.
+package testutils
 
 import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"

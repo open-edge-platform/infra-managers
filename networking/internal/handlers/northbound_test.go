@@ -18,7 +18,7 @@ import (
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-managers/networking/internal/handlers"
 	"github.com/open-edge-platform/infra-managers/networking/internal/reconcilers"
-	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testing"
+	net_testing "github.com/open-edge-platform/infra-managers/networking/internal/testutils"
 	rec_v2 "github.com/open-edge-platform/orch-library/go/pkg/controller/v2"
 )
 

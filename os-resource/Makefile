@@ -31,7 +31,7 @@ GIT_TAG_PREFIX     := os-resource/v
 #  TEST_TARGET='TestAuth.*' make test
 TEST_TARGET        ?= .
 # Default TEST_PKG, overwrite to select particular test pakages
-TEST_PKG           ?= $(shell go list ./... | grep -v "cmd" | grep -v "internal/testing" | tr '\n' ,)
+TEST_PKG           ?= $(shell go list ./... | grep -v "cmd" | grep -v "internal/testutils" | tr '\n' ,)
 TEST_COVER         := atomic ./...
 TEST_ARGS          := -globalLogLevel=error
 TEST_USE_DB        := true
