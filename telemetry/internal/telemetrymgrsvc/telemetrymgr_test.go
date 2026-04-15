@@ -20,7 +20,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	tm "github.com/open-edge-platform/infra-managers/telemetry/internal/telemetrymgrsvc"
-	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testing"
+	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testutils"
 	pb "github.com/open-edge-platform/infra-managers/telemetry/pkg/api/telemetrymgr/v1"
 )
 

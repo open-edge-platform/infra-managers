@@ -19,7 +19,7 @@ import (
 	telemetryv1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/telemetry/v1"
 	inv_testing "github.com/open-edge-platform/infra-core/inventory/v2/pkg/testing"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
-	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testing"
+	telemetry_testing "github.com/open-edge-platform/infra-managers/telemetry/internal/testutils"
 )
 
 func TestMain(m *testing.M) {
