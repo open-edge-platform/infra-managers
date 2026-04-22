@@ -1,16 +1,11 @@
----
-# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+---
 version: 2
 updates:
+  # Go modules - separate block for each directory
   - package-ecosystem: "gomod"
-    directories:
-      - "/host"
-      - "/maintenance"
-      - "/networking"
-      - "/os-resource"
-      - "/telemetry"
-      - "/attestationstatus"
+    directory: "/host"
     schedule:
       interval: daily
     open-pull-requests-limit: 3
@@ -25,9 +20,95 @@ updates:
       internal-dependencies:
         patterns:
           - "*open-edge-platform*"
+
+  - package-ecosystem: "gomod"
+    directory: "/maintenance"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "[gomod] "
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:  # Internal dependencies are update into separate PRs.
+          - "*open-edge-platform*"
+      internal-dependencies:
+        patterns:
+          - "*open-edge-platform*"
+
+  - package-ecosystem: "gomod"
+    directory: "/networking"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "[gomod] "
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:  # Internal dependencies are update into separate PRs.
+          - "*open-edge-platform*"
+      internal-dependencies:
+        patterns:
+          - "*open-edge-platform*"
+
+  - package-ecosystem: "gomod"
+    directory: "/os-resource"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "[gomod] "
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:  # Internal dependencies are update into separate PRs.
+          - "*open-edge-platform*"
+      internal-dependencies:
+        patterns:
+          - "*open-edge-platform*"
+
+  - package-ecosystem: "gomod"
+    directory: "/telemetry"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "[gomod] "
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:  # Internal dependencies are update into separate PRs.
+          - "*open-edge-platform*"
+      internal-dependencies:
+        patterns:
+          - "*open-edge-platform*"
+
+  - package-ecosystem: "gomod"
+    directory: "/attestationstatus"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "[gomod] "
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:  # Internal dependencies are update into separate PRs.
+          - "*open-edge-platform*"
+      internal-dependencies:
+        patterns:
+          - "*open-edge-platform*"
+
+  # GitHub Actions
   - package-ecosystem: "github-actions"
-    directories:
-      - "/"  # this enables searching only in /.github/workflows directory
+    directory: "/"
     schedule:
       interval: daily
     open-pull-requests-limit: 10
