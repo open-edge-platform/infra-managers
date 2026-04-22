@@ -13,7 +13,7 @@ require (
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.39.10
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
-	google.golang.org/grpc v1.81.0-dev
+	google.golang.org/grpc v1.82.0-dev
 	google.golang.org/protobuf v1.36.11
 )
 
