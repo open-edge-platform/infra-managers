@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -306,6 +306,17 @@ func ConvertSystemDiskIntoHostStorages(tb testing.TB, storage *pb.Storage,
 	return hostStorages
 }
 
+// ConvertAmtConfigInfoIntoHostAmtconfig is a helper function to convert amtconfigInfo into hostamtconfig resource.
+func ConvertAmtConfigInfoIntoHostAmtconfig(tb testing.TB, amtconfig *pb.AmtConfigInfo,
+	host *computev1.HostResource,
+) *computev1.HostamtconfigResource {
+	tb.Helper()
+
+	hostDevice, err := hutils.PopulateHostamtconfigWithAmtConfigInfo(amtconfig, host)
+	require.NoError(tb, err, "Unable to convert hostAmtconfig")
+	return hostDevice
+}
+
 // HardDeleteHoststoragesWithUpdateHostSystemInfo deletes the storage by removing all SystemDisk objects
 // from the HwInfo of the SystemInfo. The SB does not support incremental updates - original systemInfo
 // is requested to avoid side effects.
@@ -318,6 +329,22 @@ func HardDeleteHoststoragesWithUpdateHostSystemInfo(
 	defer cancel()
 
 	systemInfo.SystemInfo.HwInfo.Storage = &pb.Storage{}
+	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo)
+	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
+}
+
+// HardDeleteHostamtconfigWithUpdateHostSystemInfo deletes the amtconfig info by removing the AmtConfigInfo
+// from the HwInfo of the SystemInfo. The SB does not support incremental updates - original systemInfo
+// is requested to avoid side effects.
+func HardDeleteHostamtconfigWithUpdateHostSystemInfo(
+	tb testing.TB, tenantID string, systemInfo *pb.UpdateHostSystemInfoByGUIDRequest,
+) {
+	tb.Helper()
+
+	ctx, cancel := inv_testing.CreateContextWithENJWT(tb, tenantID)
+	defer cancel()
+
+	systemInfo.SystemInfo.AmtInfo = &pb.AmtConfigInfo{}
 	_, err := HostManagerTestClient.UpdateHostSystemInfoByGUID(ctx, systemInfo)
 	require.NoError(tb, err, "UpdateHostSystemInfoByGuid() failed")
 }

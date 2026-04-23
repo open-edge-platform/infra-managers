@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 package invclient_test
@@ -381,6 +381,110 @@ func TestInvClient_SetHostAsConnectionLost(t *testing.T) {
 		uint64(time.Now().Add(time.Second).Unix()))
 	require.NoError(t, err)
 	assertHostStatus(host.GetResourceId(), hrm_status.HostStatusNoConnection)
+}
+
+func TestInvClient_CreateHostamtconfig(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	id, err := invclient.CreateHostamtconfig(ctx, client, tenant1, &computev1.HostamtconfigResource{})
+	require.Error(t, err)
+	assert.Equal(t, codes.InvalidArgument, grpc_status.Code(err))
+	assert.Empty(t, id)
+
+	host := dao.CreateHost(t, tenant1)
+
+	// Create with resourceId is not allowed
+	amtconfig := &computev1.HostamtconfigResource{
+		TenantId:    tenant1,
+		Version:     "1.2.34",
+		DeviceName:  "testhost",
+		BuildNumber: "1234",
+		DeviceGuid:  "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:        host,
+		ResourceId:  "hostamtconfig-12345678",
+	}
+	id, err = invclient.CreateHostamtconfig(ctx, client, tenant1, amtconfig)
+	require.Error(t, err)
+	require.Equal(t, "", id)
+
+	// OK
+	amtconfig = &computev1.HostamtconfigResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		DeviceName:       "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err = invclient.CreateHostamtconfig(ctx, client, tenant1, amtconfig)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	t.Cleanup(func() { dao.DeleteResource(t, tenant1, id) })
+}
+
+func TestInvClient_UpdateHostamtconfig(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	// Error
+	err := invclient.UpdateHostamtconfig(ctx, client, tenant1, &computev1.HostamtconfigResource{})
+	require.Error(t, err)
+
+	// OK
+	host := dao.CreateHost(t, tenant1)
+	amtconfig := &computev1.HostamtconfigResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		DeviceName:       "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err := invclient.CreateHostamtconfig(ctx, client, tenant1, amtconfig)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	t.Cleanup(func() { dao.DeleteResource(t, tenant1, id) })
+
+	amtconfig.Version = "1.3.45"
+	amtconfig.OperationalState = "disabled"
+	amtconfig.ResourceId = id
+	err = invclient.UpdateHostamtconfig(ctx, client, tenant1, amtconfig)
+	require.NoError(t, err)
+}
+
+func TestInvClient_DeleteHostamtconfig(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	client := inv_testing.TestClients[inv_testing.RMClient].GetTenantAwareInventoryClient()
+	dao := inv_testing.NewInvResourceDAOOrFail(t)
+
+	// Not found, does not return an error
+	err := invclient.DeleteHostamtconfig(ctx, client, tenant1, "hostamtconfig-12345678")
+	require.NoError(t, err)
+
+	// OK
+	host := dao.CreateHost(t, tenant1)
+	amtconfig := &computev1.HostamtconfigResource{
+		TenantId:         tenant1,
+		Version:          "1.2.34",
+		DeviceName:       "testhost",
+		BuildNumber:      "1234",
+		DeviceGuid:       "1234abcd-ef56-7890-12ab-34567890cdef",
+		Host:             host,
+		OperationalState: "enabled",
+	}
+	id, err := invclient.CreateHostamtconfig(ctx, client, tenant1, amtconfig)
+	require.NoError(t, err)
+	require.NotEqual(t, "", id)
+	err = invclient.DeleteHostamtconfig(ctx, client, tenant1, id)
+	require.NoError(t, err)
 }
 
 func TestInvClient_SetHostStatus(t *testing.T) {

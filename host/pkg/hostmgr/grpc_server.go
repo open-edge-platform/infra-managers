@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -140,6 +140,10 @@ func (s *server) UpdateHostSystemInfoByGUID(ctx context.Context,
 	}
 
 	if err := updateHostgpus(ctx, tenantID, hostres, systemInfo.HwInfo); err != nil {
+		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
+	}
+
+	if err := updateHostamtconfig(ctx, tenantID, hostres, systemInfo.AmtInfo); err != nil {
 		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
 	}
 

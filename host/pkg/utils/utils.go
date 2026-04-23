@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 // Package util provides utility functions for host management.
@@ -284,6 +284,35 @@ func PopulateHoststorageWithDiskInfo(disk *pb.SystemDisk, hostres *computev1.Hos
 		Host:          hostres,
 	}
 	return storageres, nil
+}
+
+// PopulateHostamtconfigWithAmtConfigInfo translates a AmtConfigInfo into a host deamtconfigvice resource.
+func PopulateHostamtconfigWithAmtConfigInfo(amtconfig *pb.AmtConfigInfo, hostres *computev1.HostResource) (
+	*computev1.HostamtconfigResource, error,
+) {
+	if hostres == nil {
+		zlog.InfraSec().InfraError("HostResource cannot be nil").Msgf("")
+		return nil, errors.Errorfc(codes.InvalidArgument, "HostResource cannot be nil")
+	}
+	rasInfo := amtconfig.GetRasInfo()
+	amtconfigres := &computev1.HostamtconfigResource{
+		TenantId:         hostres.GetTenantId(),
+		Version:          amtconfig.GetVersion(),
+		DeviceName:       amtconfig.GetDeviceName(),
+		OperationalState: amtconfig.GetOperationalState(),
+		BuildNumber:      amtconfig.GetBuildNumber(),
+		Sku:              amtconfig.GetSku(),
+		Features:         amtconfig.GetFeatures(),
+		DeviceGuid:       amtconfig.GetDeviceGuid(),
+		ControlMode:      amtconfig.GetControlMode(),
+		DnsSuffix:        amtconfig.GetDnsSuffix(),
+		NetworkStatus:    rasInfo.GetNetworkStatus(),
+		RemoteStatus:     rasInfo.GetRemoteStatus(),
+		RemoteTrigger:    rasInfo.GetRemoteTrigger(),
+		MpsHostname:      rasInfo.GetMpsHostname(),
+		Host:             hostres,
+	}
+	return amtconfigres, nil
 }
 
 func linkStateToNetworkInterfaceLinkState(linkState bool) computev1.NetworkInterfaceLinkState {

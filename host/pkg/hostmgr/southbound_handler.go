@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -129,6 +129,79 @@ func updateHoststorage(ctx context.Context, tenantID string, hostRes *computev1.
 			return err
 		}
 	}
+	return nil
+}
+
+func hostAmtconfigToAdd(ctx context.Context, tenantID string, hostAmtconfig *computev1.HostamtconfigResource) error {
+	zlog.Debug().Msgf("Add host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+	id, err := inv_mgr_cli.CreateHostamtconfig(ctx, invClientInstance, tenantID, hostAmtconfig)
+	if err != nil {
+		return err
+	}
+	hostAmtconfig.ResourceId = id
+	return nil
+}
+
+func hostAmtconfigToUpdate(ctx context.Context, tenantID string, hostAmtconfig, invDevice *computev1.HostamtconfigResource,
+) error {
+	hostAmtconfig.ResourceId = invDevice.GetResourceId()
+	if !hmgr_util.ProtoEqualSubset(hostAmtconfig, invDevice, inv_mgr_cli.UpdateHostamtconfigFieldMask...) {
+		zlog.Debug().Msgf("Update host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+		if err := inv_mgr_cli.UpdateHostamtconfig(ctx, invClientInstance, tenantID, hostAmtconfig); err != nil {
+			return err
+		}
+	} else {
+		zlog.Debug().Msgf("Skip hostAmtconfig update: tenantID=%s, hostAmtconfig=%v", tenantID, hostAmtconfig)
+	}
+	return nil
+}
+
+func hostAmtconfigToDelete(ctx context.Context, tenantID string, invDevice *computev1.HostamtconfigResource) error {
+	zlog.Debug().Msgf("Delete host amtconfig: tenantID=%s, hostAmtconfig=%v", tenantID, invDevice)
+	err := inv_mgr_cli.DeleteHostamtconfig(ctx, invClientInstance, tenantID, invDevice.GetResourceId())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// This function updates Host amtconfig resources in Inventory if needed.
+func updateHostamtconfig(ctx context.Context, tenantID string, hostRes *computev1.HostResource, amtconfigInfo *pb.AmtConfigInfo,
+) error {
+	// Amconfigs are always eager loaded. No need to query Inventory again
+	invAmtconfig := hostRes.GetHostAmtconfig()
+
+	zlog.Debug().Msgf("Update host amtconfig: tenantID=%s, Inventory Amtconfig Info=%v, reported amtconfig info=%v",
+		tenantID, invAmtconfig, amtconfigInfo)
+
+	hostAmtconfig, err := hmgr_util.PopulateHostamtconfigWithAmtConfigInfo(amtconfigInfo, hostRes)
+	if err != nil {
+		return err
+	}
+
+	if invAmtconfig.GetResourceId() == "" {
+		if amtconfigInfo.GetRasInfo() != nil {
+			err = hostAmtconfigToAdd(ctx, tenantID, hostAmtconfig)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		if amtconfigInfo.GetRasInfo() != nil {
+			if invAmtconfig.GetVersion() != hostAmtconfig.GetVersion() {
+				err = hostAmtconfigToUpdate(ctx, tenantID, hostAmtconfig, invAmtconfig)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			err = hostAmtconfigToDelete(ctx, tenantID, invAmtconfig)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
