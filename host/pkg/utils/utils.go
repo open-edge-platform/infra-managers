@@ -218,7 +218,7 @@ func DeserializeMetadata(metadata string) ([]Metadata, error) {
 // SerializeMetadata builds a metadata string from the given map.
 // The metadata string is a JSON-encoded array of key-value objects.
 func SerializeMetadata(metadataMap map[string]string) (string, error) {
-	var metaList []Metadata
+	metaList := make([]Metadata, 0, len(metadataMap))
 	for k, v := range metadataMap {
 		metaList = append(metaList, Metadata{Key: k, Value: v})
 	}
