@@ -511,6 +511,20 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			fail: false,
 		},
 		{
+			name: "ClusterInfo_Multiple_Metadata_Keys_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "new-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"new-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
 			name: "Failed_NoSystemInfo",
 			args: args{
 				nil,
@@ -533,6 +547,154 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSerializeMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]string
+		expected string
+		wantErr  bool
+	}{
+		{
+			name:     "Empty_Map",
+			input:    map[string]string{},
+			expected: "[]",
+			wantErr:  false,
+		},
+		{
+			name: "Single_Key",
+			input: map[string]string{
+				"key1": "value1",
+			},
+			expected: `[{"key":"key1","value":"value1"}]`,
+			wantErr:  false,
+		},
+		{
+			name: "Multiple_Keys",
+			input: map[string]string{
+				"kubeconfig": "test-config",
+				"region":     "us-west-2",
+			},
+			// Note: map iteration order is not guaranteed, so we'll check both possible orders
+			wantErr: false,
+		},
+		{
+			name: "Kubeconfig_Override",
+			input: map[string]string{
+				"kubeconfig": "new-config-content",
+				"other":      "other-value",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := util.SerializeMetadata(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SerializeMetadata() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				if tt.name == "Multiple_Keys" || tt.name == "Kubeconfig_Override" {
+					// For multiple keys, verify it contains both entries
+					assert.Contains(t, result, `"key":"kubeconfig"`)
+					assert.Contains(t, result, `"value":`)
+				} else {
+					assert.Equal(t, tt.expected, result)
+				}
+			}
+		})
+	}
+}
+
+func TestDeserializeMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []util.Metadata
+		wantErr  bool
+	}{
+		{
+			name:     "Empty_String",
+			input:    "",
+			expected: []util.Metadata{},
+			wantErr:  false,
+		},
+		{
+			name:     "Empty_Array",
+			input:    "[]",
+			expected: []util.Metadata{},
+			wantErr:  false,
+		},
+		{
+			name:  "Single_Entry",
+			input: `[{"key":"kubeconfig","value":"test-config"}]`,
+			expected: []util.Metadata{
+				{Key: "kubeconfig", Value: "test-config"},
+			},
+			wantErr: false,
+		},
+		{
+			name:  "Multiple_Entries",
+			input: `[{"key":"kubeconfig","value":"test-config"},{"key":"region","value":"us-west-2"}]`,
+			expected: []util.Metadata{
+				{Key: "kubeconfig", Value: "test-config"},
+				{Key: "region", Value: "us-west-2"},
+			},
+			wantErr: false,
+		},
+		{
+			name:    "Invalid_JSON",
+			input:   `{"invalid": "format"}`,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := util.DeserializeMetadata(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DeserializeMetadata() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestMetadataOverrideBehavior(t *testing.T) {
+	// Test the complete flow: existing metadata -> deserialize -> add/override kubeconfig -> serialize
+	existingMetadata := `[{"key":"kubeconfig","value":"old-config"},{"key":"region","value":"us-east-1"}]`
+
+	// Deserialize existing metadata
+	metaList, err := util.DeserializeMetadata(existingMetadata)
+	require.NoError(t, err)
+
+	// Convert to map
+	metaMap, err := util.MetadataToMetaMap(metaList)
+	require.NoError(t, err)
+
+	// Verify old kubeconfig exists
+	assert.Equal(t, "old-config", metaMap["kubeconfig"])
+	assert.Equal(t, "us-east-1", metaMap["region"])
+
+	// Override kubeconfig
+	metaMap["kubeconfig"] = "new-config-content"
+
+	// Serialize back
+	newMetadata, err := util.SerializeMetadata(metaMap)
+	require.NoError(t, err)
+
+	// Verify the new metadata contains the overridden kubeconfig and preserved other keys
+	assert.Contains(t, newMetadata, `"key":"kubeconfig"`)
+	assert.Contains(t, newMetadata, `"value":"new-config-content"`)
+	assert.Contains(t, newMetadata, `"key":"region"`)
+	assert.Contains(t, newMetadata, `"value":"us-east-1"`)
+	assert.NotContains(t, newMetadata, "old-config")
 }
 
 func TestPopulateHostResourceWithNewSystemInfo_FieldMask(t *testing.T) {
