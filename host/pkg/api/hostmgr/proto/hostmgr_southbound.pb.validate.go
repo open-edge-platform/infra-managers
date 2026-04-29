@@ -79,7 +79,7 @@ type HostStatusMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HostStatusMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -183,7 +183,7 @@ type HostStatusRespMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HostStatusRespMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -286,7 +286,7 @@ type MetadataMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m MetadataMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -488,6 +488,35 @@ func (m *SystemInfo) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetKcInfo()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SystemInfoValidationError{
+					field:  "KcInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SystemInfoValidationError{
+					field:  "KcInfo",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetKcInfo()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SystemInfoValidationError{
+				field:  "KcInfo",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return SystemInfoMultiError(errors)
 	}
@@ -501,7 +530,7 @@ type SystemInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -564,6 +593,107 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SystemInfoValidationError{}
+
+// Validate checks the field values on ClusterInfo with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ClusterInfo) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ClusterInfo with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ClusterInfoMultiError, or
+// nil if none found.
+func (m *ClusterInfo) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ClusterInfo) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Kubeconfig
+
+	if len(errors) > 0 {
+		return ClusterInfoMultiError(errors)
+	}
+
+	return nil
+}
+
+// ClusterInfoMultiError is an error wrapping multiple validation errors
+// returned by ClusterInfo.ValidateAll() if the designated constraints aren't met.
+type ClusterInfoMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ClusterInfoMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ClusterInfoMultiError) AllErrors() []error { return m }
+
+// ClusterInfoValidationError is the validation error returned by
+// ClusterInfo.Validate if the designated constraints aren't met.
+type ClusterInfoValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ClusterInfoValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ClusterInfoValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ClusterInfoValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ClusterInfoValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ClusterInfoValidationError) ErrorName() string { return "ClusterInfoValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ClusterInfoValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sClusterInfo.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ClusterInfoValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ClusterInfoValidationError{}
 
 // Validate checks the field values on BiosInfo with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
@@ -656,7 +786,7 @@ type BiosInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m BiosInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -814,7 +944,7 @@ type OsInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OsInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -916,7 +1046,7 @@ type ConfigMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m ConfigMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1060,7 +1190,7 @@ type OsKernelMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OsKernelMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1215,7 +1345,7 @@ type OsReleaseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m OsReleaseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1347,7 +1477,7 @@ type StorageMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m StorageMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1719,7 +1849,7 @@ type HWInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m HWInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -1913,7 +2043,7 @@ type SystemCPUMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemCPUMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2023,7 +2153,7 @@ type SystemMemoryMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemMemoryMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2179,7 +2309,7 @@ type SystemDiskMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemDiskMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2341,7 +2471,7 @@ type SystemGPUMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemGPUMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2588,7 +2718,7 @@ type SystemNetworkMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemNetworkMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2732,7 +2862,7 @@ type CPUTopologyMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CPUTopologyMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -2877,7 +3007,7 @@ type SocketMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SocketMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3010,7 +3140,7 @@ type CoreGroupMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m CoreGroupMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3133,7 +3263,7 @@ type IPAddressMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m IPAddressMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3243,7 +3373,7 @@ type SystemPCIMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemPCIMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3353,7 +3483,7 @@ type InterfacesMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m InterfacesMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3545,7 +3675,7 @@ type SystemUSBMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m SystemUSBMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3674,7 +3804,7 @@ type BmInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m BmInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3805,7 +3935,7 @@ type BmcInfoMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m BmcInfoMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -3989,7 +4119,7 @@ type UpdateHostStatusByHostGuidRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateHostStatusByHostGuidRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4176,7 +4306,7 @@ type UpdateHostSystemInfoByGUIDRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateHostSystemInfoByGUIDRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4281,7 +4411,7 @@ type UpdateHostSystemInfoByGUIDResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateHostSystemInfoByGUIDResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4424,7 +4554,7 @@ type UpdateInstanceStateStatusByHostGUIDRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateInstanceStateStatusByHostGUIDRequestMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}
@@ -4530,7 +4660,7 @@ type UpdateInstanceStateStatusByHostGUIDResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
 func (m UpdateInstanceStateStatusByHostGUIDResponseMultiError) Error() string {
-	var msgs []string
+	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
 	}

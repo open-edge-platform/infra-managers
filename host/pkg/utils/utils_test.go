@@ -477,6 +477,40 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			fail: true,
 		},
 		{
+			name: "ClusterInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
+			name: "ClusterInfo_With_HWInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					HwInfo: &pb.HWInfo{
+						SerialNum:   "test-serial",
+						ProductName: "test-product",
+					},
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				SerialNumber: "test-serial",
+				ProductName:  "test-product",
+				Metadata:     `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
 			name: "Failed_NoSystemInfo",
 			args: args{
 				nil,
@@ -496,6 +530,70 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			}
 			if eq, diff := inv_testing.ProtoEqualOrDiff(tt.want, updatedHost); !eq && !tt.fail {
 				t.Errorf("PopulateHostResourceWithNewSystemInfo() data not equal, but should be: %v", diff)
+			}
+		})
+	}
+}
+
+func TestPopulateHostResourceWithNewSystemInfo_FieldMask(t *testing.T) {
+	type testCase struct {
+		name              string
+		systemInfo        *pb.SystemInfo
+		expectedFields    []string
+		notExpectedFields []string
+	}
+
+	tests := []testCase{
+		{
+			name: "ClusterInfo_Only",
+			systemInfo: &pb.SystemInfo{
+				KcInfo: &pb.ClusterInfo{
+					Kubeconfig: "test-kubeconfig",
+				},
+			},
+			expectedFields:    []string{computev1.HostResourceFieldMetadata},
+			notExpectedFields: []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldCpuSockets},
+		},
+		{
+			name: "HWInfo_Only",
+			systemInfo: &pb.SystemInfo{
+				HwInfo: &pb.HWInfo{
+					SerialNum:   "test-serial",
+					ProductName: "test-product",
+				},
+			},
+			expectedFields:    []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldProductName},
+			notExpectedFields: []string{computev1.HostResourceFieldMetadata, computev1.HostResourceFieldBiosVendor},
+		},
+		{
+			name: "ClusterInfo_With_HWInfo",
+			systemInfo: &pb.SystemInfo{
+				HwInfo: &pb.HWInfo{
+					SerialNum: "test-serial",
+				},
+				KcInfo: &pb.ClusterInfo{
+					Kubeconfig: "test-kubeconfig",
+				},
+			},
+			expectedFields:    []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldMetadata},
+			notExpectedFields: []string{computev1.HostResourceFieldCpuSockets, computev1.HostResourceFieldBiosVendor},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, fieldMask, err := util.PopulateHostResourceWithNewSystemInfo(tt.systemInfo)
+			require.NoError(t, err)
+			require.NotNil(t, fieldMask)
+
+			// Check that expected fields are in the mask
+			for _, expectedField := range tt.expectedFields {
+				assert.Contains(t, fieldMask.Paths, expectedField, "Field %s should be in fieldmask", expectedField)
+			}
+
+			// Check that not expected fields are NOT in the mask
+			for _, notExpectedField := range tt.notExpectedFields {
+				assert.NotContains(t, fieldMask.Paths, notExpectedField, "Field %s should NOT be in fieldmask", notExpectedField)
 			}
 		})
 	}

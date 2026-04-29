@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 syntax = "proto3";
 
@@ -92,6 +92,12 @@ message SystemInfo {
   BmInfo bm_ctl_info = 3;
 
   BiosInfo bios_info = 4;
+
+  ClusterInfo kc_info = 5;
+}
+
+message ClusterInfo {
+  string kubeconfig = 1;
 }
 
 message BiosInfo {
