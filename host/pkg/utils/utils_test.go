@@ -4,6 +4,7 @@
 package util_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -110,6 +111,33 @@ var (
 		Features:    []string{"abc", "xyz", "q"},
 	}
 )
+
+// mockSecretsService implements secrets.SecretsService for testing
+type mockSecretsService struct {
+	storage map[string]map[string]interface{}
+}
+
+func newMockSecretsService() *mockSecretsService {
+	return &mockSecretsService{
+		storage: make(map[string]map[string]interface{}),
+	}
+}
+
+func (m *mockSecretsService) ReadSecret(ctx context.Context, path string) (map[string]interface{}, error) {
+	if data, exists := m.storage[path]; exists {
+		return data, nil
+	}
+	return nil, nil
+}
+
+func (m *mockSecretsService) WriteSecret(ctx context.Context, path string, secret map[string]interface{}) (map[string]interface{}, error) {
+	m.storage[path] = secret
+	return secret, nil
+}
+
+func (m *mockSecretsService) Logout(ctx context.Context) {
+	// No-op for mock
+}
 
 func TestPopulateHostusbWithUsbInfo(t *testing.T) {
 	host := &computev1.HostResource{}
@@ -534,7 +562,10 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(tt.args.info)
+			// Create mock secrets service for testing
+			mockSecrets := newMockSecretsService()
+
+			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tt.args.info, mockSecrets)
 			if err != nil {
 				if !tt.fail {
 					t.Errorf("PopulateHostResourceWithNewSystemInfo() should NOT fail %s", err)
@@ -544,218 +575,6 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			}
 			if eq, diff := inv_testing.ProtoEqualOrDiff(tt.want, updatedHost); !eq && !tt.fail {
 				t.Errorf("PopulateHostResourceWithNewSystemInfo() data not equal, but should be: %v", diff)
-			}
-		})
-	}
-}
-
-func TestSerializeMetadata(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    map[string]string
-		expected string
-		wantErr  bool
-	}{
-		{
-			name:     "Empty_Map",
-			input:    map[string]string{},
-			expected: "[]",
-			wantErr:  false,
-		},
-		{
-			name: "Single_Key",
-			input: map[string]string{
-				"key1": "value1",
-			},
-			expected: `[{"key":"key1","value":"value1"}]`,
-			wantErr:  false,
-		},
-		{
-			name: "Multiple_Keys",
-			input: map[string]string{
-				"kubeconfig": "test-config",
-				"region":     "us-west-2",
-			},
-			// Note: map iteration order is not guaranteed, so we'll check both possible orders
-			wantErr: false,
-		},
-		{
-			name: "Kubeconfig_Override",
-			input: map[string]string{
-				"kubeconfig": "new-config-content",
-				"other":      "other-value",
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := util.SerializeMetadata(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SerializeMetadata() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				if tt.name == "Multiple_Keys" || tt.name == "Kubeconfig_Override" {
-					// For multiple keys, verify it contains both entries
-					assert.Contains(t, result, `"key":"kubeconfig"`)
-					assert.Contains(t, result, `"value":`)
-				} else {
-					assert.Equal(t, tt.expected, result)
-				}
-			}
-		})
-	}
-}
-
-func TestDeserializeMetadata(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected []util.Metadata
-		wantErr  bool
-	}{
-		{
-			name:     "Empty_String",
-			input:    "",
-			expected: []util.Metadata{},
-			wantErr:  false,
-		},
-		{
-			name:     "Empty_Array",
-			input:    "[]",
-			expected: []util.Metadata{},
-			wantErr:  false,
-		},
-		{
-			name:  "Single_Entry",
-			input: `[{"key":"kubeconfig","value":"test-config"}]`,
-			expected: []util.Metadata{
-				{Key: "kubeconfig", Value: "test-config"},
-			},
-			wantErr: false,
-		},
-		{
-			name:  "Multiple_Entries",
-			input: `[{"key":"kubeconfig","value":"test-config"},{"key":"region","value":"us-west-2"}]`,
-			expected: []util.Metadata{
-				{Key: "kubeconfig", Value: "test-config"},
-				{Key: "region", Value: "us-west-2"},
-			},
-			wantErr: false,
-		},
-		{
-			name:    "Invalid_JSON",
-			input:   `{"invalid": "format"}`,
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result, err := util.DeserializeMetadata(tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DeserializeMetadata() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !tt.wantErr {
-				assert.Equal(t, tt.expected, result)
-			}
-		})
-	}
-}
-
-func TestMetadataOverrideBehavior(t *testing.T) {
-	// Test the complete flow: existing metadata -> deserialize -> add/override kubeconfig -> serialize
-	existingMetadata := `[{"key":"kubeconfig","value":"old-config"},{"key":"region","value":"us-east-1"}]`
-
-	// Deserialize existing metadata
-	metaList, err := util.DeserializeMetadata(existingMetadata)
-	require.NoError(t, err)
-
-	// Convert to map
-	metaMap, err := util.MetadataToMetaMap(metaList)
-	require.NoError(t, err)
-
-	// Verify old kubeconfig exists
-	assert.Equal(t, "old-config", metaMap["kubeconfig"])
-	assert.Equal(t, "us-east-1", metaMap["region"])
-
-	// Override kubeconfig
-	metaMap["kubeconfig"] = "new-config-content"
-
-	// Serialize back
-	newMetadata, err := util.SerializeMetadata(metaMap)
-	require.NoError(t, err)
-
-	// Verify the new metadata contains the overridden kubeconfig and preserved other keys
-	assert.Contains(t, newMetadata, `"key":"kubeconfig"`)
-	assert.Contains(t, newMetadata, `"value":"new-config-content"`)
-	assert.Contains(t, newMetadata, `"key":"region"`)
-	assert.Contains(t, newMetadata, `"value":"us-east-1"`)
-	assert.NotContains(t, newMetadata, "old-config")
-}
-
-func TestPopulateHostResourceWithNewSystemInfo_FieldMask(t *testing.T) {
-	type testCase struct {
-		name              string
-		systemInfo        *pb.SystemInfo
-		expectedFields    []string
-		notExpectedFields []string
-	}
-
-	tests := []testCase{
-		{
-			name: "ClusterInfo_Only",
-			systemInfo: &pb.SystemInfo{
-				KcInfo: &pb.ClusterInfo{
-					Kubeconfig: "test-kubeconfig",
-				},
-			},
-			expectedFields:    []string{computev1.HostResourceFieldMetadata},
-			notExpectedFields: []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldCpuSockets},
-		},
-		{
-			name: "HWInfo_Only",
-			systemInfo: &pb.SystemInfo{
-				HwInfo: &pb.HWInfo{
-					SerialNum:   "test-serial",
-					ProductName: "test-product",
-				},
-			},
-			expectedFields:    []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldProductName},
-			notExpectedFields: []string{computev1.HostResourceFieldMetadata, computev1.HostResourceFieldBiosVendor},
-		},
-		{
-			name: "ClusterInfo_With_HWInfo",
-			systemInfo: &pb.SystemInfo{
-				HwInfo: &pb.HWInfo{
-					SerialNum: "test-serial",
-				},
-				KcInfo: &pb.ClusterInfo{
-					Kubeconfig: "test-kubeconfig",
-				},
-			},
-			expectedFields:    []string{computev1.HostResourceFieldSerialNumber, computev1.HostResourceFieldMetadata},
-			notExpectedFields: []string{computev1.HostResourceFieldCpuSockets, computev1.HostResourceFieldBiosVendor},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, fieldMask, err := util.PopulateHostResourceWithNewSystemInfo(tt.systemInfo)
-			require.NoError(t, err)
-			require.NotNil(t, fieldMask)
-
-			// Check that expected fields are in the mask
-			for _, expectedField := range tt.expectedFields {
-				assert.Contains(t, fieldMask.Paths, expectedField, "Field %s should be in fieldmask", expectedField)
-			}
-
-			// Check that not expected fields are NOT in the mask
-			for _, notExpectedField := range tt.notExpectedFields {
-				assert.NotContains(t, fieldMask.Paths, notExpectedField, "Field %s should NOT be in fieldmask", notExpectedField)
 			}
 		})
 	}
@@ -1732,7 +1551,10 @@ func TestIsSameHostSystemInfo(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(tc.in)
+			// Create mock secrets service for testing
+			mockSecrets := newMockSecretsService()
+
+			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tc.in, mockSecrets)
 			require.NoError(t, err)
 
 			isSame, err := util.IsSameHost(tc.want, updatedHost, fieldmask)

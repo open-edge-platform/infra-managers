@@ -13,6 +13,7 @@ import (
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/secrets"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	"github.com/open-edge-platform/infra-managers/host/pkg/alivemgr"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
@@ -23,8 +24,9 @@ import (
 
 type server struct {
 	pb.UnimplementedHostmgrServer
-	rbac        *rbac.Policy
-	authEnabled bool
+	rbac           *rbac.Policy
+	authEnabled    bool
+	secretsService secrets.SecretsService
 }
 
 //nolint:stylecheck,revive // name of this function should be aligned with the one in .pb.go
@@ -122,7 +124,7 @@ func (s *server) UpdateHostSystemInfoByGUID(ctx context.Context,
 		return nil, inv_errors.Errorfc(codes.FailedPrecondition, "")
 	}
 
-	err = updateHost(ctx, tenantID, hostres, systemInfo)
+	err = updateHost(ctx, tenantID, hostres, systemInfo, s.secretsService)
 	if err != nil {
 		return nil, inv_errors.ErrorToSanitizedGrpcError(err)
 	}
