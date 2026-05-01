@@ -20,6 +20,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/secrets"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
 	"github.com/open-edge-platform/infra-managers/host/pkg/alivemgr"
@@ -216,12 +217,19 @@ func StartGrpcSrv(
 
 	srvOpts = append(srvOpts, grpc.ChainUnaryInterceptor(unaryInter...))
 
+	// Initialize Vault secrets service
+	secretsService, err := secrets.SecretServiceFactory(context.Background())
+	if err != nil {
+		zlog.Fatal().Err(err).Msg("Failed to initialize Vault secrets service")
+	}
+
 	// Create a gRPC server object
 	s := grpc.NewServer(srvOpts...)
 	// Attach the hostmgr service to the server
 	pb.RegisterHostmgrServer(s, &server{
-		rbac:        opaPolicy,
-		authEnabled: opts.enableAuth,
+		rbac:           opaPolicy,
+		authEnabled:    opts.enableAuth,
+		secretsService: secretsService,
 	})
 	reflection.Register(s)
 	// Serve gRPC server when signal is ready

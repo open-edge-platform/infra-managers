@@ -9,11 +9,13 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/netip"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -24,6 +26,7 @@ import (
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/secrets"
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
@@ -186,51 +189,6 @@ func PopulateHostgpuWithGpuInfo(gpu *pb.SystemGPU, host *computev1.HostResource)
 	return &gpures, nil
 }
 
-type Metadata struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-// MetadataToMetaMap converts a slice of Metadata to a map.
-func MetadataToMetaMap(metadata []Metadata) (map[string]string, error) {
-	metaMap := make(map[string]string, len(metadata))
-	for _, m := range metadata {
-		metaMap[m.Key] = m.Value
-	}
-	return metaMap, nil
-}
-
-// DeserializeMetadata parses the given metadata string into a map.
-// The metadata string is expected to be a JSON-encoded array of string key-value pairs.
-func DeserializeMetadata(metadata string) ([]Metadata, error) {
-	if len(metadata) == 0 || metadata == "[]" {
-		return make([]Metadata, 0), nil
-	}
-	var metaList []Metadata
-	err := json.Unmarshal([]byte(metadata), &metaList)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Error while un-marshaling the metadata")
-		return nil, errors.Wrap(err)
-	}
-	return metaList, nil
-}
-
-// SerializeMetadata builds a metadata string from the given map.
-// The metadata string is a JSON-encoded array of key-value objects.
-func SerializeMetadata(metadataMap map[string]string) (string, error) {
-	metaList := make([]Metadata, 0, len(metadataMap))
-	for k, v := range metadataMap {
-		metaList = append(metaList, Metadata{Key: k, Value: v})
-	}
-
-	metaBytes, err := json.Marshal(metaList)
-	if err != nil {
-		zlog.InfraSec().InfraErr(err).Msgf("Error while marshaling the metadata")
-		return "", errors.Wrap(err)
-	}
-	return string(metaBytes), nil
-}
-
 // PopulateHostResourceWithNewSystemInfo function gets on input System Information to be updated.
 // It constructs a Host resource structure with an updated System Information. Fields not present in
 // the System Information are automatically being set to 'nil'. Fieldmask for System Information is
@@ -238,7 +196,7 @@ func SerializeMetadata(metadataMap map[string]string) (string, error) {
 // NIC/Storage/USBs resources are handled in different functions.
 //
 //nolint:cyclop // complexity is 11
-func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
+func PopulateHostResourceWithNewSystemInfo(ctx context.Context, systemInfo *pb.SystemInfo, secretsService secrets.SecretsService) (
 	*computev1.HostResource, *fieldmaskpb.FieldMask, error,
 ) {
 	zlog.InfraSec().Debug().Msg("Populating Host resource with updated system information")
@@ -293,25 +251,22 @@ func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 	}
 
 	if systemInfo.KcInfo != nil {
-		// Metadata has the following format in the inventory: [{"key": "my-key", "value": "my-value"}, ...]
-		metaList, err := DeserializeMetadata(hr.Metadata)
-		if err != nil {
-			return nil, nil, errors.Errorfc(codes.InvalidArgument, "invalid input: metadata deserialization error")
+		// Store kubeconfig in Vault instead of database metadata
+		// There is 1:1 mapping between Host and kubeconfig, so we can use a fixed vault path for each host
+		vaultPath := "secret/data/kubeconfig"
+		kubeconfigData := map[string]interface{}{
+			"kubeconfig": systemInfo.KcInfo.Kubeconfig,
+			"timestamp":  time.Now().Unix(),
 		}
 
-		// Ensure that kubeconfig is always updated in the metadata, even if there are duplicate keys in the metadata.
-		metaMap, err := MetadataToMetaMap(metaList)
+		// Store in vault
+		_, err := secretsService.WriteSecret(ctx, vaultPath, kubeconfigData)
 		if err != nil {
-			zlog.InfraSec().Info().Msgf("Duplicate keys found in metadata, will overwrite the duplicated keys. Keys: %v", err)
+			zlog.InfraSec().Err(err).Msgf("Failed to store kubeconfig in vault")
+			return nil, nil, errors.Errorfc(codes.Internal, "failed to store kubeconfig in vault: %v", err)
 		}
 
-		metaMap["kubeconfig"] = systemInfo.KcInfo.Kubeconfig
-
-		metadata, err := SerializeMetadata(metaMap)
-		if err != nil {
-			return nil, nil, errors.Errorfc(codes.InvalidArgument, "invalid input: metadata serialization error")
-		}
-		hr.Metadata = metadata
+		zlog.InfraSec().Info().Msgf("Kubeconfig securely stored in vault at path %s", vaultPath)
 	}
 
 	// adding only fields with valid data to the fieldmask to avoid ResourceID validation errors
