@@ -8,7 +8,7 @@ go 1.26.1
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
 	github.com/mennanov/fmutils v0.3.6
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.0
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.80.0
