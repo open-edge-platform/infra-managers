@@ -200,10 +200,10 @@ func MetadataToMetaMap(metadata []Metadata) (map[string]string, error) {
 	return metaMap, nil
 }
 
-// DeserializeMetadata parses the given metadata string into a map.
+// ParseMetadata parses the given metadata string into a map.
 // The metadata string is expected to be a JSON-encoded array of string key-value pairs.
-func DeserializeMetadata(metadata string) ([]Metadata, error) {
-	if len(metadata) == 0 || metadata == "[]" {
+func ParseMetadata(metadata string) ([]Metadata, error) {
+	if metadata == "" {
 		return make([]Metadata, 0), nil
 	}
 	var metaList []Metadata
@@ -237,7 +237,7 @@ func SerializeMetadata(metadataMap map[string]string) (string, error) {
 // being produced for future update of the Host resource.
 // NIC/Storage/USBs resources are handled in different functions.
 //
-//nolint:cyclop // complexity is 11
+//nolint:cyclop,funlen // complexity is 11
 func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 	*computev1.HostResource, *fieldmaskpb.FieldMask, error,
 ) {
@@ -294,7 +294,7 @@ func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 
 	if systemInfo.KcInfo != nil {
 		// Metadata has the following format in the inventory: [{"key": "my-key", "value": "my-value"}, ...]
-		metaList, err := DeserializeMetadata(hr.Metadata)
+		metaList, err := ParseMetadata(hr.Metadata)
 		if err != nil {
 			return nil, nil, errors.Errorfc(codes.InvalidArgument, "invalid input: metadata deserialization error")
 		}
