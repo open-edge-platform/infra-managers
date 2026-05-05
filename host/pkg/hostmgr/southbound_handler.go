@@ -20,7 +20,7 @@ import (
 func updateHost(ctx context.Context, tenantID string, hostResc *computev1.HostResource, info *pb.SystemInfo) error {
 	zlog.Debug().Msgf("Updating Host (tID=%s, UUID=%s) in Inventory: %v", tenantID, hostResc.GetUuid(), hostResc)
 
-	updatedHostres, fieldmask, err := hmgr_util.PopulateHostResourceWithNewSystemInfo(ctx, info)
+	updatedHostres, fieldmask, err := hmgr_util.PopulateHostResourceWithNewSystemInfo(info)
 	if err != nil {
 		return err
 	}

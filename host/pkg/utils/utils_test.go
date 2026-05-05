@@ -4,7 +4,6 @@
 package util_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -111,33 +110,6 @@ var (
 		Features:    []string{"abc", "xyz", "q"},
 	}
 )
-
-// // mockSecretsService implements secrets.SecretsService for testing
-// type mockSecretsService struct {
-// 	storage map[string]map[string]interface{}
-// }
-
-// func newMockSecretsService() *mockSecretsService {
-// 	return &mockSecretsService{
-// 		storage: make(map[string]map[string]interface{}),
-// 	}
-// }
-
-// func (m *mockSecretsService) ReadSecret(ctx context.Context, path string) (map[string]interface{}, error) {
-// 	if data, exists := m.storage[path]; exists {
-// 		return data, nil
-// 	}
-// 	return nil, nil
-// }
-
-// func (m *mockSecretsService) WriteSecret(ctx context.Context, path string, secret map[string]interface{}) (map[string]interface{}, error) {
-// 	m.storage[path] = secret
-// 	return secret, nil
-// }
-
-// func (m *mockSecretsService) Logout(ctx context.Context) {
-// 	// No-op for mock
-// }
 
 func TestPopulateHostusbWithUsbInfo(t *testing.T) {
 	host := &computev1.HostResource{}
@@ -562,11 +534,7 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock secrets service for testing
-			//mockSecrets := newMockSecretsService()
-
-			//updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tt.args.info, mockSecrets)
-			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tt.args.info)
+			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(tt.args.info)
 			if err != nil {
 				if !tt.fail {
 					t.Errorf("PopulateHostResourceWithNewSystemInfo() should NOT fail %s", err)
@@ -1552,8 +1520,7 @@ func TestIsSameHostSystemInfo(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Create mock secrets service for testing
-			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tc.in)
+			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(tc.in)
 			require.NoError(t, err)
 
 			isSame, err := util.IsSameHost(tc.want, updatedHost, fieldmask)

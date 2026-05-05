@@ -9,7 +9,6 @@ package util
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/netip"
@@ -239,7 +238,7 @@ func SerializeMetadata(metadataMap map[string]string) (string, error) {
 // NIC/Storage/USBs resources are handled in different functions.
 //
 //nolint:cyclop // complexity is 11
-func PopulateHostResourceWithNewSystemInfo(ctx context.Context, systemInfo *pb.SystemInfo) (
+func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 	*computev1.HostResource, *fieldmaskpb.FieldMask, error,
 ) {
 	zlog.InfraSec().Debug().Msg("Populating Host resource with updated system information")

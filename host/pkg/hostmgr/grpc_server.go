@@ -25,7 +25,6 @@ type server struct {
 	pb.UnimplementedHostmgrServer
 	rbac        *rbac.Policy
 	authEnabled bool
-	//secretsService secrets.SecretsService
 }
 
 //nolint:stylecheck,revive // name of this function should be aligned with the one in .pb.go
