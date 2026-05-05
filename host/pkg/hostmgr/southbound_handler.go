@@ -10,6 +10,7 @@ import (
 	computev1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/compute/v1"
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/secrets"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
 	inv_mgr_cli "github.com/open-edge-platform/infra-managers/host/pkg/invclient"
 	hmgr_util "github.com/open-edge-platform/infra-managers/host/pkg/utils"
@@ -17,10 +18,10 @@ import (
 
 // updateHost retrieves a current host resource from Inventory by GUID, overwrites its info with
 // the SystemInfo provided and inserts the updated host resource to Inventory.
-func updateHost(ctx context.Context, tenantID string, hostResc *computev1.HostResource, info *pb.SystemInfo) error {
+func updateHost(ctx context.Context, tenantID string, hostResc *computev1.HostResource, info *pb.SystemInfo, secretsService secrets.SecretsService) error {
 	zlog.Debug().Msgf("Updating Host (tID=%s, UUID=%s) in Inventory: %v", tenantID, hostResc.GetUuid(), hostResc)
 
-	updatedHostres, fieldmask, err := hmgr_util.PopulateHostResourceWithNewSystemInfo(info)
+	updatedHostres, fieldmask, err := hmgr_util.PopulateHostResourceWithNewSystemInfo(ctx, info, secretsService)
 	if err != nil {
 		return err
 	}

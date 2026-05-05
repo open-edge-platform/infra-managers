@@ -4,6 +4,7 @@
 package util_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -110,6 +111,33 @@ var (
 		Features:    []string{"abc", "xyz", "q"},
 	}
 )
+
+// mockSecretsService implements secrets.SecretsService for testing
+type mockSecretsService struct {
+	storage map[string]map[string]interface{}
+}
+
+func newMockSecretsService() *mockSecretsService {
+	return &mockSecretsService{
+		storage: make(map[string]map[string]interface{}),
+	}
+}
+
+func (m *mockSecretsService) ReadSecret(ctx context.Context, path string) (map[string]interface{}, error) {
+	if data, exists := m.storage[path]; exists {
+		return data, nil
+	}
+	return nil, nil
+}
+
+func (m *mockSecretsService) WriteSecret(ctx context.Context, path string, secret map[string]interface{}) (map[string]interface{}, error) {
+	m.storage[path] = secret
+	return secret, nil
+}
+
+func (m *mockSecretsService) Logout(ctx context.Context) {
+	// No-op for mock
+}
 
 func TestPopulateHostusbWithUsbInfo(t *testing.T) {
 	host := &computev1.HostResource{}
@@ -477,6 +505,54 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			fail: true,
 		},
 		{
+			name: "ClusterInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
+			name: "ClusterInfo_With_HWInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					HwInfo: &pb.HWInfo{
+						SerialNum:   "test-serial",
+						ProductName: "test-product",
+					},
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				SerialNumber: "test-serial",
+				ProductName:  "test-product",
+				Metadata:     `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
+			name: "ClusterInfo_Multiple_Metadata_Keys_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "new-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"new-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
 			name: "Failed_NoSystemInfo",
 			args: args{
 				nil,
@@ -486,7 +562,10 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(tt.args.info)
+			// Create mock secrets service for testing
+			mockSecrets := newMockSecretsService()
+
+			updatedHost, _, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tt.args.info, mockSecrets)
 			if err != nil {
 				if !tt.fail {
 					t.Errorf("PopulateHostResourceWithNewSystemInfo() should NOT fail %s", err)
@@ -1472,7 +1551,10 @@ func TestIsSameHostSystemInfo(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(tc.in)
+			// Create mock secrets service for testing
+			mockSecrets := newMockSecretsService()
+
+			updatedHost, fieldmask, err := util.PopulateHostResourceWithNewSystemInfo(context.Background(), tc.in, mockSecrets)
 			require.NoError(t, err)
 
 			isSame, err := util.IsSameHost(tc.want, updatedHost, fieldmask)

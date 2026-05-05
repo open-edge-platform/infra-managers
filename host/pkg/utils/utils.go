@@ -1,4 +1,5 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
+//
 // SPDX-License-Identifier: Apache-2.0
 
 // Package util provides utility functions for host management.
@@ -8,11 +9,13 @@ package util
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/netip"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -23,6 +26,7 @@ import (
 	network_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/network/v1"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
+	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/secrets"
 	inv_status "github.com/open-edge-platform/infra-core/inventory/v2/pkg/status"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/util"
 	pb "github.com/open-edge-platform/infra-managers/host/pkg/api/hostmgr/proto"
@@ -192,7 +196,7 @@ func PopulateHostgpuWithGpuInfo(gpu *pb.SystemGPU, host *computev1.HostResource)
 // NIC/Storage/USBs resources are handled in different functions.
 //
 //nolint:cyclop // complexity is 11
-func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
+func PopulateHostResourceWithNewSystemInfo(ctx context.Context, systemInfo *pb.SystemInfo, secretsService secrets.SecretsService) (
 	*computev1.HostResource, *fieldmaskpb.FieldMask, error,
 ) {
 	zlog.InfraSec().Debug().Msg("Populating Host resource with updated system information")
@@ -246,15 +250,55 @@ func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 		hr.BiosReleaseDate = systemInfo.BiosInfo.ReleaseDate
 	}
 
-	// adding all expected fields to get updated by invclient.UpdateHostResource function by default
-	fieldmask = append(fieldmask, computev1.HostResourceFieldSerialNumber,
-		computev1.HostResourceFieldProductName, computev1.HostResourceFieldMemoryBytes,
-		computev1.HostResourceFieldCpuSockets, computev1.HostResourceFieldCpuArchitecture,
-		computev1.HostResourceFieldCpuModel, computev1.HostResourceFieldCpuCores,
-		computev1.HostResourceFieldCpuThreads, computev1.HostResourceFieldCpuCapabilities,
-		computev1.HostResourceFieldCpuTopology,
-		computev1.HostResourceFieldBiosVendor, computev1.HostResourceFieldBiosVersion,
-		computev1.HostResourceFieldBiosReleaseDate)
+	if systemInfo.KcInfo != nil {
+		// Store kubeconfig in Vault instead of database metadata
+		// There is 1:1 mapping between Host and kubeconfig, so we can use a fixed vault path for each host
+		vaultPath := "secret/data/kubeconfig"
+		kubeconfigData := map[string]interface{}{
+			"kubeconfig": systemInfo.KcInfo.Kubeconfig,
+			"timestamp":  time.Now().Unix(),
+		}
+
+		// Store in vault
+		_, err := secretsService.WriteSecret(ctx, vaultPath, kubeconfigData)
+		if err != nil {
+			zlog.InfraSec().Err(err).Msgf("Failed to store kubeconfig in vault")
+			return nil, nil, errors.Errorfc(codes.Internal, "failed to store kubeconfig in vault: %v", err)
+		}
+
+		zlog.InfraSec().Info().Msgf("Kubeconfig securely stored in vault at path %s", vaultPath)
+	}
+
+	// adding only fields with valid data to the fieldmask to avoid ResourceID validation errors
+	if systemInfo.HwInfo != nil {
+		if systemInfo.HwInfo.SerialNum != "" {
+			fieldmask = append(fieldmask, computev1.HostResourceFieldSerialNumber)
+		}
+		if systemInfo.HwInfo.ProductName != "" {
+			fieldmask = append(fieldmask, computev1.HostResourceFieldProductName)
+		}
+		if systemInfo.HwInfo.Memory != nil {
+			fieldmask = append(fieldmask, computev1.HostResourceFieldMemoryBytes)
+		}
+		if systemInfo.HwInfo.Cpu != nil {
+			fieldmask = append(fieldmask, computev1.HostResourceFieldCpuSockets,
+				computev1.HostResourceFieldCpuArchitecture, computev1.HostResourceFieldCpuModel,
+				computev1.HostResourceFieldCpuCores, computev1.HostResourceFieldCpuThreads,
+				computev1.HostResourceFieldCpuCapabilities)
+			if systemInfo.HwInfo.Cpu.CpuTopology != nil {
+				fieldmask = append(fieldmask, computev1.HostResourceFieldCpuTopology)
+			}
+		}
+	}
+
+	if systemInfo.BiosInfo != nil {
+		fieldmask = append(fieldmask, computev1.HostResourceFieldBiosVendor,
+			computev1.HostResourceFieldBiosVersion, computev1.HostResourceFieldBiosReleaseDate)
+	}
+
+	if systemInfo.KcInfo != nil {
+		fieldmask = append(fieldmask, computev1.HostResourceFieldMetadata)
+	}
 
 	return hr, &fieldmaskpb.FieldMask{
 		Paths: fieldmask,
