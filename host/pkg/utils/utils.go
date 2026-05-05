@@ -314,36 +314,15 @@ func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 		hr.Metadata = metadata
 	}
 
-	// adding only fields with valid data to the fieldmask to avoid ResourceID validation errors
-	if systemInfo.HwInfo != nil {
-		if systemInfo.HwInfo.SerialNum != "" {
-			fieldmask = append(fieldmask, computev1.HostResourceFieldSerialNumber)
-		}
-		if systemInfo.HwInfo.ProductName != "" {
-			fieldmask = append(fieldmask, computev1.HostResourceFieldProductName)
-		}
-		if systemInfo.HwInfo.Memory != nil {
-			fieldmask = append(fieldmask, computev1.HostResourceFieldMemoryBytes)
-		}
-		if systemInfo.HwInfo.Cpu != nil {
-			fieldmask = append(fieldmask, computev1.HostResourceFieldCpuSockets,
-				computev1.HostResourceFieldCpuArchitecture, computev1.HostResourceFieldCpuModel,
-				computev1.HostResourceFieldCpuCores, computev1.HostResourceFieldCpuThreads,
-				computev1.HostResourceFieldCpuCapabilities)
-			if systemInfo.HwInfo.Cpu.CpuTopology != nil {
-				fieldmask = append(fieldmask, computev1.HostResourceFieldCpuTopology)
-			}
-		}
-	}
-
-	if systemInfo.BiosInfo != nil {
-		fieldmask = append(fieldmask, computev1.HostResourceFieldBiosVendor,
-			computev1.HostResourceFieldBiosVersion, computev1.HostResourceFieldBiosReleaseDate)
-	}
-
-	if systemInfo.KcInfo != nil {
-		fieldmask = append(fieldmask, computev1.HostResourceFieldMetadata)
-	}
+	// adding all expected fields to get updated by invclient.UpdateHostResource function by default
+	fieldmask = append(fieldmask, computev1.HostResourceFieldSerialNumber,
+		computev1.HostResourceFieldProductName, computev1.HostResourceFieldMemoryBytes,
+		computev1.HostResourceFieldCpuSockets, computev1.HostResourceFieldCpuArchitecture,
+		computev1.HostResourceFieldCpuModel, computev1.HostResourceFieldCpuCores,
+		computev1.HostResourceFieldCpuThreads, computev1.HostResourceFieldCpuCapabilities,
+		computev1.HostResourceFieldCpuTopology,
+		computev1.HostResourceFieldBiosVendor, computev1.HostResourceFieldBiosVersion,
+		computev1.HostResourceFieldBiosReleaseDate, computev1.HostResourceFieldMetadata)
 
 	return hr, &fieldmaskpb.FieldMask{
 		Paths: fieldmask,
