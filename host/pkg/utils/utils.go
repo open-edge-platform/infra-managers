@@ -237,7 +237,7 @@ func SerializeMetadata(metadataMap map[string]string) (string, error) {
 // being produced for future update of the Host resource.
 // NIC/Storage/USBs resources are handled in different functions.
 //
-//nolint:cyclop,funlen // complexity is 11
+//nolint:cyclop,funlen,nolintlint // complexity is 11
 func PopulateHostResourceWithNewSystemInfo(systemInfo *pb.SystemInfo) (
 	*computev1.HostResource, *fieldmaskpb.FieldMask, error,
 ) {
