@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 module github.com/open-edge-platform/infra-managers/maintenance
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
