@@ -8,6 +8,7 @@
     - [BmInfo](#hostmgr_southbound_proto-BmInfo)
     - [BmcInfo](#hostmgr_southbound_proto-BmcInfo)
     - [CPUTopology](#hostmgr_southbound_proto-CPUTopology)
+    - [ClusterInfo](#hostmgr_southbound_proto-ClusterInfo)
     - [Config](#hostmgr_southbound_proto-Config)
     - [CoreGroup](#hostmgr_southbound_proto-CoreGroup)
     - [HWInfo](#hostmgr_southbound_proto-HWInfo)
@@ -52,7 +53,7 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## hostmgr/proto/hostmgr_southbound.proto
-SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 SPDX-License-Identifier: Apache-2.0
 
 
@@ -115,6 +116,21 @@ SPDX-License-Identifier: Apache-2.0
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | sockets | [Socket](#hostmgr_southbound_proto-Socket) | repeated | a list of CPU socket descriptions |
+
+
+
+
+
+
+<a name="hostmgr_southbound_proto-ClusterInfo"></a>
+
+### ClusterInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| kubeconfig | [string](#string) |  |  |
 
 
 
@@ -413,6 +429,7 @@ SPDX-License-Identifier: Apache-2.0
 | os_info | [OsInfo](#hostmgr_southbound_proto-OsInfo) |  |  |
 | bm_ctl_info | [BmInfo](#hostmgr_southbound_proto-BmInfo) |  |  |
 | bios_info | [BiosInfo](#hostmgr_southbound_proto-BiosInfo) |  |  |
+| kc_info | [ClusterInfo](#hostmgr_southbound_proto-ClusterInfo) |  |  |
 
 
 

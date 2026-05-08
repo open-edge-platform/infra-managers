@@ -477,6 +477,54 @@ func TestPopulateHostResourceWithNewSystemInfo(t *testing.T) {
 			fail: true,
 		},
 		{
+			name: "ClusterInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
+			name: "ClusterInfo_With_HWInfo_Success",
+			args: args{
+				&pb.SystemInfo{
+					HwInfo: &pb.HWInfo{
+						SerialNum:   "test-serial",
+						ProductName: "test-product",
+					},
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "test-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				SerialNumber: "test-serial",
+				ProductName:  "test-product",
+				Metadata:     `[{"key":"kubeconfig","value":"test-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
+			name: "ClusterInfo_Multiple_Metadata_Keys_Success",
+			args: args{
+				&pb.SystemInfo{
+					KcInfo: &pb.ClusterInfo{
+						Kubeconfig: "new-kubeconfig-content",
+					},
+				},
+			},
+			want: &computev1.HostResource{
+				Metadata: `[{"key":"kubeconfig","value":"new-kubeconfig-content"}]`,
+			},
+			fail: false,
+		},
+		{
 			name: "Failed_NoSystemInfo",
 			args: args{
 				nil,
