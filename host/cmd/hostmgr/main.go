@@ -17,7 +17,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/flags"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/oam"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"

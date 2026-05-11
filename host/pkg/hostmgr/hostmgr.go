@@ -18,7 +18,7 @@ import (
 	inv_v1 "github.com/open-edge-platform/infra-core/inventory/v2/pkg/api/inventory/v1"
 	inv_client "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
