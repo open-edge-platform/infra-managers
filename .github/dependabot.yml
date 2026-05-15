@@ -11,6 +11,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -28,6 +30,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -45,6 +49,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -62,6 +68,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -79,6 +87,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -96,6 +106,8 @@ updates:
     open-pull-requests-limit: 3
     commit-message:
       prefix: "[gomod] "
+    cooldown:
+      default-days: 7
     groups:
       dependencies:
         patterns:
@@ -114,3 +126,5 @@ updates:
     open-pull-requests-limit: 10
     commit-message:
       prefix: "[gha] "
+    cooldown:
+      default-days: 7
