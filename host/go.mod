@@ -1,15 +1,15 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 module github.com/open-edge-platform/infra-managers/host
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.1
-	github.com/open-edge-platform/infra-managers/maintenance v1.25.2
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.3
+	github.com/open-edge-platform/infra-managers/maintenance v1.26.0
 	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.40.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
@@ -62,6 +62,7 @@ require (
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/hashicorp/vault/api v1.22.0 // indirect
+	github.com/hashicorp/vault/api/auth/kubernetes v0.10.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect

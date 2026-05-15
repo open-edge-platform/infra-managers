@@ -1,13 +1,13 @@
 # version.mk - check versions of tools for Managers repository
 
-# SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+# SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 GOLINTVERSION_HAVE             := $(shell golangci-lint version | sed 's/.*version //' | sed 's/ .*//')
 GOLINTVERSION_REQ              := 2.9.0
 GOJUNITREPORTVERSION_HAVE      := $(shell go-junit-report -version | sed s/.*" v"// | sed 's/ .*//')
 GOJUNITREPORTVERSION_REQ       := 2.1.0
-GOVERSION_REQ                  := 1.26.1
+GOVERSION_REQ                  := 1.26.3
 GOVERSION_HAVE                 := $(shell go version | sed 's/.*version go//' | sed 's/ .*//')           := 1.6.0
 PROTOCGENDOCVERSION_HAVE       := $(shell protoc-gen-doc --version | sed s/.*"version "// | sed 's/ .*//')
 PROTOCGENDOCVERSION_REQ        := 1.5.1
