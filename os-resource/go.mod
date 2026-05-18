@@ -1,9 +1,9 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 module github.com/open-edge-platform/infra-managers/os-resource
 
-go 1.26.1
+go 1.26.3
 
 require (
 	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.0
