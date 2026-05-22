@@ -11,6 +11,8 @@ on:
       - release-*
     paths:
       - "os-resource/**"
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
