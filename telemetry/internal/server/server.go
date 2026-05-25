@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 // Package server provides gRPC server functionality for telemetry manager.
@@ -14,7 +14,7 @@ import (
 
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	inv_metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
@@ -109,7 +109,7 @@ func telemetrymgrGrpcServer(
 
 	opts := parseOptions(options...)
 
-	srvMetrics := metrics.GetServerMetricsWithLatency()
+	srvMetrics := inv_metrics.GetServerMetricsWithLatency()
 	if opts.enableMetrics {
 		zlog.Info().Msgf("Metrics exporter is enabled")
 		unaryInter = append(unaryInter, srvMetrics.UnaryServerInterceptor())
@@ -154,8 +154,8 @@ func telemetrymgrGrpcServer(
 	if opts.enableMetrics {
 		// Register metrics
 		srvMetrics.InitializeMetrics(gsrv)
-		metrics.StartMetricsExporter([]prometheus.Collector{metrics.GetClientMetricsWithLatency(), srvMetrics},
-			metrics.WithListenAddress(opts.metricsAddress))
+		inv_metrics.StartMetricsExporter([]prometheus.Collector{inv_metrics.GetClientMetricsWithLatency(), srvMetrics},
+			inv_metrics.WithListenAddress(opts.metricsAddress))
 	}
 
 	wg.Add(1)

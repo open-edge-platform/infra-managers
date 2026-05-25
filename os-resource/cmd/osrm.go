@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 package main
 
@@ -16,7 +16,7 @@ import (
 
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	inv_metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/oam"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
 	"github.com/open-edge-platform/infra-managers/os-resource/internal/common"
@@ -44,9 +44,9 @@ var (
 	defaultProfile    = flag.String(common.DefaultProfile, "", common.DefaultProfileDescription)
 	autoProvision     = flag.Bool(common.AutoprovisionFlag, false, common.AutoprovisionDescription)
 
-	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
-	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault,
-		metrics.MetricsAddressDescription)
+	enableMetrics  = flag.Bool(inv_metrics.EnableMetrics, false, inv_metrics.EnableMetricsDescription)
+	metricsAddress = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault,
+		inv_metrics.MetricsAddressDescription)
 	osSecurityFeatureEnable = flag.Bool(common.OSSecurityFeatureEnable, false, common.OSSecurityFeatureEnableDescription)
 	inventoryTickerPeriod   = flag.String("inventory-ticker-period", "12h", "Inventory ticker period (e.g., 12h, 1h, 30m)")
 )
@@ -85,8 +85,8 @@ func SetupTracing(traceURL string) func(context.Context) error {
 }
 
 func startMetricsServer() {
-	metrics.StartMetricsExporter([]prometheus.Collector{metrics.GetClientMetricsWithLatency()},
-		metrics.WithListenAddress(*metricsAddress))
+	inv_metrics.StartMetricsExporter([]prometheus.Collector{inv_metrics.GetClientMetricsWithLatency()},
+		inv_metrics.WithListenAddress(*metricsAddress))
 }
 
 func SetupOamServerAndSetReady(enableTracing *bool, oamServerAddress *string) {

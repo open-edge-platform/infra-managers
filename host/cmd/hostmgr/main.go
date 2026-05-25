@@ -17,7 +17,7 @@ import (
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/flags"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	inv_metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/oam"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
@@ -63,8 +63,8 @@ var (
 	invCacheStaleTimeoutOffset = flag.Uint(
 		client.InvCacheStaleTimeoutOffset, client.InvCacheStaleTimeoutOffsetDefault, client.InvCacheStaleTimeoutOffsetDescription)
 
-	enableMetrics  = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
-	metricsAddress = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
+	enableMetrics  = flag.Bool(inv_metrics.EnableMetrics, false, inv_metrics.EnableMetricsDescription)
+	metricsAddress = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault, inv_metrics.MetricsAddressDescription)
 )
 
 var (

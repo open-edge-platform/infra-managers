@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 // Package main is the entry point for the networking manager service.
@@ -16,7 +16,7 @@ import (
 
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/client"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	inv_metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/oam"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
 	"github.com/open-edge-platform/infra-managers/networking/internal/clients"
@@ -30,8 +30,8 @@ var (
 	inventoryAddress = flag.String(client.InventoryAddress, "localhost:50051", client.InventoryAddressDescription)
 	oamservaddr      = flag.String(oam.OamServerAddress, "", oam.OamServerAddressDescription)
 	enableTracing    = flag.Bool(tracing.EnableTracing, false, tracing.EnableTracingDescription)
-	enableMetrics    = flag.Bool(metrics.EnableMetrics, false, metrics.EnableMetricsDescription)
-	metricsAddress   = flag.String(metrics.MetricsAddress, metrics.MetricsAddressDefault, metrics.MetricsAddressDescription)
+	enableMetrics    = flag.Bool(inv_metrics.EnableMetrics, false, inv_metrics.EnableMetricsDescription)
+	metricsAddress   = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault, inv_metrics.MetricsAddressDescription)
 	traceURL         = flag.String(tracing.TraceURL, "", tracing.TraceURLDescription)
 	wg               = sync.WaitGroup{}
 	readyChan        = make(chan bool, 1)
@@ -65,8 +65,8 @@ func setupTracing(traceURL string) func(context.Context) error {
 }
 
 func startMetricsServer() {
-	metrics.StartMetricsExporter([]prometheus.Collector{metrics.GetClientMetricsWithLatency()},
-		metrics.WithListenAddress(*metricsAddress))
+	inv_metrics.StartMetricsExporter([]prometheus.Collector{inv_metrics.GetClientMetricsWithLatency()},
+		inv_metrics.WithListenAddress(*metricsAddress))
 }
 
 func setupOamServer(enableTracing bool, oamservaddr string) {
