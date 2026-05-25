@@ -11,6 +11,8 @@ on:
       - release-*
     paths:
       - "maintenance/**"
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
