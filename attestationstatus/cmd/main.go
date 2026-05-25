@@ -47,7 +47,8 @@ var (
 	enableAuth     = flag.Bool(rbac.EnableAuth, true, rbac.EnableAuthDescription)
 	rbacRules      = flag.String(rbac.RbacRules, "/rego/authz.rego", rbac.RbacRulesDescription)
 	enableMetrics  = flag.Bool(inv_metrics.EnableMetrics, false, inv_metrics.EnableMetricsDescription)
-	metricsAddress = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault, inv_metrics.MetricsAddressDescription)
+	metricsAddress = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault,
+		inv_metrics.MetricsAddressDescription)
 )
 
 var (

@@ -31,12 +31,13 @@ var (
 	oamservaddr      = flag.String(oam.OamServerAddress, "", oam.OamServerAddressDescription)
 	enableTracing    = flag.Bool(tracing.EnableTracing, false, tracing.EnableTracingDescription)
 	enableMetrics    = flag.Bool(inv_metrics.EnableMetrics, false, inv_metrics.EnableMetricsDescription)
-	metricsAddress   = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault, inv_metrics.MetricsAddressDescription)
-	traceURL         = flag.String(tracing.TraceURL, "", tracing.TraceURLDescription)
-	wg               = sync.WaitGroup{}
-	readyChan        = make(chan bool, 1)
-	termChan         = make(chan bool, 1)
-	sigChan          = make(chan os.Signal, 1)
+	metricsAddress   = flag.String(inv_metrics.MetricsAddress, inv_metrics.MetricsAddressDefault,
+		inv_metrics.MetricsAddressDescription)
+	traceURL  = flag.String(tracing.TraceURL, "", tracing.TraceURLDescription)
+	wg        = sync.WaitGroup{}
+	readyChan = make(chan bool, 1)
+	termChan  = make(chan bool, 1)
+	sigChan   = make(chan os.Signal, 1)
 )
 
 var (
