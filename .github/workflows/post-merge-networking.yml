@@ -11,6 +11,8 @@ on:
       - release-*
     paths:
       - "networking/**"
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:

@@ -11,6 +11,8 @@ on:
       - release-*
     paths:
       - "attestationstatus/**"
+    tags:
+      - '*'
   workflow_dispatch:
 
 permissions:
