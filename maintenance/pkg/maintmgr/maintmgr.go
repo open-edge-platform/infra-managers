@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: (C) 2025 Intel Corporation
+// SPDX-FileCopyrightText: (C) 2026 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -20,7 +20,7 @@ import (
 	schedule_cache "github.com/open-edge-platform/infra-core/inventory/v2/pkg/client/cache/schedule"
 	inv_errors "github.com/open-edge-platform/infra-core/inventory/v2/pkg/errors"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/logging"
-	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
+	inv_metrics "github.com/open-edge-platform/infra-core/inventory/v2/pkg/metrics"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/policy/rbac"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tenant"
 	"github.com/open-edge-platform/infra-core/inventory/v2/pkg/tracing"
@@ -214,7 +214,7 @@ func StartGrpcSrv(
 	var srvOpts []grpc.ServerOption
 	var unaryInter []grpc.UnaryServerInterceptor
 
-	srvMetrics := metrics.GetServerMetricsWithLatency()
+	srvMetrics := inv_metrics.GetServerMetricsWithLatency()
 	if opts.enableMetrics {
 		zlog.Info().Msgf("Metrics exporter is enabled")
 		unaryInter = append(unaryInter, srvMetrics.UnaryServerInterceptor())
@@ -258,10 +258,10 @@ func StartGrpcSrv(
 	if opts.enableMetrics {
 		// Register metrics
 		srvMetrics.InitializeMetrics(s)
-		metrics.StartMetricsExporter([]prometheus.Collector{
-			metrics.GetClientMetricsWithLatency(),
+		inv_metrics.StartMetricsExporter([]prometheus.Collector{
+			inv_metrics.GetClientMetricsWithLatency(),
 			srvMetrics,
-		}, metrics.WithListenAddress(opts.metricsAddress))
+		}, inv_metrics.WithListenAddress(opts.metricsAddress))
 	}
 
 	wg.Add(1)
