@@ -9,8 +9,8 @@ require (
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
 	github.com/google/uuid v1.6.0
-	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.0
-	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.39.10
+	github.com/open-edge-platform/infra-core/inventory/v2 v2.35.6
+	github.com/open-edge-platform/infra-onboarding/onboarding-manager v1.40.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.82.0-dev
@@ -63,6 +63,7 @@ require (
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
 	github.com/hashicorp/hcl/v2 v2.23.0 // indirect
 	github.com/hashicorp/vault/api v1.22.0 // indirect
+	github.com/hashicorp/vault/api/auth/kubernetes v0.10.0 // indirect
 	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -86,7 +87,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/open-edge-platform/orch-library/go v0.6.3 // indirect
+	github.com/open-edge-platform/orch-library/go v0.6.4 // indirect
 	github.com/open-edge-platform/orch-library/go/dazl v0.5.4 // indirect
 	github.com/open-policy-agent/opa v1.14.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
